@@ -1,0 +1,30 @@
+{
+  "bookings": [
+    {
+      "id": 1000,
+      "travellerCount": 2,
+      "originId": 2370001,
+      "destinationId": 2370002,
+      "bookingDateTime": "2017-12-22T15:38:35+0000",
+      "expiryDateTime": "2017-12-22T16:08:35+0000",
+      "departureDateTime": "2030-04-15T05:00:00+0000",
+      "arrivalDateTime": "2030-04-15T07:00:00+0000",
+      "totalPrice": 6000.00,
+      "currencyCode": "XAF",
+      "status": "PENDING"
+    },
+    {
+      "id": 1001,
+      "travellerCount": 2,
+      "originId": 2370001,
+      "destinationId": 2370002,
+      "bookingDateTime": "2017-12-22T15:38:35+0000",
+      "expiryDateTime": "2017-12-22T16:08:35+0000",
+      "departureDateTime": "2030-04-15T05:00:00+0000",
+      "arrivalDateTime": "2030-04-15T07:00:00+0000",
+      "totalPrice": 6000.00,
+      "currencyCode": "XAF",
+      "status": "PENDING"
+    }
+  ]
+}

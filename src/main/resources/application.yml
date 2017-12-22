@@ -1,0 +1,79 @@
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+      naming.physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.MySQL5Dialect
+
+  datasource:
+    driverClassName: com.mysql.jdbc.Driver
+    jdbcUrl: jdbc:mysql://127.0.0.1:3306/oms?useSSL=false&requireSSL=false&serverTimezone=UTC
+    username: root
+    #password:
+    connectionTimeout: 30000
+    connectionTestQuery: "SELECT 1"
+    maximumPoolSize: 5
+    idleTimeout: 600000             # 10 mins
+    maxLifetime: 1800000            # 30 mins
+    leakDetectionThreshold: 0       # Never
+    dataSourceProperties:
+      cachePrepStmts: true
+      prepStmtCacheSize: 250
+      prepStmtCacheSqlLimit: 2048
+
+swagger:
+  version: "1.0"
+  title: Online Management API
+  description: Online Management API
+  termsPath: ""
+  email: "herve.tchepannou@gmail.com"
+  licenceType: ""
+  licencePath: "#"
+  protocol: http
+  path: "/v1/.*?"
+
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 512
+
+management:
+  security:
+    enabled: false
+
+endpoints:
+  enabled: true
+  health:
+    sensitive: false
+  metrics:
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+    io.tchepannou: DEBUG
+    com.amazonaws: ERROR
+    org.springframework: INFO
+    org.hibernate: ERROR
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: OFF
+    springfox: ERROR
+
+  pattern:
+    console: "%d Type=%level Logger=%c Thread=%thread %m%n"
+    file: "%d Type=%level Logger=%c Thread=%thread %m%n"
+
+enigma:
+  service:
+    order:
+      orderTTLMinutes: 30
+    ferari:
+      url: "https://io-tchepannou-ferari.herokuapp.com"
+      #url: "http://localhost:18081"
+    tontine:
+      url: "https://io-tchepannou-tontine.herokuapp.com"
+      #url: "http://localhost:18082"

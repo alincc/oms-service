@@ -39,7 +39,7 @@
         <springfox-swagger.version>2.3.1</springfox-swagger.version>
 
         <assertj.version>3.0.0</assertj.version>
-        <jetty.version>9.3.11.v20160721</jetty.version>
+        <jetty-server.version>9.3.11.v20160721</jetty-server.version>
         <junit.version>4.12</junit.version>
         <mockito.version>1.9.5</mockito.version>
 
@@ -93,16 +93,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-tomcat</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jetty</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -170,7 +160,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>${jetty.version}</version>
+            <version>${jetty-server.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

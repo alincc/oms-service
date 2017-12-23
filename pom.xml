@@ -24,7 +24,6 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- Library versions - in ALPHABETICAL ORDER-->
-        <core-http.version>1.0.0</core-http.version>
         <rest-client.version>1.0.0</rest-client.version>
         <oms-client.version>1.0.0</oms-client.version>
 

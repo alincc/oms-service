@@ -1,4 +1,4 @@
-package support.stub;
+package io.tchepannou.enigma.oms.controller.support.stub;
 
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;

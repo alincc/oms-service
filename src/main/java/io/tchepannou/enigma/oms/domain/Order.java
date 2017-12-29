@@ -1,13 +1,11 @@
 package io.tchepannou.enigma.oms.domain;
 
 import io.tchepannou.enigma.oms.client.OrderStatus;
+import io.tchepannou.enigma.oms.client.PaymentMethod;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -59,12 +57,7 @@ public class Order extends Persistent {
     @OneToMany(mappedBy = "order")
     private List<Traveller> travellers;
 
-    @Embedded
-    @AttributeOverrides({
-        @AttributeOverride(name="countryCode", column = @Column(name="mobile_payment_country_code")),
-        @AttributeOverride(name="areaCode", column = @Column(name="mobile_payment_area_code")),
-        @AttributeOverride(name="number", column = @Column(name="mobile_payment_number")),
-        @AttributeOverride(name="provider", column = @Column(name="mobile_payment_provider"))
-    })
-    private MobilePayment mobilePayment;
+    @Enumerated(EnumType.STRING)
+    @Column(name="payment_method")
+    private PaymentMethod paymentMethod;
 }

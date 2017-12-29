@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
+import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.Sex;
-import io.tchepannou.enigma.oms.client.dto.CustomerDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
+import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
+import io.tchepannou.enigma.oms.controller.support.stub.HandlerStub;
+import io.tchepannou.enigma.oms.controller.support.stub.StubSupport;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Traveller;
@@ -38,8 +41,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.web.context.WebApplicationContext;
-import support.stub.HandlerStub;
-import support.stub.StubSupport;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
@@ -49,6 +50,7 @@ import java.util.Date;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -115,7 +117,7 @@ public class OrderControllerIT extends StubSupport {
     /* =========== CREATE ============ */
     @Test
     public void shouldCreateOrder() throws Exception {
-        final CreateOrderRequest request = createCreateOrderRequest();
+        final CreateOrderRequest request = createCreateOrderRequest(2);
 
         final MvcResult result = mockMvc
                 .perform(
@@ -126,11 +128,28 @@ public class OrderControllerIT extends StubSupport {
 
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
+
+                .andExpect(jsonPath("$.order.merchantId", is(request.getMerchantId())))
+                .andExpect(jsonPath("$.order.customerId", is(request.getCustomerId())))
+                .andExpect(jsonPath("$.order.status", is("NEW")))
+                .andExpect(jsonPath("$.order.currencyCode", is("XAF")))
+                .andExpect(jsonPath("$.order.totalAmount", is(12000d)))
+                .andExpect(jsonPath("$.order.orderDateTime", notNullValue()))
+                .andExpect(jsonPath("$.order.expiryDateTime", notNullValue()))
+
+                .andExpect(jsonPath("$.order.lines.length()", is(1)))
+                .andExpect(jsonPath("$.order.lines[0].offerType", is("CAR")))
+                .andExpect(jsonPath("$.order.lines[0].offerToken", is(request.getOfferLines().get(0).getToken())))
+                .andExpect(jsonPath("$.order.lines[0].description", is(request.getOfferLines().get(0).getDescription())))
+                .andExpect(jsonPath("$.order.lines[0].unitPrice", is(6000d)))
+                .andExpect(jsonPath("$.order.lines[0].totalPrice", is(12000d)))
+                .andExpect(jsonPath("$.order.lines[0].quantity", is(2)))
+
                 .andReturn();
 
         // Then
         final CreateOrderResponse response = mapper.readValue(result.getResponse().getContentAsString(), CreateOrderResponse.class);
-        final Integer id = response.getOrderId();
+        final Integer id = response.getOrder().getId();
         final Order order = orderRepository.findOne(id);
         assertThat(order).isNotNull();
 
@@ -143,18 +162,11 @@ public class OrderControllerIT extends StubSupport {
         assertThat(order.getStatus()).isEqualTo(OrderStatus.NEW);
         assertThat(order.getTotalAmount()).isEqualTo(new BigDecimal(12000).setScale(2));
 
-        final List<Traveller> travellers = travellerRepository.findByOrder(order);
-        assertThat(travellers).hasSize(2);
-        assertThat(travellers.get(0).getFirstName()).isEqualTo("John");
-        assertThat(travellers.get(0).getLastName()).isEqualTo("Doe");
-        assertThat(travellers.get(0).getSex()).isEqualTo(Sex.M);
-        assertThat(travellers.get(1).getFirstName()).isEqualTo("Jane");
-        assertThat(travellers.get(1).getLastName()).isEqualTo("Smith");
-        assertThat(travellers.get(1).getSex()).isEqualTo(Sex.F);
-
         final List<OrderLine> lines = orderLineRepository.findByOrder(order);
         assertThat(lines).hasSize(1);
-        assertThat(lines.get(0).getAmount()).isEqualTo(new BigDecimal(12000).setScale(2));
+        assertThat(lines.get(0).getUnitPrice()).isEqualTo(new BigDecimal(6000).setScale(2));
+        assertThat(lines.get(0).getTotalPrice()).isEqualTo(new BigDecimal(12000).setScale(2));
+        assertThat(lines.get(0).getQuantity()).isEqualTo(2);
         assertThat(lines.get(0).getBookingId()).isNull();
         assertThat(lines.get(0).getDescription()).isEqualTo(request.getOfferLines().get(0).getDescription());
         assertThat(lines.get(0).getOfferToken()).isEqualTo(request.getOfferLines().get(0).getToken());
@@ -204,37 +216,23 @@ public class OrderControllerIT extends StubSupport {
         ;
     }
 
+
+    /* =========== CHECKOUT ============ */
     @Test
-    public void shouldNotCreateOrderWithNoPaymentInfo() throws Exception {
-        final CreateOrderRequest request = createCreateOrderRequest();
-        request.setPaymentInfo(null);
+    public void shouldCheckoutOrderWithMobileMoney() throws Exception {
+        final CheckoutOrderRequest request = createCheckoutOrderRequest();
 
         mockMvc
                 .perform(
-                        post("/v1/orders")
+                        post("/v1/orders/100/checkout")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(mapper.writeValueAsString(request))
                 )
 
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(status().isBadRequest())
-
-                .andExpect(jsonPath("$.errors.length()", is(1)))
-                .andExpect(jsonPath("$.errors[0].code", is(ErrorCode.VALIDATION_ERROR.getCode())))
-                .andExpect(jsonPath("$.errors[0].text", is("may not be null")))
-                .andExpect(jsonPath("$.errors[0].field", is("paymentInfo")))
-        ;
-
-    }
-
-    /* =========== CHECKOUT ============ */
-    @Test
-    public void shouldCheckoutOrder() throws Exception {
-        mockMvc
-                .perform(get("/v1/orders/100/checkout"))
 
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
+
                 .andReturn();
 
         // Then
@@ -242,25 +240,84 @@ public class OrderControllerIT extends StubSupport {
         assertThat(order).isNotNull();
 
         assertThat(order.getPaymentId()).isEqualTo(100);
+        assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+
+        final List<Traveller> travellers = travellerRepository.findByOrder(order);
+        assertThat(travellers).hasSize(2);
+        assertThat(travellers.get(0).getFirstName()).isEqualTo("John");
+        assertThat(travellers.get(0).getLastName()).isEqualTo("Doe");
+        assertThat(travellers.get(0).getSex()).isEqualTo(Sex.M);
+        assertThat(travellers.get(0).getEmail()).isEqualTo("john.doe@gmail.com");
+        assertThat(travellers.get(1).getFirstName()).isEqualTo("Jane");
+        assertThat(travellers.get(1).getLastName()).isEqualTo("Smith");
+        assertThat(travellers.get(1).getSex()).isEqualTo(Sex.F);
+        assertThat(travellers.get(1).getEmail()).isEqualTo("jane.smith@gmail.com");
 
         final List<OrderLine> lines = orderLineRepository.findByOrder(order);
         assertThat(lines).hasSize(2);
-        assertThat(lines.get(0).getAmount()).isEqualTo(new BigDecimal(6000).setScale(2));
         assertThat(lines.get(0).getBookingId()).isEqualTo(1000);
-        assertThat(lines.get(1).getAmount()).isEqualTo(new BigDecimal(6000).setScale(2));
+        assertThat(lines.get(1).getBookingId()).isEqualTo(1001);
+    }
+
+    @Test
+    public void shouldCheckoutOrderWithPaymentAtMerchant() throws Exception {
+        final CheckoutOrderRequest request = createCheckoutOrderRequest();
+        request.setPaymentMethod(PaymentMethod.AT_MERCHANT);
+        request.setPaymentInfo(null);
+
+        mockMvc
+                .perform(
+                        post("/v1/orders/100/checkout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(request))
+                )
+
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+
+                .andReturn();
+
+        // Then
+        final Order order = orderRepository.findOne(100);
+        assertThat(order).isNotNull();
+
+        assertThat(order.getPaymentId()).isNull();
+        assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.AT_MERCHANT);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+
+        final List<Traveller> travellers = travellerRepository.findByOrder(order);
+        assertThat(travellers).hasSize(2);
+        assertThat(travellers.get(0).getFirstName()).isEqualTo("John");
+        assertThat(travellers.get(0).getLastName()).isEqualTo("Doe");
+        assertThat(travellers.get(0).getSex()).isEqualTo(Sex.M);
+        assertThat(travellers.get(0).getEmail()).isEqualTo("john.doe@gmail.com");
+        assertThat(travellers.get(1).getFirstName()).isEqualTo("Jane");
+        assertThat(travellers.get(1).getLastName()).isEqualTo("Smith");
+        assertThat(travellers.get(1).getSex()).isEqualTo(Sex.F);
+        assertThat(travellers.get(1).getEmail()).isEqualTo("jane.smith@gmail.com");
+
+        final List<OrderLine> lines = orderLineRepository.findByOrder(order);
+        assertThat(lines).hasSize(2);
+        assertThat(lines.get(0).getBookingId()).isEqualTo(1000);
         assertThat(lines.get(1).getBookingId()).isEqualTo(1001);
     }
 
     @Test
     public void shouldNotCheckoutOrderWhenPaymentFailed() throws Exception {
         tontineHanderStub.setStatus(HttpStatus.CONFLICT.value());
+        final CheckoutOrderRequest request = createCheckoutOrderRequest();
+
         mockMvc
-                .perform(get("/v1/orders/100/checkout"))
+                .perform(
+                        post("/v1/orders/100/checkout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(request))
+                )
 
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isConflict())
-                .andReturn()
         ;
 
         // Then
@@ -272,9 +329,75 @@ public class OrderControllerIT extends StubSupport {
     }
 
 
+    /* =========== CHECKOUT ============ */
+    @Test
+    public void shouldNotReturnInvalidOrder() throws Exception {
+        mockMvc
+                .perform(get("/v1/orders/99999"))
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isNotFound())
+        ;
+    }
+
+    @Test
+    public void shouldReturnOrder() throws Exception {
+        mockMvc
+                .perform(get("/v1/orders/200"))
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.order.merchantId", is(2)))
+                .andExpect(jsonPath("$.order.customerId", is(3)))
+                .andExpect(jsonPath("$.order.status", is("CONFIRMED")))
+                .andExpect(jsonPath("$.order.currencyCode", is("XAF")))
+                .andExpect(jsonPath("$.order.totalAmount", is(6000d)))
+                .andExpect(jsonPath("$.order.orderDateTime", notNullValue()))
+                .andExpect(jsonPath("$.order.expiryDateTime", notNullValue()))
+                .andExpect(jsonPath("$.order.paymentMethod", is("ONLINE")))
+                .andExpect(jsonPath("$.order.paymentId", is(123)))
+
+                .andExpect(jsonPath("$.order.lines.length()", is(1)))
+                .andExpect(jsonPath("$.order.lines[0].bookingId", is(5678)))
+                .andExpect(jsonPath("$.order.lines[0].offerType", is("CAR")))
+                .andExpect(jsonPath("$.order.lines[0].offerToken", notNullValue()))
+                .andExpect(jsonPath("$.order.lines[0].description", is("hello")))
+                .andExpect(jsonPath("$.order.lines[0].unitPrice", is(6000d)))
+                .andExpect(jsonPath("$.order.lines[0].totalPrice", is(6000d)))
+                .andExpect(jsonPath("$.order.lines[0].quantity", is(1)))
+        ;
+
+    }
+
+
     private CreateOrderRequest createCreateOrderRequest() throws Exception {
+        return createCreateOrderRequest(2);
+    }
+
+    private CheckoutOrderRequest createCheckoutOrderRequest() throws Exception {
+        final CheckoutOrderRequest request = new CheckoutOrderRequest();
+        request.setTravellers(
+            Arrays.asList(
+                createTraveller("John", "Doe", Sex.M, "john.doe@gmail.com"),
+                createTraveller("Jane", "Smith", Sex.F, "jane.smith@gmail.com")
+            )
+        );
+
+        final MobilePaymentInfoDto mobile = new MobilePaymentInfoDto();
+        mobile.setCountryCode("237");
+        mobile.setNumber("99505678");
+
+        final PaymentInfoDto payment = new PaymentInfoDto();
+        payment.setMobile(mobile);
+        request.setPaymentInfo(payment);
+        request.setPaymentMethod(PaymentMethod.ONLINE);
+
+        return request;
+    }
+
+    private CreateOrderRequest createCreateOrderRequest(int travellerCount) throws Exception {
         final Date departureDate = dateFormat.parse("2030-04-15T05:00:00+0000");
-        final CarOfferToken carOfferToken = createCarOfferToken(100, 1000 , departureDate, 2);
+        final CarOfferToken carOfferToken = createCarOfferToken(100, 1000 , departureDate, travellerCount);
 
         final List<OfferLineDto> lines = new ArrayList();
         final OfferLineDto line = new OfferLineDto();
@@ -284,27 +407,11 @@ public class OrderControllerIT extends StubSupport {
 
         lines.add(line);
 
-        final CustomerDto customer = new CustomerDto();
-        customer.setId(1);
-
-        final List<TravellerDto> travellers = Arrays.asList(
-                createTraveller("John", "Doe", Sex.M),
-                createTraveller("Jane", "Smith", Sex.F)
-        );
-
-        final MobilePaymentInfoDto mobile = new MobilePaymentInfoDto();
-        mobile.setCountryCode("237");
-        mobile.setNumber("99505678");
-
-        final PaymentInfoDto payment = new PaymentInfoDto();
-        payment.setMobile(mobile);
 
         final CreateOrderRequest request = new CreateOrderRequest();
         request.setOfferLines(lines);
         request.setMerchantId(1);
-        request.setCustomer(customer);
-        request.setTravellers(travellers);
-        request.setPaymentInfo(payment);
+        request.setCustomerId(1);
 
         return request;
     }
@@ -312,8 +419,9 @@ public class OrderControllerIT extends StubSupport {
     private CarOfferToken createCarOfferToken(Integer productId, Integer priceId, Date departureDate, int travellerCount){
         final CarOfferToken token = new CarOfferToken();
         token.setProductId(productId);
+        token.setTravellerCount(travellerCount);
         token.setPriceId(priceId);
-        token.setAmount(BigDecimal.valueOf(6000*travellerCount));
+        token.setAmount(BigDecimal.valueOf(6000));
         token.setCurrencyCode("XAF");
         token.setDepartureDateTime(departureDate);
         token.setArrivalDateTime(DateUtils.addHours(departureDate, 2));
@@ -323,11 +431,12 @@ public class OrderControllerIT extends StubSupport {
         return token;
     }
 
-    private TravellerDto createTraveller(String firstName, String lastName, Sex sex){
+    private TravellerDto createTraveller(String firstName, String lastName, Sex sex, String email){
         TravellerDto dto = new TravellerDto();
         dto.setFirstName(firstName);
         dto.setLastName(lastName);
         dto.setSex(sex);
+        dto.setEmail(email);
         return dto;
     }
 

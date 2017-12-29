@@ -36,4 +36,6 @@ public class Traveller extends Persistent{
 
     @Enumerated(EnumType.STRING)
     private Sex sex;
+
+    private String email;
 }

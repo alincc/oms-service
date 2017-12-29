@@ -39,7 +39,13 @@ public class OrderLine extends Persistent{
     @Column(name="offer_token")
     private String offerToken;
 
-    private BigDecimal amount;
+    private Integer quantity;
+
+    @Column(name="unit_price")
+    private BigDecimal unitPrice;
+
+    @Column(name="total_price")
+    private BigDecimal totalPrice;
 
     private String description;
 }

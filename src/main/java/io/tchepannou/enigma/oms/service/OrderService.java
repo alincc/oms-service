@@ -4,10 +4,13 @@ import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
 import io.tchepannou.enigma.oms.client.OrderStatus;
+import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
+import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
+import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Traveller;
@@ -57,20 +60,15 @@ public class OrderService {
 
 
     @Transactional
-    public CreateOrderResponse create(CreateOrderRequest request){
+    public CreateOrderResponse create(final CreateOrderRequest request){
         try {
 
             // Create order
             final List<OrderLine> lines = new ArrayList();
-            final List<Traveller> travellers = new ArrayList<>();
             final Order order = mapper.toOrder(request, orderTTLMinutes);
             for (final OfferLineDto dto : request.getOfferLines()){
                 OrderLine line = mapper.toOrderLine(dto, order);
                 lines.add(line);
-            }
-            for (final TravellerDto dto : request.getTravellers()){
-                final Traveller traveller = mapper.toTraveller(dto, order);
-                travellers.add(traveller);
             }
 
             // Save
@@ -78,13 +76,11 @@ public class OrderService {
             for (final OrderLine line : lines){
                 orderLineRepository.save(line);
             }
-            for (final Traveller traveller : travellers){
-                travellerRepository.save(traveller);
-            }
+            order.setLines(lines);
 
             // Response
             final CreateOrderResponse response = new CreateOrderResponse();
-            response.setOrderId(order.getId());
+            response.setOrder(mapper.toDto(order));
             return response;
 
         } catch (InvalidCarOfferTokenException e){
@@ -95,15 +91,42 @@ public class OrderService {
     }
 
     @Transactional
-    public void checkout(Integer orderId){
+    public void checkout(final Integer orderId, final CheckoutOrderRequest request){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
             throw new NotFoundException(ErrorCode.ORDER_NOT_FOUND);
         }
 
+        // Save travellers
+        LOGGER.info("Saving travellers in Order#{}", order.getId());
+        for (final TravellerDto traveller : request.getTravellers()){
+            final Traveller obj = mapper.toTraveller(traveller, order);
+            travellerRepository.save(obj);
+        }
+
+        // Book
+        LOGGER.info("Booking Order#{}", order.getId());
         book(order);
-        charge(order);
+
+        // Apply charges
+        LOGGER.info("Charging Order#{}", order.getId());
+        charge(order, request);
+
+        // Confirm order
+        LOGGER.info("Confirming Order#{}", order.getId());
         confirm(order);
+    }
+
+    @Transactional
+    public GetOrderResponse findById(final Integer orderId){
+        final Order order = orderRepository.findOne(orderId);
+        if (order == null){
+            throw new NotFoundException(ErrorCode.ORDER_NOT_FOUND);
+        }
+
+        final GetOrderResponse response = new GetOrderResponse();
+        response.setOrder(mapper.toDto(order));
+        return response;
     }
 
     public void book(final Order order){
@@ -128,11 +151,16 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    private void charge(final Order order){
-        ChargeResponse response = tontine.charge(order);
+    private void charge(final Order order, final CheckoutOrderRequest request){
+        order.setPaymentMethod(request.getPaymentMethod());
 
-        order.setPaymentId(response.getTransactionId());
-        order.setStatus(OrderStatus.PAID);
+        if (PaymentMethod.ONLINE.equals(request.getPaymentMethod())) {
+            ChargeResponse response = tontine.charge(order, request);
+
+            order.setPaymentId(response.getTransactionId());
+            order.setStatus(OrderStatus.PAID);
+        }
+
         orderRepository.save(order);
     }
 

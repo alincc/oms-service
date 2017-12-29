@@ -2,6 +2,7 @@ package io.tchepannou.enigma.oms.service.tontine;
 
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpConflictException;
+import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.exception.DownstreamException;
 import io.tchepannou.enigma.refdata.client.exception.ErrorCode;
@@ -24,10 +25,10 @@ public class TontineService {
 
 
 
-    public ChargeResponse charge(final Order order){
+    public ChargeResponse charge(final Order order, CheckoutOrderRequest checkoutRequest){
         try {
 
-            final ChargeRequest request = tontineMapper.toChargeRequest(order);
+            final ChargeRequest request = tontineMapper.toChargeRequest(order, checkoutRequest);
             return rest.post(url + "/v1/transactions/charge", request, ChargeResponse.class).getBody();
 
         } catch (HttpConflictException e){

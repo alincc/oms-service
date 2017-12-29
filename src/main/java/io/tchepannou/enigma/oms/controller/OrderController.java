@@ -4,8 +4,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
+import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
 import io.tchepannou.enigma.oms.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +29,7 @@ public class OrderController {
     private OrderService orderService;
 
     @RequestMapping(method = RequestMethod.POST)
-    @ApiOperation(value = "Create", notes = "Perform a booking")
+    @ApiOperation(value = "Create")
     @ApiResponses({
             @ApiResponse(code=200, message = "Success"),
             @ApiResponse(code=400, message = "Invalid request", response = OMSErrorResponse.class),
@@ -38,14 +40,25 @@ public class OrderController {
         return orderService.create(request);
     }
 
-    @RequestMapping(value="/{id}/checkout", method = RequestMethod.GET)
-    @ApiOperation(value = "Checkout", notes = "Checkout a booking")
+    @RequestMapping(value="/{orderId}/checkout", method = RequestMethod.POST)
+    @ApiOperation(value = "Checkout")
     @ApiResponses({
             @ApiResponse(code=200, message = "Success"),
             @ApiResponse(code=404, message = "Order not found", response = OMSErrorResponse.class),
             @ApiResponse(code=409, message = "Checkout error", response = OMSErrorResponse.class)
     })
-    public void checkout(@PathVariable Integer id) {
-        orderService.checkout(id);
+    public void checkout(@PathVariable Integer orderId, @RequestBody @Valid CheckoutOrderRequest request) {
+        orderService.checkout(orderId, request);
+    }
+
+
+    @RequestMapping(value="/{orderId}", method = RequestMethod.GET)
+    @ApiOperation(value = "Get")
+    @ApiResponses({
+            @ApiResponse(code=200, message = "Success"),
+            @ApiResponse(code=404, message = "Order not found", response = OMSErrorResponse.class),
+    })
+    public GetOrderResponse findById(@PathVariable Integer orderId) {
+        return orderService.findById(orderId);
     }
 }

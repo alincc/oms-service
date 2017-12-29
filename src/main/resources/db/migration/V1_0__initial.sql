@@ -9,11 +9,7 @@ CREATE TABLE T_ORDER(
   status                   VARCHAR(10)    NOT NULL,
   total_amount             DECIMAL(10, 2) NOT NULL,
   currency_code            VARCHAR(3)     NOT NULL,
-
-  mobile_payment_area_code    VARCHAR(3),
-  mobile_payment_country_code VARCHAR(3),
-  mobile_payment_number       VARCHAR(20),
-  mobile_payment_provider     VARCHAR(10),
+  payment_method           VARCHAR(20),
 
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;
@@ -26,7 +22,9 @@ CREATE TABLE T_ORDER_LINE(
   offer_type         VARCHAR(10)    NOT NULL,
   offer_token        VARCHAR(255)   NOT NULL,
   description        VARCHAR(100),
-  amount             DECIMAL(10, 2) NOT NULL,
+  quantity           INT,
+  unit_price         DECIMAL(10, 2) NOT NULL,
+  total_price        DECIMAL(10, 2) NOT NULL,
 
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;
@@ -38,6 +36,7 @@ CREATE TABLE T_TRAVELLER(
   first_name         VARCHAR(50),
   last_name          VARCHAR(50),
   sex                CHAR(1),
+  email              VARCHAR(255),
 
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;

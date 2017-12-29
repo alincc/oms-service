@@ -1,6 +1,6 @@
 package io.tchepannou.enigma.oms.service.tontine;
 
-import io.tchepannou.enigma.oms.domain.MobilePayment;
+import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.tontine.client.dto.MobilePaymentInfoDto;
 import io.tchepannou.enigma.tontine.client.dto.PaymentInfoDto;
@@ -9,14 +9,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TontineMapper {
-    public ChargeRequest toChargeRequest(final Order order){
+    public ChargeRequest toChargeRequest(final Order order, CheckoutOrderRequest checkoutRequest){
         final ChargeRequest request = new ChargeRequest();
         request.setInvoiceId(order.getId());
         request.setCurrencyCode(order.getCurrencyCode());
         request.setAmount(order.getTotalAmount());
         request.setMerchantId(order.getMerchantId());
 
-        MobilePayment mobile = order.getMobilePayment();
+        MobilePaymentInfoDto mobile = checkoutRequest.getPaymentInfo().getMobile();
         if (mobile != null){
             MobilePaymentInfoDto dto = new MobilePaymentInfoDto();
             dto.setNumber(mobile.getNumber());

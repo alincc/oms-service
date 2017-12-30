@@ -43,7 +43,7 @@ This will generate the service binary ``target/oms-service.jar``
 ```
 $ java -Dspring.profiles.active=local -jar target/oms-service.jar
 ```
-The server will run locally on the port `28080`
+The server will run locally on the port `18082`
 - Verify the status of the service at [http://localhost:28080/health](http://localhost:28080/health). The status should be `UP`. 
 - Access the API documentation at [http://localhost:28080/swagger-ui.html](http://localhost:28080/swagger-ui.html) 
 

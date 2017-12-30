@@ -1,2 +1,8 @@
 server:
-  port: 28080
+  port: 18082
+
+enigma:
+  service:
+    ferari:
+      url: "http://localhost:18081"
+

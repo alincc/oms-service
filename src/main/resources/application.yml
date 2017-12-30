@@ -73,7 +73,5 @@ enigma:
       orderTTLMinutes: 30
     ferari:
       url: "https://io-tchepannou-ferari.herokuapp.com"
-      #url: "http://localhost:18081"
     tontine:
       url: "https://io-tchepannou-tontine.herokuapp.com"
-      #url: "http://localhost:18082"

@@ -129,7 +129,6 @@ public class OrderControllerIT extends StubSupport {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$.order.customerId", is(request.getCustomerId())))
                 .andExpect(jsonPath("$.order.status", is("NEW")))
                 .andExpect(jsonPath("$.order.currencyCode", is("XAF")))
                 .andExpect(jsonPath("$.order.totalAmount", is(12000d)))
@@ -142,6 +141,8 @@ public class OrderControllerIT extends StubSupport {
                 .andExpect(jsonPath("$.order.lines[0].unitPrice", is(6000d)))
                 .andExpect(jsonPath("$.order.lines[0].totalPrice", is(12000d)))
                 .andExpect(jsonPath("$.order.lines[0].quantity", is(2)))
+
+                .andExpect(jsonPath("$.order.customer.id", is(1)))
 
                 .andReturn();
 
@@ -218,6 +219,11 @@ public class OrderControllerIT extends StubSupport {
         assertThat(order.getPaymentId()).isEqualTo(100);
         assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getCustomerId()).isEqualTo(request.getCustomerId());
+        assertThat(order.getFirstName()).isEqualTo(request.getFirstName());
+        assertThat(order.getLastName()).isEqualTo(request.getLastName());
+        assertThat(order.getEmail()).isEqualTo(request.getEmail());
+        assertThat(order.getMobilePhone()).isEqualTo(request.getMobilePhone());
 
         final List<Traveller> travellers = travellerRepository.findByOrder(order);
         assertThat(travellers).hasSize(2);
@@ -323,7 +329,7 @@ public class OrderControllerIT extends StubSupport {
 
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.order.customerId", is(3)))
+
                 .andExpect(jsonPath("$.order.status", is("CONFIRMED")))
                 .andExpect(jsonPath("$.order.currencyCode", is("XAF")))
                 .andExpect(jsonPath("$.order.totalAmount", is(6000d)))
@@ -340,6 +346,12 @@ public class OrderControllerIT extends StubSupport {
                 .andExpect(jsonPath("$.order.lines[0].unitPrice", is(6000d)))
                 .andExpect(jsonPath("$.order.lines[0].totalPrice", is(6000d)))
                 .andExpect(jsonPath("$.order.lines[0].quantity", is(1)))
+
+                .andExpect(jsonPath("$.order.customer.id", is(3)))
+                .andExpect(jsonPath("$.order.customer.firstName", is("Ray")))
+                .andExpect(jsonPath("$.order.customer.lastName", is("Sponsible")))
+                .andExpect(jsonPath("$.order.customer.email", is("ray@gmail.com")))
+                .andExpect(jsonPath("$.order.customer.mobilePhone", is("1234567")))
         ;
 
     }
@@ -366,6 +378,12 @@ public class OrderControllerIT extends StubSupport {
         payment.setMobile(mobile);
         request.setPaymentInfo(payment);
         request.setPaymentMethod(PaymentMethod.ONLINE);
+
+        request.setCustomerId(11);
+        request.setFirstName("Ray");
+        request.setLastName("Sponsible");
+        request.setEmail("ray.sponsible@gmail.com");
+        request.setMobilePhone("5147580111");
 
         return request;
     }

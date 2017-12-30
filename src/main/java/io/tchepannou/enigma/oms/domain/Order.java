@@ -57,4 +57,15 @@ public class Order extends Persistent {
     @Enumerated(EnumType.STRING)
     @Column(name="payment_method")
     private PaymentMethod paymentMethod;
+
+    @Column(name="first_name")
+    private String firstName;
+
+    @Column(name="last_name")
+    private String lastName;
+
+    private String email;
+
+    @Column(name="mobile_phone")
+    private String mobilePhone;
 }

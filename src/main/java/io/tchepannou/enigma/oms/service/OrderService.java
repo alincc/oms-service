@@ -97,19 +97,23 @@ public class OrderService {
             throw new NotFoundException(ErrorCode.ORDER_NOT_FOUND);
         }
 
-        // Save travellers
-        LOGGER.info("Saving travellers in Order#{}", order.getId());
+        // Customer information
+        order.setCustomerId(request.getCustomerId());
+        order.setFirstName(request.getFirstName());
+        order.setLastName(request.getLastName());
+        order.setEmail(request.getEmail());
+        order.setMobilePhone(request.getMobilePhone());
+
+        // Save travellers + custoer
         for (final TravellerDto traveller : request.getTravellers()){
             final Traveller obj = mapper.toTraveller(traveller, order);
             travellerRepository.save(obj);
         }
 
         // Book
-        LOGGER.info("Booking Order#{}", order.getId());
         book(order);
 
         // Apply charges
-        LOGGER.info("Charging Order#{}", order.getId());
         charge(order, request);
 
         // Confirm order

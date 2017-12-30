@@ -4,6 +4,7 @@ import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
+import io.tchepannou.enigma.oms.client.dto.CustomerDto;
 import io.tchepannou.enigma.oms.client.dto.ErrorDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.OrderDto;
@@ -77,7 +78,6 @@ public class Mapper {
     public OrderDto toDto(final Order obj){
         final OrderDto dto = new OrderDto();
         dto.setCurrencyCode(obj.getCurrencyCode());
-        dto.setCustomerId(obj.getCustomerId());
         dto.setExpiryDateTime(obj.getExpiryDateTime());
         dto.setId(obj.getId());
         dto.setOrderDateTime(obj.getOrderDateTime());
@@ -85,6 +85,7 @@ public class Mapper {
         dto.setPaymentMethod(obj.getPaymentMethod());
         dto.setStatus(obj.getStatus());
         dto.setTotalAmount(obj.getTotalAmount());
+        dto.setCustomer(toCustomerDto(obj));
 
         if (obj.getTravellers() != null) {
             dto.setTravellers(
@@ -100,6 +101,17 @@ public class Mapper {
                             .collect(Collectors.toList())
             );
         }
+        return dto;
+    }
+
+    private CustomerDto toCustomerDto(final Order obj){
+        final CustomerDto dto = new CustomerDto();
+        dto.setId(obj.getCustomerId());
+        dto.setFirstName(obj.getFirstName());
+        dto.setLastName(obj.getLastName());
+        dto.setMobilePhone(obj.getMobilePhone());
+        dto.setEmail(obj.getEmail());
+
         return dto;
     }
 

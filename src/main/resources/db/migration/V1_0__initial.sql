@@ -1,6 +1,5 @@
 CREATE TABLE T_ORDER(
   id                       INT     NOT NULL AUTO_INCREMENT,
-  customer_id              INT,
   payment_id               INT,
 
   order_datetime           DATETIME       NOT NULL DEFAULT NOW(),
@@ -9,6 +8,12 @@ CREATE TABLE T_ORDER(
   total_amount             DECIMAL(10, 2) NOT NULL,
   currency_code            VARCHAR(3)     NOT NULL,
   payment_method           VARCHAR(20),
+
+  customer_id              INT,
+  first_name               VARCHAR(50),
+  last_name                VARCHAR(50),
+  email                    VARCHAR(100),
+  mobile_phone             VARCHAR(20),
 
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;

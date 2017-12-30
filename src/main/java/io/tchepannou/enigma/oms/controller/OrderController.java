@@ -33,7 +33,6 @@ public class OrderController {
     @ApiResponses({
             @ApiResponse(code=200, message = "Success"),
             @ApiResponse(code=400, message = "Invalid request", response = OMSErrorResponse.class),
-            @ApiResponse(code=404, message = "Party not found", response = OMSErrorResponse.class),
             @ApiResponse(code=409, message = "Failure when creating the order", response = OMSErrorResponse.class)
     })
     public CreateOrderResponse create(@RequestBody @Valid CreateOrderRequest request) {

@@ -1,7 +1,6 @@
 CREATE TABLE T_ORDER(
   id                       INT     NOT NULL AUTO_INCREMENT,
-  merchant_id              INT     NOT NULL,
-  customer_id              INT     NOT NULL,
+  customer_id              INT,
   payment_id               INT,
 
   order_datetime           DATETIME       NOT NULL DEFAULT NOW(),
@@ -20,11 +19,11 @@ CREATE TABLE T_ORDER_LINE(
   booking_id         INT,
 
   offer_type         VARCHAR(10)    NOT NULL,
-  offer_token        VARCHAR(255)   NOT NULL,
-  description        VARCHAR(100),
   quantity           INT,
   unit_price         DECIMAL(10, 2) NOT NULL,
   total_price        DECIMAL(10, 2) NOT NULL,
+  offer_token        VARCHAR(255),
+  description        VARCHAR(100),
 
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;

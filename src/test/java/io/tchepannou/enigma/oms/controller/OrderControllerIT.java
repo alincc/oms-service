@@ -129,7 +129,6 @@ public class OrderControllerIT extends StubSupport {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$.order.merchantId", is(request.getMerchantId())))
                 .andExpect(jsonPath("$.order.customerId", is(request.getCustomerId())))
                 .andExpect(jsonPath("$.order.status", is("NEW")))
                 .andExpect(jsonPath("$.order.currencyCode", is("XAF")))
@@ -139,7 +138,6 @@ public class OrderControllerIT extends StubSupport {
 
                 .andExpect(jsonPath("$.order.lines.length()", is(1)))
                 .andExpect(jsonPath("$.order.lines[0].offerType", is("CAR")))
-                .andExpect(jsonPath("$.order.lines[0].offerToken", is(request.getOfferLines().get(0).getToken())))
                 .andExpect(jsonPath("$.order.lines[0].description", is(request.getOfferLines().get(0).getDescription())))
                 .andExpect(jsonPath("$.order.lines[0].unitPrice", is(6000d)))
                 .andExpect(jsonPath("$.order.lines[0].totalPrice", is(12000d)))
@@ -157,7 +155,6 @@ public class OrderControllerIT extends StubSupport {
         assertThat(order.getOrderDateTime()).isNotNull();
         assertThat(order.getCurrencyCode()).isEqualTo("XAF");
         assertThat(order.getCustomerId()).isEqualTo(order.getCustomerId());
-        assertThat(order.getMerchantId()).isEqualTo(1);
         assertThat(order.getPaymentId()).isNull();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.NEW);
         assertThat(order.getTotalAmount()).isEqualTo(new BigDecimal(12000).setScale(2));
@@ -194,27 +191,6 @@ public class OrderControllerIT extends StubSupport {
 
     }
 
-    @Test
-    public void shouldNotCreateOrderWithNoMerchantId() throws Exception {
-        final CreateOrderRequest request = createCreateOrderRequest();
-        request.setMerchantId(null);
-
-        mockMvc
-                .perform(
-                        post("/v1/orders")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(mapper.writeValueAsString(request))
-                )
-
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(status().isBadRequest())
-
-                .andExpect(jsonPath("$.errors.length()", is(1)))
-                .andExpect(jsonPath("$.errors[0].code", is(ErrorCode.VALIDATION_ERROR.getCode())))
-                .andExpect(jsonPath("$.errors[0].text", is("may not be null")))
-                .andExpect(jsonPath("$.errors[0].field", is("merchantId")))
-        ;
-    }
 
 
     /* =========== CHECKOUT ============ */
@@ -347,7 +323,6 @@ public class OrderControllerIT extends StubSupport {
 
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.order.merchantId", is(2)))
                 .andExpect(jsonPath("$.order.customerId", is(3)))
                 .andExpect(jsonPath("$.order.status", is("CONFIRMED")))
                 .andExpect(jsonPath("$.order.currencyCode", is("XAF")))
@@ -410,7 +385,6 @@ public class OrderControllerIT extends StubSupport {
 
         final CreateOrderRequest request = new CreateOrderRequest();
         request.setOfferLines(lines);
-        request.setMerchantId(1);
         request.setCustomerId(1);
 
         return request;

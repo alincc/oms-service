@@ -31,28 +31,32 @@ public class Mapper {
         order.setCustomerId(request.getCustomerId());
         order.setOrderDateTime(now);
         order.setExpiryDateTime(DateUtils.addHours(now, orderTTLMinutes));
-        order.setMerchantId(request.getMerchantId());
         order.setStatus(OrderStatus.NEW);
         order.setTotalAmount(BigDecimal.ZERO);
 
         return order;
     }
 
-    public OrderLine toOrderLine(final OfferLineDto dto, final Order order) throws InvalidCarOfferTokenException{
+    public OrderLine toOrderLine(
+            final OfferLineDto dto,
+            final Order order
+    ) throws InvalidCarOfferTokenException{
         final OrderLine line = new OrderLine();
         line.setOfferType(dto.getType());
-        line.setOfferToken(dto.getToken());
         line.setDescription(dto.getDescription());
         line.setOrder(order);
+        line.setOfferToken(dto.getToken());
 
         if (OfferType.CAR.equals(line.getOfferType())){
-            final CarOfferToken token = CarOfferToken.decode(line.getOfferToken());
+            final CarOfferToken token = CarOfferToken.decode(dto.getToken());
+
             final BigDecimal unitPrice = token.getAmount();
             final BigDecimal quantity = new BigDecimal(token.getTravellerCount());
 
             line.setQuantity(quantity.intValue());
             line.setUnitPrice(unitPrice);
             line.setTotalPrice(unitPrice.multiply(quantity));
+            line.setOfferToken(dto.getToken());
 
             order.setTotalAmount(order.getTotalAmount().add(line.getTotalPrice()));
             order.setCurrencyCode(token.getCurrencyCode());
@@ -76,7 +80,6 @@ public class Mapper {
         dto.setCustomerId(obj.getCustomerId());
         dto.setExpiryDateTime(obj.getExpiryDateTime());
         dto.setId(obj.getId());
-        dto.setMerchantId(obj.getMerchantId());
         dto.setOrderDateTime(obj.getOrderDateTime());
         dto.setPaymentId(obj.getPaymentId());
         dto.setPaymentMethod(obj.getPaymentMethod());
@@ -108,8 +111,8 @@ public class Mapper {
         dto.setBookingId(obj.getBookingId());
         dto.setDescription(obj.getDescription());
         dto.setId(obj.getId());
-        dto.setOfferToken(obj.getOfferToken());
         dto.setOfferType(obj.getOfferType());
+        dto.setOfferToken(obj.getOfferToken());
         return dto;
     }
 

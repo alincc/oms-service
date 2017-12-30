@@ -27,9 +27,6 @@ public class Order extends Persistent {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name="merchant_id")
-    private Integer merchantId;
-
     @Column(name="payment_id")
     private Integer paymentId;
 

@@ -14,7 +14,6 @@ public class TontineMapper {
         request.setInvoiceId(order.getId());
         request.setCurrencyCode(order.getCurrencyCode());
         request.setAmount(order.getTotalAmount());
-        request.setMerchantId(order.getMerchantId());
 
         MobilePaymentInfoDto mobile = checkoutRequest.getPaymentInfo().getMobile();
         if (mobile != null){

@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @ActiveProfiles(profiles = {"stub"})
-public class StubSupport {
+public abstract class StubSupport {
     private static final Logger LOGGER = LoggerFactory.getLogger(StubSupport.class);
 
     protected HttpServletRequest request;

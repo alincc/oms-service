@@ -2,6 +2,7 @@ package io.tchepannou.enigma.oms.service;
 
 import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
+import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.dto.CustomerDto;
@@ -15,7 +16,6 @@ import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.support.DateHelper;
-import io.tchepannou.enigma.refdata.client.exception.ErrorCode;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.stereotype.Component;
 
@@ -137,7 +137,7 @@ public class Mapper {
         dto.setEmail(obj.getEmail());
         return dto;
     }
-    public ErrorDto toDto(final ErrorCode error){
+    public ErrorDto toDto(final OMSErrorCode error){
         final ErrorDto dto = new ErrorDto();
         dto.setCode(error.getCode());
         dto.setText(error.getText());

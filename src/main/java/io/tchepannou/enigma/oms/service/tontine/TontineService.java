@@ -4,8 +4,6 @@ import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpConflictException;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.domain.Order;
-import io.tchepannou.enigma.oms.exception.DownstreamException;
-import io.tchepannou.enigma.refdata.client.exception.ErrorCode;
 import io.tchepannou.enigma.tontine.client.rr.ChargeRequest;
 import io.tchepannou.enigma.tontine.client.rr.ChargeResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +31,7 @@ public class TontineService {
 
         } catch (HttpConflictException e){
 
-            throw new DownstreamException(e, ErrorCode.OMS_CHECKOUT_FAILURE, e.getResponse().getBody());
+            throw new TontineException("Unable to charge the order", e);
         }
     }
 

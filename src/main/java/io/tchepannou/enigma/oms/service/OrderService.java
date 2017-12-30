@@ -3,6 +3,7 @@ package io.tchepannou.enigma.oms.service;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
+import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
@@ -20,8 +21,9 @@ import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.ferari.FerariService;
+import io.tchepannou.enigma.oms.service.ferari.FerrariException;
+import io.tchepannou.enigma.oms.service.tontine.TontineException;
 import io.tchepannou.enigma.oms.service.tontine.TontineService;
-import io.tchepannou.enigma.refdata.client.exception.ErrorCode;
 import io.tchepannou.enigma.tontine.client.rr.ChargeResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +87,7 @@ public class OrderService {
 
         } catch (InvalidCarOfferTokenException e){
 
-            throw new OrderException(ErrorCode.MALFORMED_OFFER_TOKEN);
+            throw new OrderException(e, OMSErrorCode.MALFORMED_OFFER_TOKEN);
 
         }
     }
@@ -94,7 +96,7 @@ public class OrderService {
     public void checkout(final Integer orderId, final CheckoutOrderRequest request){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
-            throw new NotFoundException(ErrorCode.ORDER_NOT_FOUND);
+            throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
         }
 
         // Customer information
@@ -117,7 +119,6 @@ public class OrderService {
         charge(order, request);
 
         // Confirm order
-        LOGGER.info("Confirming Order#{}", order.getId());
         confirm(order);
     }
 
@@ -125,7 +126,7 @@ public class OrderService {
     public GetOrderResponse findById(final Integer orderId){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
-            throw new NotFoundException(ErrorCode.ORDER_NOT_FOUND);
+            throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
         }
 
         final GetOrderResponse response = new GetOrderResponse();
@@ -133,39 +134,51 @@ public class OrderService {
         return response;
     }
 
-    public void book(final Order order){
-        final CreateBookingResponse response = ferari.book(order);
-        final List<BookingDto> bookings = response.getBookings();
+    private void book(final Order order){
+        try {
+            final CreateBookingResponse response = ferari.book(order);
+            final List<BookingDto> bookings = response.getBookings();
 
-        for (int i = 0; i < bookings.size(); i++) {
-            final BookingDto dto = bookings.get(i);
-            final OrderLine line = order.getLines().get(i);
+            for (int i = 0; i < bookings.size(); i++) {
+                final BookingDto dto = bookings.get(i);
+                final OrderLine line = order.getLines().get(i);
 
-            line.setBookingId(dto.getId());
+                line.setBookingId(dto.getId());
+            }
+
+            order.setStatus(OrderStatus.PENDING);
+            orderRepository.save(order);
+        } catch (FerrariException e){
+            throw new OrderException(e, OMSErrorCode.BOOK_FAILURE);
         }
-
-        order.setStatus(OrderStatus.PENDING);
-        orderRepository.save(order);
     }
 
     private void confirm(final Order order){
-        ferari.confirm(order);
+        try {
+            ferari.confirm(order);
 
-        order.setStatus(OrderStatus.CONFIRMED);
-        orderRepository.save(order);
+            order.setStatus(OrderStatus.CONFIRMED);
+            orderRepository.save(order);
+        } catch (FerrariException e){
+            throw new OrderException(e, OMSErrorCode.CONFIRM_FAILURE);
+        }
     }
 
     private void charge(final Order order, final CheckoutOrderRequest request){
-        order.setPaymentMethod(request.getPaymentMethod());
+        try {
+            order.setPaymentMethod(request.getPaymentMethod());
 
-        if (PaymentMethod.ONLINE.equals(request.getPaymentMethod())) {
-            ChargeResponse response = tontine.charge(order, request);
+            if (PaymentMethod.ONLINE.equals(request.getPaymentMethod())) {
+                ChargeResponse response = tontine.charge(order, request);
 
-            order.setPaymentId(response.getTransactionId());
-            order.setStatus(OrderStatus.PAID);
+                order.setPaymentId(response.getTransactionId());
+                order.setStatus(OrderStatus.PAID);
+            }
+
+            orderRepository.save(order);
+        } catch (TontineException e){
+            throw new OrderException(e, OMSErrorCode.PAYMENT_FAILURE);
         }
-
-        orderRepository.save(order);
     }
 
     public int getOrderTTLMinutes() {

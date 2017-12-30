@@ -24,8 +24,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- Library versions - in ALPHABETICAL ORDER-->
-        <rest-client.version>1.0.1</rest-client.version>
-        <ferari-client.version>1.0.8</ferari-client.version>
+        <rest-client.version>1.0.2</rest-client.version>
+        <ferari-client.version>1.0.10</ferari-client.version>
         <ref-data-client.version>1.0.7</ref-data-client.version>
         <oms-client.version>1.0.3</oms-client.version>
 

@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 public class FerariMapper {
     public CreateBookingRequest toCreateBookingRequest(final Order order){
         final CreateBookingRequest request = new CreateBookingRequest();
-        request.setTravellerCount(order.getTravellers().size());
+        request.setTravellerCount(request.getTravellerCount());
         request.setOfferTokens(
                 order.getLines().stream()
                         .map(l -> l.getOfferToken())

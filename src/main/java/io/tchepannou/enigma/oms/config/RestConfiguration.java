@@ -24,6 +24,7 @@ public class RestConfiguration {
         final RestConfig config = new RestConfig();
         config.setSerializer(new JsonSerializer(objectMapper));
         config.setCurrentRequestProvider(currentRequestProvider());
+        config.setClientInfo("oms-service");
         return config;
     }
 

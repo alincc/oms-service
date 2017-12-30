@@ -1,14 +1,13 @@
 package io.tchepannou.enigma.oms.exception;
 
-import io.tchepannou.enigma.refdata.client.exception.ErrorCode;
-import io.tchepannou.enigma.refdata.client.exception.TaggedException;
+import io.tchepannou.enigma.oms.client.OMSErrorCode;
 
 public class OrderException extends TaggedException {
-    public OrderException(final ErrorCode errorCode) {
+    public OrderException(final OMSErrorCode errorCode) {
         super(errorCode);
     }
 
-    public OrderException(final Throwable cause, final ErrorCode errorCode) {
+    public OrderException(final Throwable cause, final OMSErrorCode errorCode) {
         super(cause, errorCode);
     }
 }

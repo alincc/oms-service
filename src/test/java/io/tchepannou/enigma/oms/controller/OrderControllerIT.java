@@ -2,6 +2,7 @@ package io.tchepannou.enigma.oms.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tchepannou.enigma.ferari.client.CarOfferToken;
+import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
@@ -20,7 +21,6 @@ import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.support.DateHelper;
-import io.tchepannou.enigma.refdata.client.exception.ErrorCode;
 import io.tchepannou.enigma.tontine.client.dto.MobilePaymentInfoDto;
 import io.tchepannou.enigma.tontine.client.dto.PaymentInfoDto;
 import org.apache.commons.lang.time.DateUtils;
@@ -186,8 +186,8 @@ public class OrderControllerIT extends StubSupport {
                 .andExpect(status().isConflict())
 
                 .andExpect(jsonPath("$.errors.length()", is(1)))
-                .andExpect(jsonPath("$.errors[0].code", is(ErrorCode.MALFORMED_OFFER_TOKEN.getCode())))
-                .andExpect(jsonPath("$.errors[0].text", is(ErrorCode.MALFORMED_OFFER_TOKEN.getText())))
+                .andExpect(jsonPath("$.errors[0].code", is(OMSErrorCode.MALFORMED_OFFER_TOKEN.getCode())))
+                .andExpect(jsonPath("$.errors[0].text", is(OMSErrorCode.MALFORMED_OFFER_TOKEN.getText())))
         ;
 
     }

@@ -1,14 +1,12 @@
 package io.tchepannou.enigma.oms.service.ferari;
 
 import io.tchepannou.core.rest.RestClient;
-import io.tchepannou.core.rest.exception.HttpConflictException;
+import io.tchepannou.core.rest.exception.HttpException;
 import io.tchepannou.enigma.ferari.client.rr.ConfirmBookingResponse;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
-import io.tchepannou.enigma.oms.exception.DownstreamException;
-import io.tchepannou.enigma.refdata.client.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -30,8 +28,8 @@ public class FerariService {
             final CreateBookingRequest request = bookingMapper.toCreateBookingRequest(order);
             return rest.post(url + "/v1/bookings", request, CreateBookingResponse.class).getBody();
 
-        } catch (HttpConflictException e){
-            throw new DownstreamException(e, ErrorCode.OMS_CHECKOUT_FAILURE, e.getResponse().getBody());
+        } catch (HttpException e){
+            throw new FerrariException("Unable to book Order#" + order.getId(), e);
         }
     }
 
@@ -43,8 +41,8 @@ public class FerariService {
                 rest.get(confirmUrl, ConfirmBookingResponse.class).getBody();
             }
 
-        } catch (HttpConflictException e){
-            throw new DownstreamException(e, ErrorCode.OMS_CHECKOUT_FAILURE, e.getResponse().getBody());
+        } catch (HttpException e){
+            throw new FerrariException("Unable to book Order#" + order.getId(), e);
         }
     }
 

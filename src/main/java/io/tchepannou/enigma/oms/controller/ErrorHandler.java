@@ -1,14 +1,12 @@
 package io.tchepannou.enigma.oms.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.tchepannou.enigma.ferari.client.rr.ErrorResponse;
+import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.dto.ErrorDto;
 import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
-import io.tchepannou.enigma.oms.exception.DownstreamException;
 import io.tchepannou.enigma.oms.exception.NotFoundException;
 import io.tchepannou.enigma.oms.exception.OrderException;
 import io.tchepannou.enigma.oms.service.Mapper;
-import io.tchepannou.enigma.refdata.client.exception.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,34 +41,6 @@ public class ErrorHandler {
     }
 
     @ResponseBody
-    @ExceptionHandler(DownstreamException.class)
-    @ResponseStatus(value = HttpStatus.CONFLICT)
-    protected OMSErrorResponse handleDownstreamException(final DownstreamException ex){
-        LOGGER.error("Checkout error - details={}", ex.getDetails(), ex);
-
-        OMSErrorResponse response = new OMSErrorResponse();
-        try{
-            final ErrorResponse errorResponse = objectMapper.readValue(ex.getDetails(), ErrorResponse.class);
-            if (errorResponse.getErrors() != null){
-                response.setErrors(
-                    errorResponse.getErrors().stream()
-                        .map(e -> {
-                            ErrorDto error = new ErrorDto();
-                            error.setField(e.getField());
-                            error.setCode(e.getCode());
-                            error.setText(e.getText());
-                            return error;
-                        })
-                        .collect(Collectors.toList())
-                );
-            }
-        }catch(Exception e){
-        }
-
-        return response;
-    }
-
-    @ResponseBody
     @ExceptionHandler(OrderException.class)
     @ResponseStatus(value = HttpStatus.CONFLICT)
     protected OMSErrorResponse handleOrderException(final OrderException ex){
@@ -90,7 +60,7 @@ public class ErrorHandler {
                 .map(e -> {
                     final ErrorDto dto = new ErrorDto();
                     dto.setText(e.getDefaultMessage());
-                    dto.setCode(ErrorCode.VALIDATION_ERROR.getCode());
+                    dto.setCode(OMSErrorCode.VALIDATION_ERROR.getCode());
                     dto.setField(e.getField());
                     return dto;
                 })
@@ -104,10 +74,10 @@ public class ErrorHandler {
     protected OMSErrorResponse handleThrowable(final Throwable ex){
         LOGGER.error("Unexpected error", ex);
 
-        return createErrorResponse(ErrorCode.UNEXPECTED_ERROR);
+        return createErrorResponse(OMSErrorCode.UNEXPECTED_ERROR);
     }
 
-    private OMSErrorResponse createErrorResponse(ErrorCode error){
+    private OMSErrorResponse createErrorResponse(OMSErrorCode error){
         return createErrorResponse(Arrays.asList(mapper.toDto(error)));
     }
     private OMSErrorResponse createErrorResponse(List<ErrorDto> errors){

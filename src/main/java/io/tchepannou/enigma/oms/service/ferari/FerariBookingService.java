@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties("enigma.service.ferari")
-public class FerariService {
+public class FerariBookingService {
     @Autowired
     private FerariMapper bookingMapper;
 

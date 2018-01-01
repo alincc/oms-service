@@ -9,6 +9,7 @@ import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
+import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
@@ -20,7 +21,7 @@ import io.tchepannou.enigma.oms.exception.OrderException;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
-import io.tchepannou.enigma.oms.service.ferari.FerariService;
+import io.tchepannou.enigma.oms.service.ferari.FerariBookingService;
 import io.tchepannou.enigma.oms.service.ferari.FerrariException;
 import io.tchepannou.enigma.oms.service.tontine.TontineException;
 import io.tchepannou.enigma.oms.service.tontine.TontineService;
@@ -53,7 +54,7 @@ public class OrderService {
     private Mapper mapper;
 
     @Autowired
-    private FerariService ferari;
+    private FerariBookingService ferari;
 
     @Autowired
     private TontineService tontine;
@@ -93,7 +94,7 @@ public class OrderService {
     }
 
     @Transactional
-    public void checkout(final Integer orderId, final CheckoutOrderRequest request){
+    public CheckoutOrderResponse checkout(final Integer orderId, final CheckoutOrderRequest request){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
             throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
@@ -120,6 +121,12 @@ public class OrderService {
 
         // Confirm order
         confirm(order);
+
+        // Saved order
+        final CheckoutOrderResponse response = new CheckoutOrderResponse();
+        response.setOrder(mapper.toDto(order));
+        return response;
+
     }
 
     @Transactional

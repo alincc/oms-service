@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
+import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
@@ -46,8 +47,8 @@ public class OrderController {
             @ApiResponse(code=404, message = "Order not found", response = OMSErrorResponse.class),
             @ApiResponse(code=409, message = "Checkout error", response = OMSErrorResponse.class)
     })
-    public void checkout(@PathVariable Integer orderId, @RequestBody @Valid CheckoutOrderRequest request) {
-        orderService.checkout(orderId, request);
+    public CheckoutOrderResponse checkout(@PathVariable Integer orderId, @RequestBody @Valid CheckoutOrderRequest request) {
+        return orderService.checkout(orderId, request);
     }
 
 

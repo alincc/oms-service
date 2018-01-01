@@ -1,8 +1,8 @@
 enigma:
   service:
     ferari:
-      port: 18081
+      port: 38081
       url: "http://localhost:${enigma.service.ferari.port}"
     tontine:
-      port: 18082
+      port: 38082
       url: "http://localhost:${enigma.service.tontine.port}"

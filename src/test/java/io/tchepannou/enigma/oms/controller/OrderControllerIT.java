@@ -7,6 +7,7 @@ import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.Sex;
+import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
@@ -21,8 +22,6 @@ import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.support.DateHelper;
-import io.tchepannou.enigma.tontine.client.dto.MobilePaymentInfoDto;
-import io.tchepannou.enigma.tontine.client.dto.PaymentInfoDto;
 import org.apache.commons.lang.time.DateUtils;
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
@@ -129,26 +128,13 @@ public class OrderControllerIT extends StubSupport {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$.order.status", is("NEW")))
-                .andExpect(jsonPath("$.order.currencyCode", is("XAF")))
-                .andExpect(jsonPath("$.order.totalAmount", is(12000d)))
-                .andExpect(jsonPath("$.order.orderDateTime", notNullValue()))
-                .andExpect(jsonPath("$.order.expiryDateTime", notNullValue()))
-
-                .andExpect(jsonPath("$.order.lines.length()", is(1)))
-                .andExpect(jsonPath("$.order.lines[0].offerType", is("CAR")))
-                .andExpect(jsonPath("$.order.lines[0].description", is(request.getOfferLines().get(0).getDescription())))
-                .andExpect(jsonPath("$.order.lines[0].unitPrice", is(6000d)))
-                .andExpect(jsonPath("$.order.lines[0].totalPrice", is(12000d)))
-                .andExpect(jsonPath("$.order.lines[0].quantity", is(2)))
-
-                .andExpect(jsonPath("$.order.customer.id", is(1)))
+                .andExpect(jsonPath("$.orderId", notNullValue()))
 
                 .andReturn();
 
         // Then
         final CreateOrderResponse response = mapper.readValue(result.getResponse().getContentAsString(), CreateOrderResponse.class);
-        final Integer id = response.getOrder().getId();
+        final Integer id = response.getOrderId();
         final Order order = orderRepository.findOne(id);
         assertThat(order).isNotNull();
 
@@ -223,7 +209,6 @@ public class OrderControllerIT extends StubSupport {
         assertThat(order.getFirstName()).isEqualTo(request.getFirstName());
         assertThat(order.getLastName()).isEqualTo(request.getLastName());
         assertThat(order.getEmail()).isEqualTo(request.getEmail());
-        assertThat(order.getMobilePhone()).isEqualTo(request.getMobilePhone());
 
         final List<Traveller> travellers = travellerRepository.findByOrder(order);
         assertThat(travellers).hasSize(2);
@@ -246,7 +231,7 @@ public class OrderControllerIT extends StubSupport {
     public void shouldCheckoutOrderWithPaymentAtMerchant() throws Exception {
         final CheckoutOrderRequest request = createCheckoutOrderRequest();
         request.setPaymentMethod(PaymentMethod.AT_MERCHANT);
-        request.setPaymentInfo(null);
+        request.setMobilePayment(null);
 
         mockMvc
                 .perform(
@@ -351,7 +336,6 @@ public class OrderControllerIT extends StubSupport {
                 .andExpect(jsonPath("$.order.customer.firstName", is("Ray")))
                 .andExpect(jsonPath("$.order.customer.lastName", is("Sponsible")))
                 .andExpect(jsonPath("$.order.customer.email", is("ray@gmail.com")))
-                .andExpect(jsonPath("$.order.customer.mobilePhone", is("1234567")))
         ;
 
     }
@@ -370,20 +354,18 @@ public class OrderControllerIT extends StubSupport {
             )
         );
 
-        final MobilePaymentInfoDto mobile = new MobilePaymentInfoDto();
+        request.setPaymentMethod(PaymentMethod.ONLINE);
+
+        final MobilePaymentDto mobile = new MobilePaymentDto();
         mobile.setCountryCode("237");
         mobile.setNumber("99505678");
-
-        final PaymentInfoDto payment = new PaymentInfoDto();
-        payment.setMobile(mobile);
-        request.setPaymentInfo(payment);
-        request.setPaymentMethod(PaymentMethod.ONLINE);
+        mobile.setProvider("Orange");
 
         request.setCustomerId(11);
         request.setFirstName("Ray");
         request.setLastName("Sponsible");
         request.setEmail("ray.sponsible@gmail.com");
-        request.setMobilePhone("5147580111");
+        request.setMobilePayment(mobile);
 
         return request;
     }

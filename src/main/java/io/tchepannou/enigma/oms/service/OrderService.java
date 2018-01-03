@@ -82,9 +82,7 @@ public class OrderService {
             order.setLines(lines);
 
             // Response
-            final CreateOrderResponse response = new CreateOrderResponse();
-            response.setOrder(mapper.toDto(order));
-            return response;
+            return new CreateOrderResponse(order.getId());
 
         } catch (InvalidCarOfferTokenException e){
 
@@ -105,7 +103,6 @@ public class OrderService {
         order.setFirstName(request.getFirstName());
         order.setLastName(request.getLastName());
         order.setEmail(request.getEmail());
-        order.setMobilePhone(request.getMobilePhone());
 
         // Save travellers + custoer
         for (final TravellerDto traveller : request.getTravellers()){
@@ -123,9 +120,7 @@ public class OrderService {
         confirm(order);
 
         // Saved order
-        final CheckoutOrderResponse response = new CheckoutOrderResponse();
-        response.setOrder(mapper.toDto(order));
-        return response;
+        return new CheckoutOrderResponse(order.getId());
 
     }
 

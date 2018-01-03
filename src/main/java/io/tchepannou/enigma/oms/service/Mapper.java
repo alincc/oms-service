@@ -109,7 +109,6 @@ public class Mapper {
         dto.setId(obj.getCustomerId());
         dto.setFirstName(obj.getFirstName());
         dto.setLastName(obj.getLastName());
-        dto.setMobilePhone(obj.getMobilePhone());
         dto.setEmail(obj.getEmail());
 
         return dto;

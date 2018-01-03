@@ -65,7 +65,4 @@ public class Order extends Persistent {
     private String lastName;
 
     private String email;
-
-    @Column(name="mobile_phone")
-    private String mobilePhone;
 }

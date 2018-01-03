@@ -13,7 +13,6 @@ CREATE TABLE T_ORDER(
   first_name               VARCHAR(50),
   last_name                VARCHAR(50),
   email                    VARCHAR(100),
-  mobile_phone             VARCHAR(20),
 
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;

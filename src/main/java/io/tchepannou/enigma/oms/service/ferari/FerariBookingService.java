@@ -2,7 +2,6 @@ package io.tchepannou.enigma.oms.service.ferari;
 
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpException;
-import io.tchepannou.enigma.ferari.client.rr.ConfirmBookingResponse;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
 import io.tchepannou.enigma.oms.domain.Order;
@@ -38,7 +37,7 @@ public class FerariBookingService {
 
             for (final OrderLine line : order.getLines()) {
                 final String confirmUrl = String.format("%s/v1/bookings/%s/confirm", url, line.getBookingId());
-                rest.get(confirmUrl, ConfirmBookingResponse.class).getBody();
+                rest.get(confirmUrl, Object.class).getBody();
             }
 
         } catch (HttpException e){

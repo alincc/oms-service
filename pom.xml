@@ -25,9 +25,10 @@
 
         <!-- Library versions - in ALPHABETICAL ORDER-->
         <rest-client.version>1.0.2</rest-client.version>
-        <ferari-client.version>1.0.12</ferari-client.version>
+        <ferari-client.version>1.0.14</ferari-client.version>
         <ref-data-client.version>1.0.7</ref-data-client.version>
-        <oms-client.version>1.0.4</oms-client.version>
+        <oms-client.version>1.0.5</oms-client.version>
+        <tontine-client.version>1.0.2</tontine-client.version>
 
         <common-lang.version>2.4</common-lang.version>
         <commons-io.version>2.4</commons-io.version>
@@ -59,16 +60,6 @@
             <groupId>io.tchepannou.enigma</groupId>
             <artifactId>oms-client</artifactId>
             <version>${oms-client.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.tchepannou.enigma</groupId>
-                    <artifactId>ferari-client</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.tchepannou.enigma</groupId>
-                    <artifactId>ref-data-client</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.tchepannou.enigma</groupId>
@@ -84,6 +75,11 @@
             <groupId>io.tchepannou.core</groupId>
             <artifactId>rest-client</artifactId>
             <version>${rest-client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.tchepannou.enigma</groupId>
+            <artifactId>tontine-client</artifactId>
+            <version>${tontine-client.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

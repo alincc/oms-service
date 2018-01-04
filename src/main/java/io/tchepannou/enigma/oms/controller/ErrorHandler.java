@@ -55,6 +55,8 @@ public class ErrorHandler {
     protected OMSErrorResponse handleMethodArgumentNotValidException(
             final MethodArgumentNotValidException ex
     ) {
+        LOGGER.error("Validation error", ex);
+
         final List<ErrorDto> errors = ex.getBindingResult().getFieldErrors()
                 .stream()
                 .map(e -> {

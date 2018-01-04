@@ -5,6 +5,11 @@ import io.tchepannou.enigma.oms.client.OMSErrorCode;
 public class TaggedException extends RuntimeException {
     private OMSErrorCode errorCode;
 
+    public TaggedException(final String message, final Throwable cause, final OMSErrorCode errorCode) {
+        super(message, cause);
+        this.errorCode = errorCode;
+    }
+
     public TaggedException(final OMSErrorCode errorCode) {
         this.errorCode = errorCode;
     }

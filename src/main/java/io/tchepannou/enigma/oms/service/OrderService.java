@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.service;
 
+import io.tchepannou.core.rest.exception.HttpStatusException;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
@@ -151,7 +152,7 @@ public class OrderService {
             order.setStatus(OrderStatus.PENDING);
             orderRepository.save(order);
         } catch (FerrariException e){
-            throw new OrderException(e, OMSErrorCode.BOOK_FAILURE);
+            throw toOrderException(e, OMSErrorCode.BOOKING_FAILURE);
         }
     }
 
@@ -162,7 +163,7 @@ public class OrderService {
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepository.save(order);
         } catch (FerrariException e){
-            throw new OrderException(e, OMSErrorCode.CONFIRM_FAILURE);
+            throw toOrderException(e, OMSErrorCode.CONFIRM_FAILURE);
         }
     }
 
@@ -179,10 +180,18 @@ public class OrderService {
 
             orderRepository.save(order);
         } catch (TontineException e){
-            throw new OrderException(e, OMSErrorCode.PAYMENT_FAILURE);
+            throw toOrderException(e, OMSErrorCode.PAYMENT_FAILURE);
         }
     }
 
+    private OrderException toOrderException(Throwable e, OMSErrorCode code){
+        final Throwable cause = e.getCause();
+        if (cause instanceof HttpStatusException){
+            final String body = ((HttpStatusException)cause).getResponse().getBody();
+            return new OrderException(body, e, code);
+        }
+        return new OrderException(e, code);
+    }
     public int getOrderTTLMinutes() {
         return orderTTLMinutes;
     }

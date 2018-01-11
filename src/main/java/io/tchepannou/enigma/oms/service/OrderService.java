@@ -27,8 +27,6 @@ import io.tchepannou.enigma.oms.service.ferari.FerrariException;
 import io.tchepannou.enigma.oms.service.tontine.TontineException;
 import io.tchepannou.enigma.oms.service.tontine.TontineService;
 import io.tchepannou.enigma.tontine.client.rr.ChargeResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -40,8 +38,6 @@ import java.util.List;
 @Component
 @ConfigurationProperties("enigma.service.order")
 public class OrderService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OrderService.class);
-
     @Autowired
     private OrderRepository orderRepository;
 

@@ -14,8 +14,11 @@ CREATE TABLE T_ORDER(
   last_name                VARCHAR(50),
   email                    VARCHAR(100),
 
+  INDEX T_ORDER_expiry_status(expiry_datetime, status),
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;
+
+
 
 CREATE TABLE T_ORDER_LINE(
   id                 INT     NOT NULL AUTO_INCREMENT,

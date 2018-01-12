@@ -10,4 +10,8 @@ public class OrderException extends TaggedException {
     public OrderException(final Throwable cause, final OMSErrorCode errorCode) {
         super(cause, errorCode);
     }
+
+    public OrderException(final OMSErrorCode errorCode) {
+        super(errorCode);
+    }
 }

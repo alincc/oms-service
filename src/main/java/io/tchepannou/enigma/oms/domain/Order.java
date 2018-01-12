@@ -65,4 +65,12 @@ public class Order extends Persistent {
     private String lastName;
 
     private String email;
+
+    public boolean isExpired(){
+        return expiryDateTime != null && expiryDateTime.getTime() < System.currentTimeMillis();
+    }
+
+    public boolean isCancelled(){
+        return OrderStatus.CANCELLED.equals(status);
+    }
 }

@@ -295,8 +295,47 @@ public class OrderControllerIT extends StubSupport {
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
     }
 
+    @Test
+    public void shouldNotCheckoutExpiredOrder() throws Exception {
+        tontineHanderStub.setStatus(HttpStatus.CONFLICT.value());
+        final CheckoutOrderRequest request = createCheckoutOrderRequest();
 
-    /* =========== CHECKOUT ============ */
+        mockMvc
+                .perform(
+                        post("/v1/orders/900/checkout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(request))
+                )
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isConflict())
+
+                .andExpect(jsonPath("$.errors[0].code", is(OMSErrorCode.ORDER_EXPIRED.getCode())))
+                .andExpect(jsonPath("$.errors[0].text", is(OMSErrorCode.ORDER_EXPIRED.getText())))
+        ;
+    }
+
+    @Test
+    public void shouldNotCheckoutCancelledOrder() throws Exception {
+        tontineHanderStub.setStatus(HttpStatus.CONFLICT.value());
+        final CheckoutOrderRequest request = createCheckoutOrderRequest();
+
+        mockMvc
+                .perform(
+                        post("/v1/orders/901/checkout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(request))
+                )
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isConflict())
+
+                .andExpect(jsonPath("$.errors[0].code", is(OMSErrorCode.ORDER_CANCELLED.getCode())))
+                .andExpect(jsonPath("$.errors[0].text", is(OMSErrorCode.ORDER_CANCELLED.getText())))
+        ;
+    }
+
+    /* =========== GET ============ */
     @Test
     public void shouldNotReturnInvalidOrder() throws Exception {
         mockMvc
@@ -339,6 +378,7 @@ public class OrderControllerIT extends StubSupport {
         ;
 
     }
+
 
 
     private CreateOrderRequest createCreateOrderRequest() throws Exception {

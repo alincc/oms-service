@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.service;
 
+import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpStatusException;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
@@ -27,6 +28,8 @@ import io.tchepannou.enigma.oms.service.ferari.FerrariException;
 import io.tchepannou.enigma.oms.service.tontine.TontineException;
 import io.tchepannou.enigma.oms.service.tontine.TontineService;
 import io.tchepannou.enigma.tontine.client.rr.ChargeResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -38,6 +41,8 @@ import java.util.List;
 @Component
 @ConfigurationProperties("enigma.service.order")
 public class OrderService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OrderService.class);
+
     @Autowired
     private OrderRepository orderRepository;
 
@@ -88,11 +93,17 @@ public class OrderService {
         }
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = OrderException.class)
     public CheckoutOrderResponse checkout(final Integer orderId, final CheckoutOrderRequest request){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
             throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
+        }
+        if (order.isExpired()){
+            throw new OrderException(OMSErrorCode.ORDER_EXPIRED);
+        }
+        if (order.isCancelled()){
+            throw new OrderException(OMSErrorCode.ORDER_CANCELLED);
         }
 
         // Customer information
@@ -101,7 +112,7 @@ public class OrderService {
         order.setLastName(request.getLastName());
         order.setEmail(request.getEmail());
 
-        // Save travellers + custoer
+        // Save travellers
         for (final TravellerDto traveller : request.getTravellers()){
             final Traveller obj = mapper.toTraveller(traveller, order);
             travellerRepository.save(obj);
@@ -122,6 +133,21 @@ public class OrderService {
     }
 
     @Transactional
+    public void expire (final Integer id, final RestClient rest){
+        final Order order = orderRepository.findOne(id);
+        if (id == null){
+            throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
+        }
+
+        if (OrderStatus.PENDING.equals(order.getStatus())) {
+            // Expire the booking
+            ferari.expire(order, rest);
+        }
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+    }
+
+    @Transactional
     public GetOrderResponse findById(final Integer orderId){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
@@ -134,6 +160,12 @@ public class OrderService {
     }
 
     private void book(final Order order){
+        if (OrderStatus.PENDING.equals(order)){
+            // Do not book pending request
+            LOGGER.info("Order#{} has already been booked", order.getId());
+            return;
+        }
+
         try {
             final CreateBookingResponse response = ferari.book(order);
             final List<BookingDto> bookings = response.getBookings();
@@ -153,6 +185,12 @@ public class OrderService {
     }
 
     private void confirm(final Order order){
+        if (OrderStatus.CONFIRMED.equals(order)){
+            // Do not book pending request
+            LOGGER.info("Order#{} has already been confirmed", order.getId());
+            return;
+        }
+
         try {
             ferari.confirm(order);
 
@@ -164,6 +202,12 @@ public class OrderService {
     }
 
     private void charge(final Order order, final CheckoutOrderRequest request){
+        if (OrderStatus.PAID.equals(order)){
+            // Do not pay PAID request
+            LOGGER.info("Order#{} has already been charged", order.getId());
+            return;
+        }
+
         try {
             order.setPaymentMethod(request.getPaymentMethod());
 

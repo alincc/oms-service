@@ -69,8 +69,10 @@ logging:
 
 enigma:
   service:
+    expirer:
+      cron: "0 0/15 * * * ?"
     order:
-      orderTTLMinutes: 30
+      orderTTLMinutes: 10
     ferari:
       url: "https://io-tchepannou-ferari.herokuapp.com"
     tontine:

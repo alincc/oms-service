@@ -31,7 +31,7 @@ public class Mapper {
 
         order.setCustomerId(request.getCustomerId());
         order.setOrderDateTime(now);
-        order.setExpiryDateTime(DateUtils.addHours(now, orderTTLMinutes));
+        order.setExpiryDateTime(DateUtils.addMinutes(now, orderTTLMinutes));
         order.setStatus(OrderStatus.NEW);
         order.setTotalAmount(BigDecimal.ZERO);
 

@@ -26,8 +26,8 @@ spring:
 
 swagger:
   version: "1.0"
-  title: Online Management API
-  description: Online Management API
+  title: Order Management API
+  description: Order Management API
   termsPath: ""
   email: "herve.tchepannou@gmail.com"
   licenceType: ""

@@ -25,7 +25,7 @@
 
         <!-- Library versions - in ALPHABETICAL ORDER-->
         <rest-client.version>1.0.4</rest-client.version>
-        <ferari-client.version>1.0.18</ferari-client.version>
+        <ferari-client.version>1.0.19</ferari-client.version>
         <logger.version>1.0.0</logger.version>
         <ref-data-client.version>1.0.7</ref-data-client.version>
         <oms-client.version>1.0.7</oms-client.version>

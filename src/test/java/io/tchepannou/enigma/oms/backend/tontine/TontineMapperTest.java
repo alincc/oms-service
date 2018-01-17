@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.tontine;
+package io.tchepannou.enigma.oms.backend.tontine;
 
 import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;

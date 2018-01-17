@@ -154,6 +154,7 @@ public class OrderControllerIT extends StubSupport {
         assertThat(lines.get(0).getBookingId()).isNull();
         assertThat(lines.get(0).getDescription()).isEqualTo(request.getOfferLines().get(0).getDescription());
         assertThat(lines.get(0).getOfferToken()).isEqualTo(request.getOfferLines().get(0).getToken());
+        assertThat(lines.get(0).getMerchantId()).isEqualTo(request.getOfferLines().get(0).getMerchantId());
     }
 
     @Test
@@ -370,6 +371,7 @@ public class OrderControllerIT extends StubSupport {
                 .andExpect(jsonPath("$.order.lines[0].unitPrice", is(6000d)))
                 .andExpect(jsonPath("$.order.lines[0].totalPrice", is(6000d)))
                 .andExpect(jsonPath("$.order.lines[0].quantity", is(1)))
+                .andExpect(jsonPath("$.order.lines[0].merchantId", is(2001)))
 
                 .andExpect(jsonPath("$.order.customer.id", is(3)))
                 .andExpect(jsonPath("$.order.customer.firstName", is("Ray")))
@@ -419,6 +421,7 @@ public class OrderControllerIT extends StubSupport {
         line.setToken(carOfferToken.toString());
         line.setType(OfferType.CAR);
         line.setDescription("description #1");
+        line.setMerchantId(101);
 
         lines.add(line);
 

@@ -58,6 +58,7 @@ public class Mapper {
             line.setUnitPrice(unitPrice);
             line.setTotalPrice(unitPrice.multiply(quantity));
             line.setOfferToken(dto.getToken());
+            line.setMerchantId(dto.getMerchantId());
 
             order.setTotalAmount(order.getTotalAmount().add(line.getTotalPrice()));
             order.setCurrencyCode(token.getCurrencyCode());
@@ -124,6 +125,7 @@ public class Mapper {
         dto.setId(obj.getId());
         dto.setOfferType(obj.getOfferType());
         dto.setOfferToken(obj.getOfferToken());
+        dto.setMerchantId(obj.getMerchantId());
         return dto;
     }
 

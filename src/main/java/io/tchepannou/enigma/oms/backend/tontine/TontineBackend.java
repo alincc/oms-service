@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.tontine;
+package io.tchepannou.enigma.oms.backend.tontine;
 
 import io.tchepannou.core.logger.Loggable;
 import io.tchepannou.core.rest.RestClient;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties("enigma.service.tontine")
-public class TontineService {
+public class TontineBackend {
     private String url;
 
     @Autowired
@@ -24,11 +24,11 @@ public class TontineService {
 
 
     @Loggable("Tontine.Transaction.charge")
-    public ChargeResponse charge(final Order order, CheckoutOrderRequest checkoutRequest){
+    public Integer charge(final Order order, CheckoutOrderRequest checkoutRequest){
         try {
 
             final ChargeRequest request = tontineMapper.toChargeRequest(order, checkoutRequest);
-            return rest.post(url + "/v1/transactions/charge", request, ChargeResponse.class).getBody();
+            return rest.post(url + "/v1/transactions/charge", request, ChargeResponse.class).getBody().getTransactionId();
 
         } catch (HttpConflictException e){
 

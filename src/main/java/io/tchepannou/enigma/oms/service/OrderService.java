@@ -4,7 +4,10 @@ import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpStatusException;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
-import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
+import io.tchepannou.enigma.oms.backend.ferari.BookingBackend;
+import io.tchepannou.enigma.oms.backend.ferari.FerrariException;
+import io.tchepannou.enigma.oms.backend.tontine.TontineBackend;
+import io.tchepannou.enigma.oms.backend.tontine.TontineException;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
@@ -23,11 +26,6 @@ import io.tchepannou.enigma.oms.exception.OrderException;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
-import io.tchepannou.enigma.oms.service.ferari.FerariBookingService;
-import io.tchepannou.enigma.oms.service.ferari.FerrariException;
-import io.tchepannou.enigma.oms.service.tontine.TontineException;
-import io.tchepannou.enigma.oms.service.tontine.TontineService;
-import io.tchepannou.enigma.tontine.client.rr.ChargeResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,10 +54,10 @@ public class OrderService {
     private Mapper mapper;
 
     @Autowired
-    private FerariBookingService ferari;
+    private BookingBackend ferari;
 
     @Autowired
-    private TontineService tontine;
+    private TontineBackend tontine;
 
     private int orderTTLMinutes;
 
@@ -167,8 +165,7 @@ public class OrderService {
         }
 
         try {
-            final CreateBookingResponse response = ferari.book(order);
-            final List<BookingDto> bookings = response.getBookings();
+            final List<BookingDto> bookings = ferari.book(order);
 
             for (int i = 0; i < bookings.size(); i++) {
                 final BookingDto dto = bookings.get(i);
@@ -212,9 +209,9 @@ public class OrderService {
             order.setPaymentMethod(request.getPaymentMethod());
 
             if (PaymentMethod.ONLINE.equals(request.getPaymentMethod())) {
-                ChargeResponse response = tontine.charge(order, request);
+                final Integer transactionId = tontine.charge(order, request);
 
-                order.setPaymentId(response.getTransactionId());
+                order.setPaymentId(transactionId);
                 order.setStatus(OrderStatus.PAID);
             }
 

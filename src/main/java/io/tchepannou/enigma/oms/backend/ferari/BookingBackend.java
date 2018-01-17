@@ -1,9 +1,10 @@
-package io.tchepannou.enigma.oms.service.ferari;
+package io.tchepannou.enigma.oms.backend.ferari;
 
 import io.tchepannou.core.logger.Loggable;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpException;
 import io.tchepannou.enigma.ferari.client.CancellationReason;
+import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingResponse;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
@@ -14,9 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @ConfigurationProperties("enigma.service.ferari")
-public class FerariBookingService {
+public class BookingBackend {
     @Autowired
     private FerariMapper bookingMapper;
 
@@ -26,11 +29,11 @@ public class FerariBookingService {
     private String url;
 
     @Loggable("Ferari.Booking.book")
-    public CreateBookingResponse book(final Order order){
+    public List<BookingDto> book(final Order order){
         try {
 
             final CreateBookingRequest request = bookingMapper.toCreateBookingRequest(order);
-            return rest.post(url + "/v1/bookings", request, CreateBookingResponse.class).getBody();
+            return rest.post(url + "/v1/bookings", request, CreateBookingResponse.class).getBody().getBookings();
 
         } catch (HttpException e){
             throw new FerrariException("Unable to book Order#" + order.getId(), e);

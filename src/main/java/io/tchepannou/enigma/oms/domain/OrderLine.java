@@ -32,6 +32,9 @@ public class OrderLine extends Persistent{
     @Column(name="booking_id")
     private Integer bookingId;
 
+    @Column(name="merchant_id")
+    private Integer merchantId;
+
     @Enumerated(EnumType.STRING)
     @Column(name="offer_type")
     private OfferType offerType;

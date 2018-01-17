@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.ferari;
+package io.tchepannou.enigma.oms.backend.ferari;
 
 import io.tchepannou.core.rest.exception.HttpException;
 

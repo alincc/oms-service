@@ -23,6 +23,7 @@ CREATE TABLE T_ORDER(
 CREATE TABLE T_ORDER_LINE(
   id                 INT     NOT NULL AUTO_INCREMENT,
   order_fk           INT     NOT NULL REFERENCES T_ORDER(id),
+  merchant_id        INT     NOT NULL,
   booking_id         INT,
 
   offer_type         VARCHAR(10)    NOT NULL,

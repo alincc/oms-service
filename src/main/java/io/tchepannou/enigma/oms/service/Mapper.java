@@ -136,11 +136,11 @@ public class Mapper {
         dto.setEmail(obj.getEmail());
         return dto;
     }
+
     public ErrorDto toDto(final OMSErrorCode error){
         final ErrorDto dto = new ErrorDto();
         dto.setCode(error.getCode());
         dto.setText(error.getText());
         return dto;
     }
-
 }

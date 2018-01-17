@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.service.ferari;
 
+import io.tchepannou.core.logger.Loggable;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpException;
 import io.tchepannou.enigma.ferari.client.CancellationReason;
@@ -24,6 +25,7 @@ public class FerariBookingService {
 
     private String url;
 
+    @Loggable("Ferari.Booking.book")
     public CreateBookingResponse book(final Order order){
         try {
 
@@ -35,6 +37,7 @@ public class FerariBookingService {
         }
     }
 
+    @Loggable("Ferari.Booking.confirm")
     public void confirm (final Order order){
         try {
 
@@ -48,6 +51,7 @@ public class FerariBookingService {
         }
     }
 
+    @Loggable("Ferari.Booking.expire")
     public void expire (final Order order, final RestClient rest) {
         try {
 

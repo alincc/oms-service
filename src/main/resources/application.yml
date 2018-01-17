@@ -56,7 +56,7 @@ endpoints:
 logging:
   level:
     root: INFO
-    io.tchepannou: DEBUG
+    io.tchepannou.core.rest: WARN
     com.amazonaws: ERROR
     org.springframework: INFO
     org.hibernate: ERROR

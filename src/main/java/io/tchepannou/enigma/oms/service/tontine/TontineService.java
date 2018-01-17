@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.service.tontine;
 
+import io.tchepannou.core.logger.Loggable;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpConflictException;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
@@ -22,7 +23,7 @@ public class TontineService {
     private RestClient rest;
 
 
-
+    @Loggable("Tontine.Transaction.charge")
     public ChargeResponse charge(final Order order, CheckoutOrderRequest checkoutRequest){
         try {
 

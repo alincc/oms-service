@@ -3,7 +3,6 @@ package io.tchepannou.enigma.oms.service;
 import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
-import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.dto.CustomerDto;
 import io.tchepannou.enigma.oms.client.dto.ErrorDto;
@@ -42,27 +41,27 @@ public class Mapper {
             final OfferLineDto dto,
             final Order order
     ) throws InvalidCarOfferTokenException{
+
+        final CarOfferToken token = CarOfferToken.decode(dto.getToken());
+        final BigDecimal unitPrice = token.getAmount();
+        final BigDecimal quantity = new BigDecimal(token.getTravellerCount());
+
         final OrderLine line = new OrderLine();
         line.setOfferType(dto.getType());
         line.setDescription(dto.getDescription());
         line.setOrder(order);
         line.setOfferToken(dto.getToken());
+        line.setMerchantId(dto.getMerchantId());
+        line.setQuantity(quantity.intValue());
+        line.setUnitPrice(unitPrice);
+        line.setTotalPrice(unitPrice.multiply(quantity));
+        line.setOfferToken(dto.getToken());
+        line.setMerchantId(dto.getMerchantId());
+        line.setOfferType(dto.getType());
 
-        if (OfferType.CAR.equals(line.getOfferType())){
-            final CarOfferToken token = CarOfferToken.decode(dto.getToken());
+        order.setTotalAmount(order.getTotalAmount().add(line.getTotalPrice()));
+        order.setCurrencyCode(token.getCurrencyCode());
 
-            final BigDecimal unitPrice = token.getAmount();
-            final BigDecimal quantity = new BigDecimal(token.getTravellerCount());
-
-            line.setQuantity(quantity.intValue());
-            line.setUnitPrice(unitPrice);
-            line.setTotalPrice(unitPrice.multiply(quantity));
-            line.setOfferToken(dto.getToken());
-            line.setMerchantId(dto.getMerchantId());
-
-            order.setTotalAmount(order.getTotalAmount().add(line.getTotalPrice()));
-            order.setCurrencyCode(token.getCurrencyCode());
-        }
         return line;
     }
 

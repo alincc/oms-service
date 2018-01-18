@@ -155,6 +155,7 @@ public class OrderControllerIT extends StubSupport {
         assertThat(lines.get(0).getDescription()).isEqualTo(request.getOfferLines().get(0).getDescription());
         assertThat(lines.get(0).getOfferToken()).isEqualTo(request.getOfferLines().get(0).getToken());
         assertThat(lines.get(0).getMerchantId()).isEqualTo(request.getOfferLines().get(0).getMerchantId());
+        assertThat(lines.get(0).getOfferType()).isEqualTo(request.getOfferLines().get(0).getType());
     }
 
     @Test

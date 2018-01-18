@@ -25,10 +25,10 @@
 
         <!-- Library versions - in ALPHABETICAL ORDER-->
         <rest-client.version>1.0.4</rest-client.version>
-        <ferari-client.version>1.0.20</ferari-client.version>
+        <ferari-client.version>1.0.21</ferari-client.version>
         <logger.version>1.0.0</logger.version>
         <ref-data-client.version>1.0.7</ref-data-client.version>
-        <oms-client.version>1.0.8</oms-client.version>
+        <oms-client.version>1.0.9</oms-client.version>
         <tontine-client.version>1.0.2</tontine-client.version>
 
         <common-lang.version>2.4</common-lang.version>

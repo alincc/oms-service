@@ -34,6 +34,8 @@ $ mysql -uroot
 mysql> CREATE DATABASE oms;
 ```
 
+
+### Install Code
 Clone the code repository locally and build it.
 ```
 $ git clone git@github.com:htchepannou/oms-service.git
@@ -63,5 +65,5 @@ This allow to run the server locally on port `18083`, using the local database a
 $ java -Dspring.profiles.active=local -jar target/oms-service.jar
 ```
 
-## Licens
+## License
 This project is open source sofware under the [MIT License](https://opensource.org/licenses/MIT)

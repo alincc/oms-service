@@ -18,6 +18,8 @@
 
     <properties>
         <database.name>oms</database.name>
+        <jacoco.threshold.line>0.87</jacoco.threshold.line>
+        <jacoco.threshold.class>0.90</jacoco.threshold.class>
 
         <!-- Library versions - in ALPHABETICAL ORDER-->
         <ferari-client.version>1.0.21</ferari-client.version>

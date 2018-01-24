@@ -1,5 +1,6 @@
 CREATE TABLE T_ORDER(
   id                       INT     NOT NULL AUTO_INCREMENT,
+  site_id                  INT     NOT NULL,
   payment_id               INT,
 
   order_datetime           DATETIME       NOT NULL DEFAULT NOW(),

@@ -30,6 +30,9 @@ public class Order extends Persistent {
     @Column(name="payment_id")
     private Integer paymentId;
 
+    @Column(name="site_id")
+    private Integer siteId;
+
     @Column(name="customer_id")
     private Integer customerId;
 

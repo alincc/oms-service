@@ -24,6 +24,21 @@ spring:
       prepStmtCacheSize: 250
       prepStmtCacheSqlLimit: 2048
 
+  mail:
+    default-encoding: UTF-8
+    host: smtp.gmail.com
+    username: enigma.voyage.dev@gmail.com
+    password: enigma123
+    port: 587
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    protocol: smtp
+    test-connection: false
+
 swagger:
   version: "1.0"
   title: Order Management API
@@ -69,6 +84,8 @@ logging:
 
 enigma:
   service:
+    email:
+      from: "enigma.voyage.dev@gmail.com"
     expirer:
       cron: "0 0/15 * * * ?"
     order:
@@ -77,3 +94,11 @@ enigma:
       url: "https://io-tchepannou-ferari.herokuapp.com"
     tontine:
       url: "https://io-tchepannou-tontine.herokuapp.com"
+    refdata:
+      city:
+        url: "https://io-tchepannou-ref-data.herokuapp.com/v1/cities"
+      site:
+        url: "https://io-tchepannou-ref-data.herokuapp.com/v1/sites"
+    profile:
+      merchant:
+        url: "https://io-tchepannou-profile.herokuapp.com/v1/merchants"

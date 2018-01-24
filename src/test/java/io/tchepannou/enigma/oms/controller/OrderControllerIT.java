@@ -1,6 +1,7 @@
 package io.tchepannou.enigma.oms.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.tchepannou.core.test.jetty.StubHandler;
 import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OfferType;
@@ -13,8 +14,6 @@ import io.tchepannou.enigma.oms.client.dto.TravellerDto;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
-import io.tchepannou.enigma.oms.controller.support.stub.HandlerStub;
-import io.tchepannou.enigma.oms.controller.support.stub.StubSupport;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Traveller;
@@ -62,7 +61,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
 @Sql({"classpath:/sql/clean.sql", "classpath:/sql/OrderController.sql"})
 @ActiveProfiles(profiles = {"stub"})
 @SuppressWarnings("CPD-START")
-public class OrderControllerIT extends StubSupport {
+public class OrderControllerIT {
     private MockMvc mockMvc;
 
     @Autowired
@@ -86,13 +85,13 @@ public class OrderControllerIT extends StubSupport {
     private int tontinePort;
 
     private Server tontine;
-    private HandlerStub tontineHanderStub;
+    private StubHandler tontineHanderStub;
 
     @Value("${enigma.service.ferari.port}")
     private int ferariPort;
 
     private Server ferari;
-    private HandlerStub ferariHanderStub;
+    private StubHandler ferariHanderStub;
 
     @Before
     public void setUp() throws Exception{
@@ -100,16 +99,16 @@ public class OrderControllerIT extends StubSupport {
 
         this.dateFormat = DateHelper.createDateFormat();
 
-        ferariHanderStub = new HandlerStub();
-        ferari = startServer(ferariPort, ferariHanderStub);
+        ferariHanderStub = new StubHandler();
+        ferari = StubHandler.start(ferariPort, ferariHanderStub);
 
-        tontineHanderStub = new HandlerStub();
-        tontine = startServer(tontinePort, tontineHanderStub);
+        tontineHanderStub = new StubHandler();
+        tontine = StubHandler.start(tontinePort, tontineHanderStub);
     }
 
     @After
     public void tearDown() throws Exception {
-        stopServers(ferari, tontine);
+        StubHandler.stop(ferari, tontine);
     }
 
 
@@ -145,6 +144,7 @@ public class OrderControllerIT extends StubSupport {
         assertThat(order.getPaymentId()).isNull();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.NEW);
         assertThat(order.getTotalAmount()).isEqualTo(new BigDecimal(12000).setScale(2));
+        assertThat(order.getSiteId()).isEqualTo(request.getSiteId());
 
         final List<OrderLine> lines = orderLineRepository.findByOrder(order);
         assertThat(lines).hasSize(1);
@@ -363,6 +363,7 @@ public class OrderControllerIT extends StubSupport {
                 .andExpect(jsonPath("$.order.expiryDateTime", notNullValue()))
                 .andExpect(jsonPath("$.order.paymentMethod", is("ONLINE")))
                 .andExpect(jsonPath("$.order.paymentId", is(123)))
+                .andExpect(jsonPath("$.order.siteId", is(1)))
 
                 .andExpect(jsonPath("$.order.lines.length()", is(1)))
                 .andExpect(jsonPath("$.order.lines[0].bookingId", is(5678)))
@@ -430,6 +431,7 @@ public class OrderControllerIT extends StubSupport {
         final CreateOrderRequest request = new CreateOrderRequest();
         request.setOfferLines(lines);
         request.setCustomerId(1);
+        request.setSiteId(1);
 
         return request;
     }

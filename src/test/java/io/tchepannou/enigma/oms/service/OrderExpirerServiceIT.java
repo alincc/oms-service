@@ -1,8 +1,7 @@
 package io.tchepannou.enigma.oms.service;
 
+import io.tchepannou.core.test.jetty.StubHandler;
 import io.tchepannou.enigma.oms.client.OrderStatus;
-import io.tchepannou.enigma.oms.controller.support.stub.HandlerStub;
-import io.tchepannou.enigma.oms.controller.support.stub.StubSupport;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import org.eclipse.jetty.server.Server;
@@ -26,7 +25,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
 @SpringBootTest
 @Sql({"classpath:/sql/clean.sql", "classpath:/sql/OrderExpirerService.sql"})
 @ActiveProfiles(profiles = {"stub"})
-public class OrderExpirerServiceIT extends StubSupport {
+public class OrderExpirerServiceIT {
     private MockMvc mockMvc;
 
     @Autowired
@@ -42,20 +41,20 @@ public class OrderExpirerServiceIT extends StubSupport {
     private int ferariPort;
 
     private Server ferari;
-    private HandlerStub ferariHanderStub;
+    private StubHandler ferariHanderStub;
 
 
     @Before
     public void setUp() throws Exception{
         this.mockMvc = webAppContextSetup(webApplicationContext).build();
 
-        ferariHanderStub = new HandlerStub();
-        ferari = startServer(ferariPort, ferariHanderStub);
+        ferariHanderStub = new StubHandler();
+        ferari = StubHandler.start(ferariPort, ferariHanderStub);
     }
 
     @After
     public void tearDown() throws Exception {
-        stopServers(ferari);
+        StubHandler.stop(ferari);
     }
 
 

@@ -229,6 +229,7 @@ public class OrderService {
         }
         return new OrderException(e, code);
     }
+
     public int getOrderTTLMinutes() {
         return orderTTLMinutes;
     }

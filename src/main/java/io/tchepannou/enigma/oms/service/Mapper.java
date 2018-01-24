@@ -33,6 +33,7 @@ public class Mapper {
         order.setExpiryDateTime(DateUtils.addMinutes(now, orderTTLMinutes));
         order.setStatus(OrderStatus.NEW);
         order.setTotalAmount(BigDecimal.ZERO);
+        order.setSiteId(request.getSiteId());
 
         return order;
     }
@@ -86,6 +87,7 @@ public class Mapper {
         dto.setStatus(obj.getStatus());
         dto.setTotalAmount(obj.getTotalAmount());
         dto.setCustomer(toCustomerDto(obj));
+        dto.setSiteId(obj.getSiteId());
 
         if (obj.getTravellers() != null) {
             dto.setTravellers(

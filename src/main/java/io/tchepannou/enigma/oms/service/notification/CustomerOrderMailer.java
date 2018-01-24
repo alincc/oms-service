@@ -17,6 +17,7 @@ import io.tchepannou.enigma.profile.client.dto.MerchantDto;
 import io.tchepannou.enigma.refdata.client.dto.CityDto;
 import io.tchepannou.enigma.refdata.client.dto.SiteDto;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +55,9 @@ public class CustomerOrderMailer {
 
     @Autowired
     private Mapper mapper;
+
+    @Value("${enigma.assetUrl}")
+    private String assetUrl;
 
 
     @Transactional
@@ -96,9 +100,12 @@ public class CustomerOrderMailer {
         final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds).stream()
                 .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));;
 
-        // Model
+        // Site
         final SiteDto site = siteBackend.findById(order.getSiteId());
+        site.setLogoUrl(assetUrl + site.getLogoUrl());
         model.setSite(site);
+
+        // $$
         model.setFormattedTotalPrice(formatMoney(order.getTotalAmount(), site));
 
         // Lines

@@ -1,0 +1,13 @@
+{
+  "city": {
+    "id": 2370001,
+    "name": "Yaounde",
+    "displayName": "Yaounde",
+    "timezoneId": "UTC",
+    "country": {
+      "code": "CM",
+      "name": "Cameroon",
+      "displayName": "Cameroon"
+    }
+  }
+}

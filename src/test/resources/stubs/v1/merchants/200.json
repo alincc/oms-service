@@ -1,0 +1,18 @@
+{
+  "merchants": [
+    {
+      "id": 1000,
+      "name": "Buca Voyages",
+      "thumbnailUrl": "https://scontent-dft4-1.xx.fbcdn.net/v/t1.0-1/c0.53.320.320/p320x320/293731_10200486280872043_1366685790_n.jpg?oh=0387036eba5efe6ac7ba6bc2e750d5e0&oe=5ABCEFEE",
+      "websiteUrl": "https://www.facebook.com/pages/Buca-Voyages/424917690913003"
+    },
+    {
+      "id": 1001,
+      "name": "Le Voyageur"
+    },
+    {
+      "id": 1002,
+      "name": "Touristique Express SA"
+    }
+  ]
+}

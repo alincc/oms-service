@@ -2,6 +2,7 @@ server:
   port: 18083
 
 enigma:
+  assetUrl: "http://localhost:28080"
   service:
     ferari:
       url: "http://localhost:18081"

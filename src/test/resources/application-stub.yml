@@ -1,3 +1,8 @@
+spring:
+  mail:
+    host: 127.0.0.1
+    port: 3025
+
 enigma:
   service:
     ferari:
@@ -6,3 +11,13 @@ enigma:
     tontine:
       port: 38082
       url: "http://localhost:${enigma.service.tontine.port}"
+    refdata:
+      port: 38883
+      city:
+        url: "http://localhost:${enigma.service.refdata.port}/v1/cities"
+      site:
+        url: "http://localhost:${enigma.service.refdata.port}/v1/sites"
+    profile:
+      port: 38884
+      merchant:
+        url: "http://localhost:${enigma.service.profile.port}/v1/merchants"

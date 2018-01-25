@@ -1,6 +1,8 @@
 package io.tchepannou.enigma.oms.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.ServerSetupTest;
 import io.tchepannou.core.test.jetty.StubHandler;
 import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
@@ -40,6 +42,9 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.web.context.WebApplicationContext;
 
+import javax.mail.Message;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -90,8 +95,21 @@ public class OrderControllerIT {
     @Value("${enigma.service.ferari.port}")
     private int ferariPort;
 
+    @Value("${enigma.service.profile.port}")
+    private int profilePort;
+
+    @Value("${enigma.service.refdata.port}")
+    private int refdataPort;
+
+    @Value("${spring.mail.port}")
+    private int smtpPort;
+
     private Server ferari;
     private StubHandler ferariHanderStub;
+
+    private Server refdata;
+    private Server profile;
+
 
     @Before
     public void setUp() throws Exception{
@@ -104,11 +122,14 @@ public class OrderControllerIT {
 
         tontineHanderStub = new StubHandler();
         tontine = StubHandler.start(tontinePort, tontineHanderStub);
+
+        refdata = StubHandler.start(refdataPort, new StubHandler());
+        profile = StubHandler.start(profilePort, new StubHandler());
     }
 
     @After
     public void tearDown() throws Exception {
-        StubHandler.stop(ferari, tontine);
+        StubHandler.stop(ferari, tontine, refdata, profile);
     }
 
 
@@ -384,6 +405,58 @@ public class OrderControllerIT {
     }
 
 
+    /* ==== SEND EMAIL ==== */
+    @Test
+    public void shouldSendEmailToCustomer() throws Exception {
+        GreenMail mail = new GreenMail(ServerSetupTest.SMTP);
+        mail.start();
+        try{
+
+            // Given
+            mockMvc
+                    .perform(get("/v1/orders/200/notify/customer"))
+
+                    .andDo(MockMvcResultHandlers.print())
+                    .andExpect(status().isOk());
+
+            // When
+            mail.waitForIncomingEmail(5000, 1);
+            final MimeMessage[] msgs = mail.getReceivedMessages();
+
+            // Then
+            assertThat(msgs).hasSize(1);
+            assertThat(Arrays.asList(msgs[0].getRecipients(Message.RecipientType.TO))).containsExactly(new InternetAddress("ray@gmail.com"));
+            assertThat(Arrays.asList(msgs[0].getSubject())).contains("[Enigma-Voyages] Travel Confirmation - Order #200");
+            System.out.println(msgs[0].getContent());
+
+        }finally {
+            mail.stop();
+        }
+    }
+
+    @Test
+    public void shouldNotSendEmailToCustomerForInvalidOrder() throws Exception {
+
+        // Given
+        mockMvc
+                .perform(get("/v1/orders/999/notify/customer"))
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isNotFound());
+
+    }
+
+    @Test
+    public void shouldNotSendEmailToCustomerIfNoEmail() throws Exception {
+
+        // Given
+        mockMvc
+                .perform(get("/v1/orders/150/notify/customer"))
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isNotFound());
+
+    }
 
     private CreateOrderRequest createCreateOrderRequest() throws Exception {
         return createCreateOrderRequest(2);

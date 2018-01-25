@@ -3,6 +3,7 @@
     "id": 1,
     "name": "enigma.cm",
     "domain": "enigma.cm",
+    "brandName": "Enigma-Voyages",
     "currency": {
       "code": "XAF",
       "name": "CFA Franc",

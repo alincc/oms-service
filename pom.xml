@@ -18,8 +18,8 @@
 
     <properties>
         <database.name>oms</database.name>
-        <jacoco.threshold.line>0.87</jacoco.threshold.line>
-        <jacoco.threshold.class>0.90</jacoco.threshold.class>
+        <jacoco.threshold.line>0.85</jacoco.threshold.line>
+        <jacoco.threshold.class>0.85</jacoco.threshold.class>
 
         <!-- Library versions - in ALPHABETICAL ORDER-->
         <ferari-client.version>1.0.21</ferari-client.version>
@@ -27,6 +27,9 @@
         <oms-client.version>1.0.10</oms-client.version>
         <ref-data-client.version>1.0.9</ref-data-client.version>
         <tontine-client.version>1.0.2</tontine-client.version>
+
+        <!-- Test -->
+        <greenmail.version>1.4.0</greenmail.version>
     </properties>
 
     <dependencies>
@@ -68,6 +71,15 @@
         <dependency>
             <groupId>nz.net.ultraq.thymeleaf</groupId>
             <artifactId>thymeleaf-layout-dialect</artifactId>
+        </dependency>
+
+
+
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail</artifactId>
+            <version>${greenmail.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

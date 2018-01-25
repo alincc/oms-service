@@ -12,10 +12,12 @@ import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
 import io.tchepannou.enigma.oms.service.OrderService;
+import io.tchepannou.enigma.oms.service.UrlService;
 import io.tchepannou.enigma.oms.service.notification.CustomerOrderMailer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,7 +39,13 @@ public class OrderController {
     private OrderService orderService;
 
     @Autowired
+    private UrlService urlService;
+
+    @Autowired
     private CustomerOrderMailer customerMailer;
+
+    @Value("${server.port}")
+    private int serverPort;
 
     @RequestMapping(method = RequestMethod.POST)
     @ApiOperation(value = "Create")
@@ -64,11 +72,7 @@ public class OrderController {
 
         } finally {
 
-            try {
-                this.emailToCustomer(orderId);
-            } catch (Exception e){
-                LOGGER.warn("Unable to send email notification to customer");
-            }
+            urlService.asyncNavigateTo(String.format("http://127.0.0.1:%s/v1/orders/%s/notify/customer", serverPort, orderId));
 
         }
     }

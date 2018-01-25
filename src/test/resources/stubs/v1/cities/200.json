@@ -1,0 +1,26 @@
+{
+  "cities":[
+    {
+      "id": 2370001,
+      "name": "Yaounde",
+      "displayName": "Yaounde",
+      "timezoneId": "UTC",
+      "country": {
+        "code": "CM",
+        "name": "Cameroon",
+        "displayName": "Cameroon"
+      }
+    },
+    {
+      "id": 2370002,
+      "name": "Douala",
+      "displayName": "Douala",
+      "timezoneId": "UTC",
+      "country": {
+        "code": "CM",
+        "name": "Cameroon",
+        "displayName": "Cameroon"
+      }
+    }
+  ]
+}

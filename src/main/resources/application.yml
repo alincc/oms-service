@@ -83,7 +83,7 @@ logging:
     file: "%d Type=%level Logger=%c Thread=%thread %m%n"
 
 enigma:
-  assetUrl: "https://io-tchepannou-enigma-web.herokuapp.com"
+  assetUrl: "https://io-tchepannou-enigma-ui.herokuapp.com"
   service:
     email:
       from: "enigma.voyage.dev@gmail.com"

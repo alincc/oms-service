@@ -94,7 +94,7 @@ public class OrderController {
             @ApiResponse(code=200, message = "Success"),
             @ApiResponse(code=404, message = "Order not found", response = OMSErrorResponse.class),
     })
-    public void emailToCustomer(@PathVariable Integer orderId)
+    public void notifyCustomer(@PathVariable Integer orderId)
         throws InvalidCarOfferTokenException, IOException, MessagingException {
         customerMailer.notify(orderId);
     }

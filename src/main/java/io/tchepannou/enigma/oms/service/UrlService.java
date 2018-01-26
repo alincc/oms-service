@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -24,14 +26,41 @@ public class UrlService {
 
     public void navigateTo(final String url) throws IOException {
         HttpURLConnection cnn = null;
+        int statusCode = -1;
         try {
-            URL myURL = new URL(url);
-            cnn = (HttpURLConnection)myURL.openConnection();
-            cnn.connect();
+
+            // Connect
+            cnn = (HttpURLConnection)new URL(url).openConnection();
+            cnn.setRequestMethod("GET");
+            statusCode = cnn.getResponseCode();
+
+            LOGGER.info("GET {} - {}", url, statusCode);
+
+            // Get Content
+            BufferedReader in = new BufferedReader(new InputStreamReader(cnn.getInputStream()));
+            try {
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+
+            } finally{
+                in.close();
+            }
+
+        } catch (Exception e) {
+
+            LOGGER.info("GET {} - {}", url, statusCode, e);
+
+            throw e;
         } finally {
+
             if (cnn != null){
                 cnn.disconnect();
             }
+
         }
     }
 }

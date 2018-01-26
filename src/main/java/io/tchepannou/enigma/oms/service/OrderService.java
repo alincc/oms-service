@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.service;
 
+import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpStatusException;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
@@ -42,6 +43,9 @@ public class OrderService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OrderService.class);
 
     @Autowired
+    private KVLogger kv;
+
+    @Autowired
     private OrderRepository orderRepository;
 
     @Autowired
@@ -80,6 +84,11 @@ public class OrderService {
                 orderLineRepository.save(line);
             }
             order.setLines(lines);
+
+            // Log
+            kv.add("OrderID", order.getId());
+            kv.add("OrderStatus", order.getStatus().name());
+            kv.add("OrderAction", "Create");
 
             // Response
             return new CreateOrderResponse(order.getId());
@@ -124,6 +133,11 @@ public class OrderService {
 
         // Confirm order
         confirm(order);
+
+        // Log
+        kv.add("OrderID", order.getId());
+        kv.add("OrderStatus", order.getStatus().name());
+        kv.add("OrderAction", "Checkout");
 
         // Saved order
         return new CheckoutOrderResponse(order.getId());

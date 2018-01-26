@@ -3,8 +3,9 @@ package io.tchepannou.enigma.oms.config;
 import org.flywaydb.core.Flyway;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-//@Configuration
+@Configuration
 public class FlywayConfiguration {
     @Bean
     public FlywayMigrationStrategy flywayMigrationStrategy(){

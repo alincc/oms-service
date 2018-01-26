@@ -12,7 +12,6 @@ import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
 import io.tchepannou.enigma.oms.service.OrderService;
-import io.tchepannou.enigma.oms.service.UrlService;
 import io.tchepannou.enigma.oms.service.notification.CustomerOrderMailer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +37,6 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
-    @Autowired
-    private UrlService urlService;
 
     @Autowired
     private CustomerOrderMailer customerMailer;
@@ -72,7 +69,12 @@ public class OrderController {
 
         } finally {
 
-            urlService.asyncNavigateTo(String.format("http://127.0.0.1:%s/v1/orders/%s/notify/customer", serverPort, orderId));
+            // TODO do this asynchronously
+            try {
+                notifyCustomer(orderId);
+            } catch (Exception e){
+                LOGGER.warn("Unable to send notification to customer. Order #{}", orderId, e);
+            }
 
         }
     }

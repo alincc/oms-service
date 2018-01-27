@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.mail;
+package io.tchepannou.enigma.oms.service;
 
 import lombok.Getter;
 import lombok.Setter;

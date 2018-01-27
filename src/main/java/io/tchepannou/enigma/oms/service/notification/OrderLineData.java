@@ -16,4 +16,5 @@ public class OrderLineData extends OrderLineDto {
     private String formattedDepartureTime;
     private String formattedArrivalTime;
     private String formattedUnitPrice;
+    private String formattedTotalPrice;
 }

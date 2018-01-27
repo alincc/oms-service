@@ -405,7 +405,7 @@ public class OrderControllerIT {
     }
 
 
-    /* ==== SEND EMAIL ==== */
+    /* ==== SEND EMAIL CUSTOMER ==== */
     @Test
     public void shouldSendEmailToCustomer() throws Exception {
         GreenMail mail = new GreenMail(ServerSetupTest.SMTP);
@@ -414,7 +414,7 @@ public class OrderControllerIT {
 
             // Given
             mockMvc
-                    .perform(get("/v1/orders/200/notify/customer"))
+                    .perform(get("/v1/orders/300/notify/customer"))
 
                     .andDo(MockMvcResultHandlers.print())
                     .andExpect(status().isOk());
@@ -426,9 +426,7 @@ public class OrderControllerIT {
             // Then
             assertThat(msgs).hasSize(1);
             assertThat(Arrays.asList(msgs[0].getRecipients(Message.RecipientType.TO))).containsExactly(new InternetAddress("ray@gmail.com"));
-            assertThat(Arrays.asList(msgs[0].getSubject())).contains("[Enigma-Voyages] Travel Confirmation - Order #200");
-            System.out.println(msgs[0].getContent());
-
+            assertThat(Arrays.asList(msgs[0].getSubject())).contains("[Enigma-Voyages] Travel Confirmation - Order #300");
         }finally {
             mail.stop();
         }
@@ -457,6 +455,51 @@ public class OrderControllerIT {
                 .andExpect(status().isNotFound());
 
     }
+
+
+    /* ==== SEND EMAIL CUSTOMER ==== */
+    @Test
+    public void shouldSendEmailToMerchant() throws Exception {
+        GreenMail mail = new GreenMail(ServerSetupTest.SMTP);
+        mail.start();
+        try{
+
+            // Given
+            mockMvc
+                    .perform(get("/v1/orders/300/notify/merchants"))
+
+                    .andDo(MockMvcResultHandlers.print())
+                    .andExpect(status().isOk());
+
+            // When
+            mail.waitForIncomingEmail(5000, 1);
+            final MimeMessage[] msgs = mail.getReceivedMessages();
+
+            // Then
+            assertThat(msgs).hasSize(2);
+
+            assertThat(Arrays.asList(msgs[0].getRecipients(Message.RecipientType.TO))).containsExactly(new InternetAddress("merchant2001@gmail.com"));
+            assertThat(Arrays.asList(msgs[0].getSubject())).contains("[Enigma-Voyages] Travel Confirmation - Order #300");
+
+            assertThat(Arrays.asList(msgs[1].getRecipients(Message.RecipientType.TO))).containsExactly(new InternetAddress("merchant2002@gmail.com"));
+            assertThat(Arrays.asList(msgs[1].getSubject())).contains("[Enigma-Voyages] Travel Confirmation - Order #300");
+        }finally {
+            mail.stop();
+        }
+    }
+
+    @Test
+    public void shouldNotSendEmailToMerchantForInvalidOrder() throws Exception {
+
+        // Given
+        mockMvc
+                .perform(get("/v1/orders/999/notify/merchants"))
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isNotFound());
+
+    }
+
 
     private CreateOrderRequest createCreateOrderRequest() throws Exception {
         return createCreateOrderRequest(2);

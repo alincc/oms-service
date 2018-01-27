@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.mail;
+package io.tchepannou.enigma.oms.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

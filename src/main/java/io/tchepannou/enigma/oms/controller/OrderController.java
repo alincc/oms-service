@@ -12,7 +12,6 @@ import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
 import io.tchepannou.enigma.oms.service.OrderService;
-import io.tchepannou.enigma.oms.service.notification.CustomerOrderMailer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,10 +35,6 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
-
-
-    @Autowired
-    private CustomerOrderMailer customerMailer;
 
     @Value("${server.port}")
     private int serverPort;
@@ -72,6 +67,7 @@ public class OrderController {
             // TODO do this asynchronously
             try {
                 notifyCustomer(orderId);
+                notifyMerchants(orderId);
             } catch (Exception e){
                 LOGGER.warn("Unable to send notification to customer. Order #{}", orderId, e);
             }
@@ -98,6 +94,17 @@ public class OrderController {
     })
     public void notifyCustomer(@PathVariable Integer orderId)
         throws InvalidCarOfferTokenException, IOException, MessagingException {
-        customerMailer.notify(orderId);
+        orderService.notifyCustomer(orderId);
+    }
+
+    @RequestMapping(value="/{orderId}/notify/merchants", method = RequestMethod.GET)
+    @ApiOperation(value = "Get")
+    @ApiResponses({
+            @ApiResponse(code=200, message = "Success"),
+            @ApiResponse(code=404, message = "Order not found", response = OMSErrorResponse.class),
+    })
+    public void notifyMerchants(@PathVariable Integer orderId)
+            throws InvalidCarOfferTokenException, IOException, MessagingException {
+        orderService.notifyMerchants(orderId);
     }
 }

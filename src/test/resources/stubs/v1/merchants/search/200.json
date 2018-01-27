@@ -16,7 +16,13 @@
     },
     {
       "id": 2001,
-      "name": "Test Express SA"
+      "name": "Test Express SA #2001",
+      "email": "merchant2001@gmail.com"
+    },
+    {
+      "id": 2002,
+      "name": "Test Express SA #2002",
+      "email": "merchant2002@gmail.com"
     }
 
   ]

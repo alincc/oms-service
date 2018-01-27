@@ -27,6 +27,8 @@ import io.tchepannou.enigma.oms.exception.OrderException;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
+import io.tchepannou.enigma.oms.service.notification.CustomerOrderMailer;
+import io.tchepannou.enigma.oms.service.notification.MerchantOrderMailer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +36,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.mail.MessagingException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 @ConfigurationProperties("enigma.service.order")
@@ -63,6 +69,12 @@ public class OrderService {
     @Autowired
     private TontineBackend tontine;
 
+    @Autowired
+    private CustomerOrderMailer customerMailer;
+
+    @Autowired
+    private MerchantOrderMailer merchantMailer;
+
     private int orderTTLMinutes;
 
 
@@ -88,7 +100,7 @@ public class OrderService {
             // Log
             kv.add("OrderID", order.getId());
             kv.add("OrderStatus", order.getStatus().name());
-            kv.add("OrderAction", "Create");
+            kv.add("Action", "Create");
 
             // Response
             return new CreateOrderResponse(order.getId());
@@ -137,7 +149,7 @@ public class OrderService {
         // Log
         kv.add("OrderID", order.getId());
         kv.add("OrderStatus", order.getStatus().name());
-        kv.add("OrderAction", "Checkout");
+        kv.add("Action", "Checkout");
 
         // Saved order
         return new CheckoutOrderResponse(order.getId());
@@ -169,6 +181,27 @@ public class OrderService {
         final GetOrderResponse response = new GetOrderResponse();
         response.setOrder(mapper.toDto(order));
         return response;
+    }
+
+    public void notifyCustomer( Integer orderId)
+            throws InvalidCarOfferTokenException, IOException, MessagingException {
+        customerMailer.notify(orderId);
+    }
+
+    public void notifyMerchants( Integer orderId)
+            throws InvalidCarOfferTokenException, IOException, MessagingException {
+        final Order order = orderRepository.findOne(orderId);
+        if (order == null){
+            throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
+        }
+
+        final Set<Integer> merchantIIds = order.getLines().stream()
+                .map(l -> l.getMerchantId())
+                .collect(Collectors.toSet());
+
+        for (Integer merchantId : merchantIIds){
+            merchantMailer.notify(orderId, merchantId);
+        }
     }
 
     private void book(final Order order){

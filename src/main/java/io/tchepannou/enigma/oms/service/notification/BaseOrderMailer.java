@@ -110,9 +110,6 @@ public abstract class BaseOrderMailer {
         final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds).stream()
                 .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));;
 
-        // Site
-        site.setLogoUrl(assetUrl + site.getLogoUrl());
-
         // Lines
         final DateFormat timeFormat = new SimpleDateFormat("HH:mm");
         final DateFormat dateFormat = SimpleDateFormat.getDateInstance(DateFormat.MEDIUM);

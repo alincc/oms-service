@@ -59,6 +59,8 @@ public class Mapper {
         line.setOfferToken(dto.getToken());
         line.setMerchantId(dto.getMerchantId());
         line.setOfferType(dto.getType());
+        line.setFees(BigDecimal.ZERO);
+        line.setNetPrice(BigDecimal.ZERO);
 
         order.setTotalAmount(order.getTotalAmount().add(line.getTotalPrice()));
         order.setCurrencyCode(token.getCurrencyCode());
@@ -127,6 +129,8 @@ public class Mapper {
         dto.setOfferType(obj.getOfferType());
         dto.setOfferToken(obj.getOfferToken());
         dto.setMerchantId(obj.getMerchantId());
+        dto.setFees(obj.getFees());
+        dto.setNetPrice(obj.getNetPrice());
         return dto;
     }
 

@@ -177,6 +177,8 @@ public class OrderControllerIT {
         assertThat(lines.get(0).getOfferToken()).isEqualTo(request.getOfferLines().get(0).getToken());
         assertThat(lines.get(0).getMerchantId()).isEqualTo(request.getOfferLines().get(0).getMerchantId());
         assertThat(lines.get(0).getOfferType()).isEqualTo(request.getOfferLines().get(0).getType());
+        assertThat(lines.get(0).getFees()).isEqualTo(new BigDecimal(0).setScale(2));
+        assertThat(lines.get(0).getNetPrice()).isEqualTo(new BigDecimal(0).setScale(2));
     }
 
     @Test
@@ -232,50 +234,6 @@ public class OrderControllerIT {
         assertThat(order.getFirstName()).isEqualTo(request.getFirstName());
         assertThat(order.getLastName()).isEqualTo(request.getLastName());
         assertThat(order.getEmail()).isEqualTo(request.getEmail());
-
-        final List<Traveller> travellers = travellerRepository.findByOrder(order);
-        assertThat(travellers).hasSize(2);
-        assertThat(travellers.get(0).getFirstName()).isEqualTo("John");
-        assertThat(travellers.get(0).getLastName()).isEqualTo("Doe");
-        assertThat(travellers.get(0).getSex()).isEqualTo(Sex.M);
-        assertThat(travellers.get(0).getEmail()).isEqualTo("john.doe@gmail.com");
-        assertThat(travellers.get(1).getFirstName()).isEqualTo("Jane");
-        assertThat(travellers.get(1).getLastName()).isEqualTo("Smith");
-        assertThat(travellers.get(1).getSex()).isEqualTo(Sex.F);
-        assertThat(travellers.get(1).getEmail()).isEqualTo("jane.smith@gmail.com");
-
-        final List<OrderLine> lines = orderLineRepository.findByOrder(order);
-        assertThat(lines).hasSize(2);
-        assertThat(lines.get(0).getBookingId()).isEqualTo(1000);
-        assertThat(lines.get(1).getBookingId()).isEqualTo(1001);
-    }
-
-    @Test
-    public void shouldCheckoutOrderWithPaymentAtMerchant() throws Exception {
-        final CheckoutOrderRequest request = createCheckoutOrderRequest();
-        request.setPaymentMethod(PaymentMethod.AT_MERCHANT);
-        request.setMobilePayment(null);
-
-        mockMvc
-                .perform(
-                        post("/v1/orders/100/checkout")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(mapper.writeValueAsString(request))
-                )
-
-
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(status().isOk())
-
-                .andReturn();
-
-        // Then
-        final Order order = orderRepository.findOne(100);
-        assertThat(order).isNotNull();
-
-        assertThat(order.getPaymentId()).isNull();
-        assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.AT_MERCHANT);
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
 
         final List<Traveller> travellers = travellerRepository.findByOrder(order);
         assertThat(travellers).hasSize(2);
@@ -395,6 +353,8 @@ public class OrderControllerIT {
                 .andExpect(jsonPath("$.order.lines[0].totalPrice", is(6000d)))
                 .andExpect(jsonPath("$.order.lines[0].quantity", is(1)))
                 .andExpect(jsonPath("$.order.lines[0].merchantId", is(2001)))
+                .andExpect(jsonPath("$.order.lines[0].fees", is(500.0)))
+                .andExpect(jsonPath("$.order.lines[0].netPrice", is(5500.0)))
 
                 .andExpect(jsonPath("$.order.customer.id", is(3)))
                 .andExpect(jsonPath("$.order.customer.firstName", is("Ray")))
@@ -513,8 +473,6 @@ public class OrderControllerIT {
                 createTraveller("Jane", "Smith", Sex.F, "jane.smith@gmail.com")
             )
         );
-
-        request.setPaymentMethod(PaymentMethod.ONLINE);
 
         final MobilePaymentDto mobile = new MobilePaymentDto();
         mobile.setCountryCode("237");

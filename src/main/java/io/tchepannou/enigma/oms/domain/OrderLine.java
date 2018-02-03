@@ -47,6 +47,12 @@ public class OrderLine extends Persistent{
     @Column(name="total_price")
     private BigDecimal totalPrice;
 
+    @Column(name="net_price")
+    private BigDecimal netPrice;
+
+    @Column(name="fees")
+    private BigDecimal fees;
+
     @Column(name="offer_token")
     private String offerToken;
 

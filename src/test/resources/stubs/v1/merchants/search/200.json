@@ -4,25 +4,55 @@
       "id": 1000,
       "name": "Buca Voyages",
       "thumbnailUrl": "https://scontent-dft4-1.xx.fbcdn.net/v/t1.0-1/c0.53.320.320/p320x320/293731_10200486280872043_1366685790_n.jpg?oh=0387036eba5efe6ac7ba6bc2e750d5e0&oe=5ABCEFEE",
-      "websiteUrl": "https://www.facebook.com/pages/Buca-Voyages/424917690913003"
+      "websiteUrl": "https://www.facebook.com/pages/Buca-Voyages/424917690913003",
+      "plan": {
+        "id": 1,
+        "name": "Premium",
+        "amount": 500,
+        "percent": 15
+      }
     },
     {
       "id": 1001,
-      "name": "Le Voyageur"
+      "name": "Le Voyageur",
+      "plan": {
+        "id": 1,
+        "name": "Premium",
+        "amount": 500,
+        "percent": 15
+      }
     },
     {
       "id": 1002,
-      "name": "Touristique Express SA"
+      "name": "Touristique Express SA",
+      "plan": {
+        "id": 1,
+        "name": "Premium",
+        "amount": 500,
+        "percent": 15
+      }
     },
     {
       "id": 2001,
       "name": "Test Express SA #2001",
-      "email": "merchant2001@gmail.com"
+      "email": "merchant2001@gmail.com",
+      "plan": {
+        "id": 1,
+        "name": "Premium",
+        "amount": 500,
+        "percent": 15
+      }
     },
     {
       "id": 2002,
       "name": "Test Express SA #2002",
-      "email": "merchant2002@gmail.com"
+      "email": "merchant2002@gmail.com",
+      "plan": {
+        "id": 1,
+        "name": "Premium",
+        "amount": 500,
+        "percent": 15
+      }
     }
 
   ]

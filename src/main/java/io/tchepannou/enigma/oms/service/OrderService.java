@@ -7,6 +7,7 @@ import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.oms.backend.ferari.BookingBackend;
 import io.tchepannou.enigma.oms.backend.ferari.FerrariException;
+import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.backend.tontine.TontineBackend;
 import io.tchepannou.enigma.oms.backend.tontine.TontineException;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
@@ -29,6 +30,8 @@ import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.notification.CustomerOrderMailer;
 import io.tchepannou.enigma.oms.service.notification.MerchantOrderMailer;
+import io.tchepannou.enigma.profile.client.dto.MerchantDto;
+import io.tchepannou.enigma.profile.client.dto.PlanDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +41,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
@@ -71,6 +77,9 @@ public class OrderService {
 
     @Autowired
     private CustomerOrderMailer customerMailer;
+
+    @Autowired
+    private MerchantBackend merchantBackend;
 
     @Autowired
     private MerchantOrderMailer merchantMailer;
@@ -195,11 +204,11 @@ public class OrderService {
             throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
         }
 
-        final Set<Integer> merchantIIds = order.getLines().stream()
+        final Set<Integer> merchantIds = order.getLines().stream()
                 .map(l -> l.getMerchantId())
                 .collect(Collectors.toSet());
 
-        for (Integer merchantId : merchantIIds){
+        for (Integer merchantId : merchantIds){
             merchantMailer.notify(orderId, merchantId);
         }
     }
@@ -214,6 +223,7 @@ public class OrderService {
         try {
             final List<BookingDto> bookings = ferari.book(order);
 
+            // Book
             for (int i = 0; i < bookings.size(); i++) {
                 final BookingDto dto = bookings.get(i);
                 final OrderLine line = order.getLines().get(i);
@@ -252,17 +262,33 @@ public class OrderService {
             return;
         }
 
+        // Merchant
+        final Set<Integer> merchantIds = order.getLines().stream()
+                .map(l -> l.getMerchantId())
+                .collect(Collectors.toSet());
+
+        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds).stream()
+                .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));
+
         try {
-            order.setPaymentMethod(request.getPaymentMethod());
+            // Perform the payment
+            final Integer transactionId = tontine.charge(order, request);
+            order.setPaymentMethod(PaymentMethod.ONLINE);
+            order.setPaymentId(transactionId);
+            order.setStatus(OrderStatus.PAID);
+            orderRepository.save(order);
 
-            if (PaymentMethod.ONLINE.equals(request.getPaymentMethod())) {
-                final Integer transactionId = tontine.charge(order, request);
+            // Update the fees
+            for (final OrderLine line : order.getLines()){
+                final PlanDto plan = merchants.get(line.getMerchantId()).getPlan();
+                final BigDecimal fees = line.getTotalPrice().multiply(plan.getPercent()).add(plan.getAmount());
+                final BigDecimal net = line.getTotalPrice().subtract(fees);
 
-                order.setPaymentId(transactionId);
-                order.setStatus(OrderStatus.PAID);
+                line.setNetPrice(net);
+                line.setFees(fees);
+                orderLineRepository.save(line);
             }
 
-            orderRepository.save(order);
         } catch (TontineException e){
             throw toOrderException(e, OMSErrorCode.PAYMENT_FAILURE);
         }

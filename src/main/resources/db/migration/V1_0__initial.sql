@@ -15,10 +15,10 @@ CREATE TABLE T_ORDER(
   last_name                VARCHAR(50),
   email                    VARCHAR(100),
 
+  INDEX T_ORDER_order_datetime(order_datetime),
   INDEX T_ORDER_expiry_status(expiry_datetime, status),
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;
-
 
 
 CREATE TABLE T_ORDER_LINE(
@@ -31,11 +31,14 @@ CREATE TABLE T_ORDER_LINE(
   quantity           INT,
   unit_price         DECIMAL(10, 2) NOT NULL,
   total_price        DECIMAL(10, 2) NOT NULL,
+  net_price          DECIMAL(10, 2) NOT NULL,
+  fees               DECIMAL(10, 2) NOT NULL,
   offer_token        VARCHAR(255),
   description        VARCHAR(100),
 
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;
+
 
 CREATE TABLE T_TRAVELLER(
   id                 INT     NOT NULL AUTO_INCREMENT,
@@ -48,4 +51,3 @@ CREATE TABLE T_TRAVELLER(
 
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;
-

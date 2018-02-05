@@ -93,8 +93,6 @@ enigma:
       orderTTLMinutes: 10
     ferari:
       url: "https://io-tchepannou-ferari.herokuapp.com"
-    tontine:
-      url: "https://io-tchepannou-tontine.herokuapp.com"
     refdata:
       city:
         url: "https://io-tchepannou-ref-data.herokuapp.com/v1/cities"

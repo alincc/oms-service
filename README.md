@@ -14,7 +14,6 @@ This service manages all orders
 
 ## Downstreams
 - [ferari-service](https://www.github.com/htchepannou/ferari-service)
-- [tontine-service](https://www.github.com/htchepannou/tontine-service)
 
 ## Installation
 ### Setup IDE
@@ -58,7 +57,6 @@ This allow to run the server locally on port `18083`, using the local database a
 
 - Install and run all downstream services locally:
   - [ferari-service](https://github.com/htchepannou/ferari-service#run-the-server-with-local-profile)
-  - [tontine-service](https://github.com/htchepannou/tontine-service#run-the-server-with-local-profile)
   
 - Run the server with `local` profile:
 ```

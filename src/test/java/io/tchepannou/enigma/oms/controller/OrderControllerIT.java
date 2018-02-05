@@ -32,7 +32,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -86,11 +85,6 @@ public class OrderControllerIT {
 
     private DateFormat dateFormat;
 
-    @Value("${enigma.service.tontine.port}")
-    private int tontinePort;
-
-    private Server tontine;
-    private StubHandler tontineHanderStub;
 
     @Value("${enigma.service.ferari.port}")
     private int ferariPort;
@@ -120,16 +114,13 @@ public class OrderControllerIT {
         ferariHanderStub = new StubHandler();
         ferari = StubHandler.start(ferariPort, ferariHanderStub);
 
-        tontineHanderStub = new StubHandler();
-        tontine = StubHandler.start(tontinePort, tontineHanderStub);
-
         refdata = StubHandler.start(refdataPort, new StubHandler());
         profile = StubHandler.start(profilePort, new StubHandler());
     }
 
     @After
     public void tearDown() throws Exception {
-        StubHandler.stop(ferari, tontine, refdata, profile);
+        StubHandler.stop(ferari, refdata, profile);
     }
 
 
@@ -225,7 +216,7 @@ public class OrderControllerIT {
         final Order order = orderRepository.findOne(100);
         assertThat(order).isNotNull();
 
-        assertThat(order.getPaymentId()).isEqualTo(100);
+        assertThat(order.getPaymentId()).isEqualTo(-1);
         assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
         assertThat(order.getCustomerId()).isEqualTo(request.getCustomerId());
@@ -250,33 +241,32 @@ public class OrderControllerIT {
         assertThat(lines.get(1).getBookingId()).isEqualTo(1001);
     }
 
-    @Test
-    public void shouldNotCheckoutOrderWhenPaymentFailed() throws Exception {
-        tontineHanderStub.setStatus(HttpStatus.CONFLICT.value());
-        final CheckoutOrderRequest request = createCheckoutOrderRequest();
-
-        mockMvc
-                .perform(
-                        post("/v1/orders/100/checkout")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(mapper.writeValueAsString(request))
-                )
-
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(status().isConflict())
-        ;
-
-        // Then
-        final Order order = orderRepository.findOne(100);
-        assertThat(order).isNotNull();
-
-        assertThat(order.getPaymentId()).isNull();
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
-    }
+//    @Test
+//    public void shouldNotCheckoutOrderWhenPaymentFailed() throws Exception {
+//        tontineHanderStub.setStatus(HttpStatus.CONFLICT.value());
+//        final CheckoutOrderRequest request = createCheckoutOrderRequest();
+//
+//        mockMvc
+//                .perform(
+//                        post("/v1/orders/100/checkout")
+//                                .contentType(MediaType.APPLICATION_JSON)
+//                                .content(mapper.writeValueAsString(request))
+//                )
+//
+//                .andDo(MockMvcResultHandlers.print())
+//                .andExpect(status().isConflict())
+//        ;
+//
+//        // Then
+//        final Order order = orderRepository.findOne(100);
+//        assertThat(order).isNotNull();
+//
+//        assertThat(order.getPaymentId()).isNull();
+//        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
+//    }
 
     @Test
     public void shouldNotCheckoutExpiredOrder() throws Exception {
-        tontineHanderStub.setStatus(HttpStatus.CONFLICT.value());
         final CheckoutOrderRequest request = createCheckoutOrderRequest();
 
         mockMvc
@@ -296,7 +286,6 @@ public class OrderControllerIT {
 
     @Test
     public void shouldNotCheckoutCancelledOrder() throws Exception {
-        tontineHanderStub.setStatus(HttpStatus.CONFLICT.value());
         final CheckoutOrderRequest request = createCheckoutOrderRequest();
 
         mockMvc

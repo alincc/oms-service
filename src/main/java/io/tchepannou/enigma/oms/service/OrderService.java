@@ -7,9 +7,6 @@ import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.oms.backend.ferari.BookingBackend;
 import io.tchepannou.enigma.oms.backend.ferari.FerrariException;
-import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
-import io.tchepannou.enigma.oms.backend.tontine.TontineBackend;
-import io.tchepannou.enigma.oms.backend.tontine.TontineException;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
@@ -30,7 +27,6 @@ import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.mail.CustomerOrderMailer;
 import io.tchepannou.enigma.oms.service.mail.MerchantOrderMailer;
-import io.tchepannou.enigma.profile.client.dto.MerchantDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,9 +38,7 @@ import javax.mail.MessagingException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
@@ -71,13 +65,7 @@ public class OrderService {
     private BookingBackend ferari;
 
     @Autowired
-    private TontineBackend tontine;
-
-    @Autowired
     private CustomerOrderMailer customerMailer;
-
-    @Autowired
-    private MerchantBackend merchantBackend;
 
     @Autowired
     private MerchantOrderMailer merchantMailer;
@@ -274,25 +262,11 @@ public class OrderService {
             return;
         }
 
-        // Merchant
-        final Set<Integer> merchantIds = order.getLines().stream()
-                .map(l -> l.getMerchantId())
-                .collect(Collectors.toSet());
-
-        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds).stream()
-                .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));
-
-        try {
-
-            final Integer transactionId = tontine.charge(order, request);
-            order.setPaymentMethod(PaymentMethod.ONLINE);
-            order.setPaymentId(transactionId);
-            order.setStatus(OrderStatus.PAID);
-            orderRepository.save(order);
-
-        } catch (TontineException e){
-            throw toOrderException(e, OMSErrorCode.PAYMENT_FAILURE);
-        }
+//            final Integer transactionId = tontine.charge(order, request);
+        order.setPaymentMethod(PaymentMethod.ONLINE);
+        order.setPaymentId(-1);
+        order.setStatus(OrderStatus.PAID);
+        orderRepository.save(order);
     }
 
     private OrderException toOrderException(Throwable e, OMSErrorCode code){

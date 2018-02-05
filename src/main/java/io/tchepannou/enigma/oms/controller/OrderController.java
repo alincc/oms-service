@@ -64,13 +64,7 @@ public class OrderController {
 
         } finally {
 
-            // TODO do this asynchronously
-            try {
-                notifyCustomer(orderId);
-                notifyMerchants(orderId);
-            } catch (Exception e){
-                LOGGER.warn("Unable to send notification to customer. Order #{}", orderId, e);
-            }
+            orderService.notify(orderId);
 
         }
     }

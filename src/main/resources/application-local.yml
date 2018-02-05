@@ -18,3 +18,7 @@ enigma:
       port: 18084
       merchant:
         url: "http://localhost:${enigma.service.profile.port}/v1/merchants"
+    finance:
+      port: 18085
+      order:
+        url: "http://localhost:${enigma.service.finance.port}/v1/orders"

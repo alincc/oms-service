@@ -7,6 +7,7 @@ import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.oms.backend.ferari.BookingBackend;
 import io.tchepannou.enigma.oms.backend.ferari.FerrariException;
+import io.tchepannou.enigma.oms.backend.finance.FinanceOrderBackend;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.backend.tontine.TontineBackend;
 import io.tchepannou.enigma.oms.backend.tontine.TontineException;
@@ -28,8 +29,8 @@ import io.tchepannou.enigma.oms.exception.OrderException;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
-import io.tchepannou.enigma.oms.service.notification.CustomerOrderMailer;
-import io.tchepannou.enigma.oms.service.notification.MerchantOrderMailer;
+import io.tchepannou.enigma.oms.service.mail.CustomerOrderMailer;
+import io.tchepannou.enigma.oms.service.mail.MerchantOrderMailer;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
 import io.tchepannou.enigma.profile.client.dto.PlanDto;
 import org.slf4j.Logger;
@@ -83,6 +84,9 @@ public class OrderService {
 
     @Autowired
     private MerchantOrderMailer merchantMailer;
+
+    @Autowired
+    private FinanceOrderBackend financeOrderBackend;
 
     private int orderTTLMinutes;
 
@@ -190,6 +194,17 @@ public class OrderService {
         final GetOrderResponse response = new GetOrderResponse();
         response.setOrder(mapper.toDto(order));
         return response;
+    }
+
+    public void notify(final Integer orderId){
+        try {
+            financeOrderBackend.created(orderId);
+
+            notifyCustomer(orderId);
+            notifyMerchants(orderId);
+        } catch (Exception e){
+            LOGGER.warn("Unexpected error", e);
+        }
     }
 
     public void notifyCustomer( Integer orderId)

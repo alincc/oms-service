@@ -11,7 +11,7 @@ public abstract class Persistent {
             if (id == null){
                 return false;
             } else {
-                id.equals(((Persistent)obj).getId());
+                return id.equals(((Persistent)obj).getId());
             }
         }
         return super.equals(obj);

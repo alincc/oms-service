@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.notification;
+package io.tchepannou.enigma.oms.service.mail;
 
 import com.google.common.base.Strings;
 import io.tchepannou.enigma.ferari.client.CarOfferToken;

@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.notification;
+package io.tchepannou.enigma.oms.service.mail;
 
 import io.tchepannou.enigma.oms.client.dto.OrderLineDto;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;

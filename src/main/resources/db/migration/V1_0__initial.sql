@@ -1,3 +1,4 @@
+-- ORDERS
 CREATE TABLE T_ORDER(
   id                       INT     NOT NULL AUTO_INCREMENT,
   site_id                  INT     NOT NULL,
@@ -31,8 +32,6 @@ CREATE TABLE T_ORDER_LINE(
   quantity           INT,
   unit_price         DECIMAL(10, 2) NOT NULL,
   total_price        DECIMAL(10, 2) NOT NULL,
-  net_price          DECIMAL(10, 2) NOT NULL,
-  fees               DECIMAL(10, 2) NOT NULL,
   offer_token        VARCHAR(255),
   description        VARCHAR(100),
 
@@ -51,3 +50,32 @@ CREATE TABLE T_TRAVELLER(
 
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;
+
+
+-- FINANCE
+CREATE TABLE T_ACCOUNT(
+  id              INT           NOT NULL AUTO_INCREMENT,
+  merchant_id     INT,
+  type            VARCHAR(10),
+  balance         DECIMAL(10,2),
+  currency_code   VARCHAR(3),
+
+  PRIMARY KEY (id)
+) ENGINE = InnoDB;
+
+
+CREATE TABLE T_TRANSACTION(
+  id               INT           NOT NULL AUTO_INCREMENT,
+  account_fk       INT           NOT NULL REFERENCES T_ACCOUNT(id),
+  reference_id     INT           NOT NULL,
+
+  type             VARCHAR(10),
+  amount           DECIMAL(10,2),
+  fees             DECIMAL(10,2),
+  net              DECIMAL(10,2),
+  entry_datetime   DATETIME      NOT NULL,
+  transaction_datetime DATETIME  NOT NULL,
+
+  PRIMARY KEY (id)
+) ENGINE = InnoDB;
+

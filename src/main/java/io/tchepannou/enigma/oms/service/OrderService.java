@@ -7,7 +7,6 @@ import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.oms.backend.ferari.BookingBackend;
 import io.tchepannou.enigma.oms.backend.ferari.FerrariException;
-import io.tchepannou.enigma.oms.backend.finance.FinanceOrderBackend;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.backend.tontine.TontineBackend;
 import io.tchepannou.enigma.oms.backend.tontine.TontineException;
@@ -32,7 +31,6 @@ import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.mail.CustomerOrderMailer;
 import io.tchepannou.enigma.oms.service.mail.MerchantOrderMailer;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
-import io.tchepannou.enigma.profile.client.dto.PlanDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +83,7 @@ public class OrderService {
     private MerchantOrderMailer merchantMailer;
 
     @Autowired
-    private FinanceOrderBackend financeOrderBackend;
+    private FinanceService financeService;
 
     private int orderTTLMinutes;
 
@@ -198,7 +195,7 @@ public class OrderService {
 
     public void notify(final Integer orderId){
         try {
-            financeOrderBackend.created(orderId);
+            financeService.created(orderId);
 
             notifyCustomer(orderId);
             notifyMerchants(orderId);
@@ -286,23 +283,12 @@ public class OrderService {
                 .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));
 
         try {
-            // Perform the payment
+
             final Integer transactionId = tontine.charge(order, request);
             order.setPaymentMethod(PaymentMethod.ONLINE);
             order.setPaymentId(transactionId);
             order.setStatus(OrderStatus.PAID);
             orderRepository.save(order);
-
-            // Update the fees
-            for (final OrderLine line : order.getLines()){
-                final PlanDto plan = merchants.get(line.getMerchantId()).getPlan();
-                final BigDecimal fees = line.getTotalPrice().multiply(plan.getPercent()).add(plan.getAmount());
-                final BigDecimal net = line.getTotalPrice().subtract(fees);
-
-                line.setNetPrice(net);
-                line.setFees(fees);
-                orderLineRepository.save(line);
-            }
 
         } catch (TontineException e){
             throw toOrderException(e, OMSErrorCode.PAYMENT_FAILURE);

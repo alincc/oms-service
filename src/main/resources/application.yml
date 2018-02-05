@@ -103,6 +103,3 @@ enigma:
     profile:
       merchant:
         url: "https://io-tchepannou-profile.herokuapp.com/v1/merchants"
-    finance:
-      order:
-        url: "https://io-tchepannou-finance.herokuapp.com/v1/orders"

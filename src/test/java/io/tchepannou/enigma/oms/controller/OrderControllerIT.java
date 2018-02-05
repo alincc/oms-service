@@ -177,8 +177,6 @@ public class OrderControllerIT {
         assertThat(lines.get(0).getOfferToken()).isEqualTo(request.getOfferLines().get(0).getToken());
         assertThat(lines.get(0).getMerchantId()).isEqualTo(request.getOfferLines().get(0).getMerchantId());
         assertThat(lines.get(0).getOfferType()).isEqualTo(request.getOfferLines().get(0).getType());
-        assertThat(lines.get(0).getFees()).isEqualTo(new BigDecimal(0).setScale(2));
-        assertThat(lines.get(0).getNetPrice()).isEqualTo(new BigDecimal(0).setScale(2));
     }
 
     @Test
@@ -353,8 +351,6 @@ public class OrderControllerIT {
                 .andExpect(jsonPath("$.order.lines[0].totalPrice", is(6000d)))
                 .andExpect(jsonPath("$.order.lines[0].quantity", is(1)))
                 .andExpect(jsonPath("$.order.lines[0].merchantId", is(2001)))
-                .andExpect(jsonPath("$.order.lines[0].fees", is(500.0)))
-                .andExpect(jsonPath("$.order.lines[0].netPrice", is(5500.0)))
 
                 .andExpect(jsonPath("$.order.customer.id", is(3)))
                 .andExpect(jsonPath("$.order.customer.firstName", is("Ray")))

@@ -2,9 +2,11 @@ package io.tchepannou.enigma.oms.service;
 
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.domain.Account;
+import io.tchepannou.enigma.oms.domain.AccountType;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Transaction;
+import io.tchepannou.enigma.oms.domain.TransactionType;
 import io.tchepannou.enigma.oms.repository.AccountRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
@@ -47,25 +49,41 @@ public class FinanceService {
         final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds).stream()
                 .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));
 
+        // Site
+        final Account siteAccount = findSiteAccount(order);
+
         for (final OrderLine line : order.getLines()){
             final PlanDto plan = merchants.get(line.getMerchantId()).getPlan();
-            final Account merchantAccount = findMerchantAccount(line.getMerchantId(), order);
-            final Transaction merchantTx = toMerchantTransaction(order, line, merchantAccount, plan);
-            transactionRepository.save(merchantTx);
 
-            merchantAccount.setBalance(merchantAccount.getBalance().add(merchantTx.getNet()));
-            accountRepository.save(merchantAccount);
+            // Merchant
+            final MerchantDto merchant = merchants.get(line.getMerchantId());
+            final Account merchantAccount = findMerchantAccount(merchant, order);
+            final Transaction merchantTx = toMerchantTransaction(order, line, merchantAccount, plan);
+            updateAccount(merchantTx, merchantAccount);
+
+            // Site
+            updateAccount(
+                    toSiteTransaction(merchantTx, order, line, siteAccount, plan),
+                    siteAccount
+            );
+
         }
     }
 
-    private Account findMerchantAccount(final Integer merchantId, final Order order){
-        Account account = accountRepository.findByMerchantId(merchantId);
+    private void updateAccount(Transaction tx, Account account){
+        account.setBalance(account.getBalance().add(tx.getNet()));
+        accountRepository.save(account);
+    }
+
+    private Account findMerchantAccount(final MerchantDto merchant, final Order order){
+        Account account = accountRepository.findByTypeAndReferenceId(AccountType.MERCHANT, merchant.getId());
         if (account == null){
             account = new Account();
             account.setBalance(BigDecimal.ZERO);
             account.setCurrencyCode(order.getCurrencyCode());
-            account.setMerchantId(merchantId);
-
+            account.setReferenceId(merchant.getId());
+            account.setSiteId(order.getSiteId());
+            account.setType(AccountType.MERCHANT);
             accountRepository.save(account);
         }
         return account;
@@ -73,18 +91,53 @@ public class FinanceService {
 
     private Transaction toMerchantTransaction(final Order order, final OrderLine line, final Account account, final PlanDto plan) {
         final Transaction tx = new Transaction();
-        final BigDecimal fees = line.getTotalPrice().multiply(plan.getPercent()).add(plan.getAmount());
-        final BigDecimal net = line.getTotalPrice().subtract(fees);
+        final BigDecimal amount = line.getTotalPrice();
+        final BigDecimal fees = amount.multiply(plan.getPercent()).add(plan.getAmount());
+        final BigDecimal net = amount.subtract(fees);
 
         tx.setAccount(account);
-        tx.setAmount(line.getTotalPrice());
+        tx.setAmount(amount);
         tx.setFees(fees);
         tx.setNet(net);
         tx.setEntryDateTime(DateHelper.now());
         tx.setReferenceId(line.getBookingId());
         tx.setTransactionDateTime(order.getOrderDateTime());
-        tx.setType("ORDER");
+        tx.setType(TransactionType.BOOKING);
 
+        transactionRepository.save(tx);
+        return tx;
+    }
+
+    private Account findSiteAccount(final Order order){
+        Account account = accountRepository.findByTypeAndReferenceId(AccountType.SITE, order.getId());
+        if (account == null){
+            account = new Account();
+            account.setBalance(BigDecimal.ZERO);
+            account.setCurrencyCode(order.getCurrencyCode());
+            account.setReferenceId(order.getSiteId());
+            account.setSiteId(order.getSiteId());
+            account.setType(AccountType.SITE);
+            accountRepository.save(account);
+        }
+        return account;
+    }
+
+    private Transaction toSiteTransaction(final Transaction merchantTx, final Order order, final OrderLine line, final Account account, final PlanDto plan) {
+        final Transaction tx = new Transaction();
+        final BigDecimal amount = merchantTx.getFees();
+        final BigDecimal fees = BigDecimal.ZERO;
+        final BigDecimal net = amount.subtract(fees);
+
+        tx.setAccount(account);
+        tx.setAmount(amount);
+        tx.setFees(fees);
+        tx.setNet(net);
+        tx.setEntryDateTime(DateHelper.now());
+        tx.setReferenceId(line.getBookingId());
+        tx.setTransactionDateTime(order.getOrderDateTime());
+        tx.setType(TransactionType.BOOKING);
+
+        transactionRepository.save(tx);
         return tx;
     }
 }

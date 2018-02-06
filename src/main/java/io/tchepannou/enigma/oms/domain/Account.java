@@ -5,6 +5,8 @@ import lombok.Setter;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -20,11 +22,17 @@ public class Account extends Persistent {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name="merchant_id")
-    private Integer merchantId;
+    @Column(name="site_id")
+    private Integer siteId;
+
+    @Column(name="reference_id")
+    private Integer referenceId;
 
     private BigDecimal balance;
 
     @Column(name="currency_code")
     private String currencyCode;
+
+    @Enumerated(EnumType.STRING)
+    private AccountType type;
 }

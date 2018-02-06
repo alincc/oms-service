@@ -1,3 +1,4 @@
+
 -- ORDERS
 CREATE TABLE T_ORDER(
   id                       INT     NOT NULL AUTO_INCREMENT,
@@ -55,11 +56,14 @@ CREATE TABLE T_TRAVELLER(
 -- FINANCE
 CREATE TABLE T_ACCOUNT(
   id              INT           NOT NULL AUTO_INCREMENT,
-  merchant_id     INT,
-  type            VARCHAR(10),
+  site_id         INT           NOT NULL,
+  reference_id    INT           NOT NULL,
+
+  type            VARCHAR(10)   NOT NULL,
   balance         DECIMAL(10,2),
   currency_code   VARCHAR(3),
 
+  UNIQUE(type, reference_id),
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;
 

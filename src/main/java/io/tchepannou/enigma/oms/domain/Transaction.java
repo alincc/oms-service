@@ -5,6 +5,8 @@ import lombok.Setter;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -33,7 +35,8 @@ public class Transaction extends Persistent {
 
     private BigDecimal fees;
 
-    private String type;
+    @Enumerated(EnumType.STRING)
+    private TransactionType type;
 
     @Column(name="entry_datetime")
     private Date entryDateTime;

@@ -8,8 +8,8 @@
       "plan": {
         "id": 1,
         "name": "Premium",
-        "amount": 500,
-        "percent": 0.15
+        "amount": 100,
+        "percent": 0.10
       }
     },
     {
@@ -18,8 +18,8 @@
       "plan": {
         "id": 1,
         "name": "Premium",
-        "amount": 500,
-        "percent": 0.15
+        "amount": 100,
+        "percent": 0.10
       }
     },
     {
@@ -28,8 +28,28 @@
       "plan": {
         "id": 1,
         "name": "Premium",
-        "amount": 500,
-        "percent": 0.15
+        "amount": 100,
+        "percent": 0.10
+      }
+    },
+    {
+      "id": 1101,
+      "name": "Le Voyageur",
+      "plan": {
+        "id": 1,
+        "name": "Premium",
+        "amount": 100,
+        "percent": 0.10
+      }
+    },
+    {
+      "id": 1102,
+      "name": "Touristique Express SA",
+      "plan": {
+        "id": 1,
+        "name": "Premium",
+        "amount": 100,
+        "percent": 0.10
       }
     },
     {
@@ -39,8 +59,8 @@
       "plan": {
         "id": 1,
         "name": "Premium",
-        "amount": 500,
-        "percent": 0.15
+        "amount": 100,
+        "percent": 0.10
       }
     },
     {
@@ -50,8 +70,8 @@
       "plan": {
         "id": 1,
         "name": "Premium",
-        "amount": 500,
-        "percent": 0.15
+        "amount": 100,
+        "percent": 0.10
       }
     }
 

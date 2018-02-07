@@ -12,6 +12,7 @@ CREATE TABLE T_ORDER(
   currency_code            VARCHAR(3)     NOT NULL,
   payment_method           VARCHAR(20),
 
+  device_uid               VARCHAR(36),
   customer_id              INT,
   first_name               VARCHAR(50),
   last_name                VARCHAR(50),

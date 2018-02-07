@@ -88,6 +88,7 @@ public class Mapper {
         dto.setTotalAmount(obj.getTotalAmount());
         dto.setCustomer(toCustomerDto(obj));
         dto.setSiteId(obj.getSiteId());
+        dto.setDeviceUID(obj.getDeviceUID());
 
         if (obj.getTravellers() != null) {
             dto.setTravellers(

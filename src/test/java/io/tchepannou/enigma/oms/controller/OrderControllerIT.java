@@ -3,6 +3,7 @@ package io.tchepannou.enigma.oms.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetupTest;
+import io.tchepannou.core.rest.Headers;
 import io.tchepannou.core.test.jetty.StubHandler;
 import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
@@ -56,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -212,12 +214,14 @@ public class OrderControllerIT {
     @Test
     public void shouldCheckoutOrderWithMobileMoney() throws Exception {
         final CheckoutOrderRequest request = createCheckoutOrderRequest();
+        final String deviceUID = UUID.randomUUID().toString();
 
         mockMvc
                 .perform(
                         post("/v1/orders/100/checkout")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(mapper.writeValueAsString(request))
+                                .header(Headers.DEVICE_UID, deviceUID)
                 )
 
 
@@ -237,6 +241,7 @@ public class OrderControllerIT {
         assertThat(order.getFirstName()).isEqualTo(request.getFirstName());
         assertThat(order.getLastName()).isEqualTo(request.getLastName());
         assertThat(order.getEmail()).isEqualTo(request.getEmail());
+        assertThat(order.getDeviceUID()).isEqualTo(deviceUID);
 
         final List<Traveller> travellers = travellerRepository.findByOrder(order);
         assertThat(travellers).hasSize(2);
@@ -344,6 +349,7 @@ public class OrderControllerIT {
                 .andExpect(jsonPath("$.order.paymentMethod", is("ONLINE")))
                 .andExpect(jsonPath("$.order.paymentId", is(123)))
                 .andExpect(jsonPath("$.order.siteId", is(1)))
+                .andExpect(jsonPath("$.order.deviceUID", is("1234-1234")))
 
                 .andExpect(jsonPath("$.order.lines.length()", is(1)))
                 .andExpect(jsonPath("$.order.lines[0].bookingId", is(5678)))

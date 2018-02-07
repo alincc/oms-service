@@ -111,7 +111,11 @@ public class OrderService {
     }
 
     @Transactional(noRollbackFor = OrderException.class)
-    public CheckoutOrderResponse checkout(final Integer orderId, final CheckoutOrderRequest request){
+    public CheckoutOrderResponse checkout(
+            final Integer orderId,
+            final String deviceUID,
+            final CheckoutOrderRequest request
+    ){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
             throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
@@ -124,6 +128,7 @@ public class OrderService {
         }
 
         // Customer information
+        order.setDeviceUID(deviceUID);
         order.setCustomerId(request.getCustomerId());
         order.setFirstName(request.getFirstName());
         order.setLastName(request.getLastName());

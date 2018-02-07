@@ -24,7 +24,7 @@
         <!-- Library versions - in ALPHABETICAL ORDER-->
         <ferari-client.version>1.0.21</ferari-client.version>
         <profile-client.version>1.0.3</profile-client.version>
-        <oms-client.version>1.0.12</oms-client.version>
+        <oms-client.version>1.0.13</oms-client.version>
         <ref-data-client.version>1.0.9</ref-data-client.version>
 
         <!-- Test -->

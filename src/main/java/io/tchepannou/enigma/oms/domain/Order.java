@@ -33,6 +33,9 @@ public class Order extends Persistent {
     @Column(name="site_id")
     private Integer siteId;
 
+    @Column(name="device_uid")
+    private String deviceUID;
+
     @Column(name="customer_id")
     private Integer customerId;
 

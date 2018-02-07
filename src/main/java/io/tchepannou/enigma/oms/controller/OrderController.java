@@ -4,6 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.tchepannou.core.rest.Headers;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,10 +59,14 @@ public class OrderController {
             @ApiResponse(code=404, message = "Order not found", response = OMSErrorResponse.class),
             @ApiResponse(code=409, message = "Checkout error", response = OMSErrorResponse.class)
     })
-    public CheckoutOrderResponse checkout(@PathVariable Integer orderId, @RequestBody @Valid CheckoutOrderRequest request) {
+    public CheckoutOrderResponse checkout(
+            @PathVariable Integer orderId,
+            @RequestHeader(name= Headers.DEVICE_UID, required = false) String deviceUID,
+            @RequestBody @Valid CheckoutOrderRequest request
+    ) {
         try {
 
-            return orderService.checkout(orderId, request);
+            return orderService.checkout(orderId, deviceUID, request);
 
         } finally {
 

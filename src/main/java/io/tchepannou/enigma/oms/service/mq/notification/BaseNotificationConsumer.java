@@ -1,20 +1,19 @@
-package io.tchepannou.enigma.oms.service.mail;
+package io.tchepannou.enigma.oms.service.mq.notification;
 
 import com.google.common.base.Strings;
+import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.backend.refdata.CityBackend;
 import io.tchepannou.enigma.oms.backend.refdata.SiteBackend;
-import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
-import io.tchepannou.enigma.oms.exception.NotFoundException;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.service.Mail;
 import io.tchepannou.enigma.oms.service.MailService;
-import io.tchepannou.enigma.oms.service.Mapper;
+import io.tchepannou.enigma.oms.service.mq.MQConsumer;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
 import io.tchepannou.enigma.refdata.client.dto.CityDto;
 import io.tchepannou.enigma.refdata.client.dto.SiteDto;
@@ -33,7 +32,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public abstract class BaseOrderMailer {
+public abstract class BaseNotificationConsumer extends MQConsumer {
     @Autowired
     protected OrderRepository orderRepository;
 
@@ -49,25 +48,14 @@ public abstract class BaseOrderMailer {
     @Autowired
     protected SiteBackend siteBackend;
 
-    @Autowired
-    protected Mapper mapper;
-
     @Value("${enigma.assetUrl}")
     protected String assetUrl;
 
 
-    protected Order findOrder(final Integer orderId){
-        final Order order = orderRepository.findOne(orderId);
-        if (order == null){
-            throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
-        }
-        if (Strings.isNullOrEmpty(order.getEmail())){
-            throw new NotFoundException(OMSErrorCode.CUSTOMER_HAS_NO_EMAIL);
-        }
-        if (!OrderStatus.CONFIRMED.equals(order.getStatus())){
-            throw new NotFoundException(OMSErrorCode.ORDER_NOT_CONFIRMED);
-        }
-        return order;
+    protected boolean isValidOrder(final Order order){
+        return order != null
+                && !Strings.isNullOrEmpty(order.getEmail())
+                && OrderStatus.CONFIRMED.equals(order.getStatus());
     }
 
     protected Mail buildMail (
@@ -87,7 +75,8 @@ public abstract class BaseOrderMailer {
     protected OrderMailModel buildOrderMail(
             final Order order,
             final SiteDto site,
-            final OrderLineFilter filter
+            final OrderLineFilter filter,
+            final RestClient rest
     ) throws InvalidCarOfferTokenException{
         // Order
         final OrderMailModel model = new OrderMailModel();
@@ -105,9 +94,9 @@ public abstract class BaseOrderMailer {
             offerTokens.put(line.getId(), token);
         }
 
-        final Map<Integer, CityDto> cities = cityBackend.search(cityIds).stream()
+        final Map<Integer, CityDto> cities = cityBackend.search(cityIds, rest).stream()
                 .collect(Collectors.toMap(CityDto::getId, Function.identity()));
-        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds).stream()
+        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds, rest).stream()
                 .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));;
 
         // Lines
@@ -120,7 +109,7 @@ public abstract class BaseOrderMailer {
                     .map(line -> {
                         final CarOfferToken token = offerTokens.get(line.getId());
 
-                        OrderLineData data = new OrderLineData();
+                        OrderLineModel data = new OrderLineModel();
                         data.setId(line.getId());
                         data.setBookingId(line.getBookingId());
                         data.setMerchantId(line.getMerchantId());
@@ -145,7 +134,7 @@ public abstract class BaseOrderMailer {
 
         // Total
         BigDecimal total = BigDecimal.ZERO;
-        for (OrderLineData line : model.getLines()){
+        for (OrderLineModel line : model.getLines()){
             total = total.add(line.getTotalPrice());
         }
 

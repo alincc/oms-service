@@ -11,6 +11,7 @@ after_success:
 
 services:
   - mysql
+  - rabbitmq
 
 install: true
 

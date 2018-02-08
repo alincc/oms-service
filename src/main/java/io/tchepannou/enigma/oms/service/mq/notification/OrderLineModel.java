@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.mail;
+package io.tchepannou.enigma.oms.service.mq.notification;
 
 import io.tchepannou.enigma.oms.client.dto.OrderLineDto;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class OrderLineData extends OrderLineDto {
+public class OrderLineModel extends OrderLineDto {
     private CityDto origin;
     private CityDto destination;
     private MerchantDto merchant;

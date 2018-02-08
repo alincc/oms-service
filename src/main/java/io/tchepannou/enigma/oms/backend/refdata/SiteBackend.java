@@ -19,6 +19,10 @@ public class SiteBackend {
 
     @Loggable("RefData.Site.findById")
     public SiteDto findById(Integer id){
+        return findById(id, rest);
+    }
+
+    public SiteDto findById(Integer id, RestClient rest){
         try {
             return rest.get(url + "/" + id, SiteResponse.class).getBody().getSite();
         } catch (HttpException e){

@@ -1,5 +1,6 @@
-package io.tchepannou.enigma.oms.service;
+package io.tchepannou.enigma.oms.service.mq.finance;
 
+import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.domain.Account;
 import io.tchepannou.enigma.oms.domain.AccountType;
@@ -10,9 +11,14 @@ import io.tchepannou.enigma.oms.domain.TransactionType;
 import io.tchepannou.enigma.oms.repository.AccountRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
+import io.tchepannou.enigma.oms.service.mq.MQConsumer;
+import io.tchepannou.enigma.oms.service.mq.QueueNames;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
 import io.tchepannou.enigma.profile.client.dto.PlanDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +30,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
-public class FinanceService {
+public class FinanceConsumer extends MQConsumer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FinanceConsumer.class);
+
     @Autowired
     private AccountRepository accountRepository;
 
@@ -38,15 +46,27 @@ public class FinanceService {
     private MerchantBackend merchantBackend;
 
     @Transactional
-    public void created(Integer orderId){
+    @RabbitListener(queues = QueueNames.QUEUE_FINANCE)
+    public void consume (Integer orderId){
+        LOGGER.info("Consuming {}", orderId);
+        try {
+            notify(orderId);
+        } catch (Exception e){
+            LOGGER.warn("Unable to consume message: {}", orderId, e);
+        }
+    }
+
+
+    private void notify(Integer orderId) {
         final Order order = orderRepository.findOne(orderId);
 
         // Merchant
+        final RestClient rest = createRestClient();
         final Set<Integer> merchantIds = order.getLines().stream()
                 .map(l -> l.getMerchantId())
                 .collect(Collectors.toSet());
 
-        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds).stream()
+        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds, rest).stream()
                 .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));
 
         // Site
@@ -66,7 +86,6 @@ public class FinanceService {
                     toSiteTransaction(merchantTx, order, line, siteAccount, plan),
                     siteAccount
             );
-
         }
     }
 
@@ -109,7 +128,7 @@ public class FinanceService {
     }
 
     private Account findSiteAccount(final Order order){
-        Account account = accountRepository.findByTypeAndReferenceId(AccountType.SITE, order.getId());
+        Account account = accountRepository.findByTypeAndReferenceId(AccountType.SITE, order.getSiteId());
         if (account == null){
             account = new Account();
             account.setBalance(BigDecimal.ZERO);

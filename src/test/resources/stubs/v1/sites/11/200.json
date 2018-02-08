@@ -1,0 +1,39 @@
+{
+  "site": {
+    "id": 11,
+    "name": "enigma.cm",
+    "domain": "enigma.cm",
+    "brandName": "Enigma-Voyages",
+    "currency": {
+      "code": "XAF",
+      "name": "CFA Franc",
+      "symbol": "FCFA"
+    },
+    "language": {
+      "code": "FR",
+      "name": "French"
+    },
+    "languages": [
+      {
+        "code": "EN",
+        "name": "English"
+      },
+      {
+        "code": "FR",
+        "name": "French"
+      }
+    ],
+    "countries": [
+      {
+        "code": "CM",
+        "name": "Cameroon",
+        "displayName": "Cameroon"
+      },
+      {
+        "code": "GB",
+        "name": "Gabon",
+        "displayName": "Gabon"
+      }
+    ]
+  }
+}

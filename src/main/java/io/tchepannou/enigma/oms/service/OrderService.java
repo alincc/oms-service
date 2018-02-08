@@ -25,17 +25,15 @@ import io.tchepannou.enigma.oms.exception.OrderException;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
-import io.tchepannou.enigma.oms.service.mail.CustomerOrderMailer;
-import io.tchepannou.enigma.oms.service.mail.MerchantOrderMailer;
+import io.tchepannou.enigma.oms.service.mq.QueueNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.mail.MessagingException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -64,17 +62,10 @@ public class OrderService {
     @Autowired
     private BookingBackend ferari;
 
-    @Autowired
-    private CustomerOrderMailer customerMailer;
-
-    @Autowired
-    private MerchantOrderMailer merchantMailer;
-
-    @Autowired
-    private FinanceService financeService;
-
     private int orderTTLMinutes;
 
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     @Transactional
     public CreateOrderResponse create(final CreateOrderRequest request){
@@ -187,26 +178,19 @@ public class OrderService {
     }
 
     public void notify(final Integer orderId){
-        try {
-            financeService.created(orderId);
-
-            notifyCustomer(orderId);
-            notifyMerchants(orderId);
-        } catch (Exception e){
-            LOGGER.warn("Unexpected error", e);
-        }
+        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_FINANCE, "", orderId);
+        notifyCustomer(orderId);
+        notifyMerchants(orderId);
     }
 
-    public void notifyCustomer( Integer orderId)
-            throws InvalidCarOfferTokenException, IOException, MessagingException {
-        customerMailer.notify(orderId);
+    public void notifyCustomer(Integer orderId) {
+        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_NOTIFICATION_CUSTOMER, "", orderId);
     }
 
-    public void notifyMerchants( Integer orderId)
-            throws InvalidCarOfferTokenException, IOException, MessagingException {
+    public void notifyMerchants(Integer orderId){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
-            throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
+            return;
         }
 
         final Set<Integer> merchantIds = order.getLines().stream()
@@ -214,7 +198,7 @@ public class OrderService {
                 .collect(Collectors.toSet());
 
         for (Integer merchantId : merchantIds){
-            merchantMailer.notify(orderId, merchantId);
+            rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_NOTIFICATION_MERCHANT, "", orderId + "." + merchantId);
         }
     }
 

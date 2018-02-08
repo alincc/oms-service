@@ -28,14 +28,22 @@ public class MerchantBackend {
 
     @Loggable("Profile.Merchant.findById")
     public MerchantDto findById(Integer id){
-        final List<MerchantDto> merchants = search(Collections.singletonList(id));
+        return findById(id, rest);
+    }
+
+    public MerchantDto findById(Integer id, final RestClient rest){
+        final List<MerchantDto> merchants = search(Collections.singletonList(id), rest);
         if (merchants.isEmpty()){
             throw new NotFoundException(OMSErrorCode.MERCHANT_NOT_FOUND);
         }
         return merchants.stream().filter(m -> id.equals(m.getId())).findFirst().get();
     }
+
     @Loggable("Profile.Merchant.search")
     public List<MerchantDto> search(final Collection<Integer> merchantIds){
+        return search(merchantIds, rest);
+    }
+    public List<MerchantDto> search(final Collection<Integer> merchantIds, final RestClient rest){
         final SearchMerchantRequest request = new SearchMerchantRequest();
         request.setIds(new ArrayList<>(merchantIds));
         try {
@@ -46,7 +54,6 @@ public class MerchantBackend {
             throw new ProfileException(e);
         }
     }
-
 
     public String getUrl() {
         return url;

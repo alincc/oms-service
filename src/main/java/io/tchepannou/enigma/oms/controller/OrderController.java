@@ -64,15 +64,9 @@ public class OrderController {
             @RequestHeader(name= Headers.DEVICE_UID, required = false) String deviceUID,
             @RequestBody @Valid CheckoutOrderRequest request
     ) {
-        try {
-
-            return orderService.checkout(orderId, deviceUID, request);
-
-        } finally {
-
-            orderService.notify(orderId);
-
-        }
+        final CheckoutOrderResponse response = orderService.checkout(orderId, deviceUID, request);
+        orderService.notify(orderId);
+        return response;
     }
 
 

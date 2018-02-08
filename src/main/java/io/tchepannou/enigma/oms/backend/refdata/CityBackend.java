@@ -23,6 +23,10 @@ public class CityBackend {
 
     @Loggable("RefData.City.search")
     public List<CityDto> search(Collection<Integer> ids){
+        return search(ids, rest);
+    }
+
+    public List<CityDto> search(Collection<Integer> ids, RestClient rest){
         try {
 
             final String uri = url + "?ids=" + Joiner.on(",").join(ids) + "&limit=" + Integer.MAX_VALUE;

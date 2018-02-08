@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.mail;
+package io.tchepannou.enigma.oms.service.mq.notification;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +12,7 @@ public class OrderMailModel {
     private String siteBrandName;
     private Integer orderId;
     private String customerName;
-    private List<OrderLineData> lines;
+    private List<OrderLineModel> lines;
     private String formattedOrderDateTime;
     private String formattedTotalPrice;
 }

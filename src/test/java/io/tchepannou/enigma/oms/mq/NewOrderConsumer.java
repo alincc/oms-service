@@ -1,6 +1,6 @@
 package io.tchepannou.enigma.oms.mq;
 
-import io.tchepannou.enigma.ferari.config.MQConfig;
+import io.tchepannou.enigma.oms.config.MQConfig;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

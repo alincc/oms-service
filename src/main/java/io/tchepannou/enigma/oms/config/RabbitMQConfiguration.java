@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.ferari.config;
+package io.tchepannou.enigma.oms.config;
 
 import io.tchepannou.enigma.oms.service.mq.QueueNames;
 import org.springframework.amqp.core.AmqpAdmin;

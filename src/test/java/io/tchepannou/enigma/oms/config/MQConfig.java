@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.ferari.config;
+package io.tchepannou.enigma.oms.config;
 
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;

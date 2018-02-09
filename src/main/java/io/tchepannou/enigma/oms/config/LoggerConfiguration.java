@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.ferari.config;
+package io.tchepannou.enigma.oms.config;
 
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.core.logger.KVLoggerAspect;

@@ -243,7 +243,9 @@ public class OrderControllerIT {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
 
-                .andReturn();
+                .andReturn()
+        ;
+        Thread.sleep(sleepMillis);
 
         // Then
         final Order order = orderRepository.findOne(100);
@@ -352,10 +354,9 @@ public class OrderControllerIT {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
         ;
-
-        // Then
         Thread.sleep(sleepMillis);
 
+        // Then
         assertThat(receiver.getOrderId()).isEqualTo(110);
     }
 

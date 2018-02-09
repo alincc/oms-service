@@ -1,13 +1,11 @@
 package io.tchepannou.enigma.oms.service.mq.notification;
 
-import com.google.common.base.Strings;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.backend.refdata.CityBackend;
 import io.tchepannou.enigma.oms.backend.refdata.SiteBackend;
-import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
@@ -51,12 +49,6 @@ public abstract class BaseNotificationConsumer extends MQConsumer {
     @Value("${enigma.assetUrl}")
     protected String assetUrl;
 
-
-    protected boolean isValidOrder(final Order order){
-        return order != null
-                && !Strings.isNullOrEmpty(order.getEmail())
-                && OrderStatus.CONFIRMED.equals(order.getStatus());
-    }
 
     protected Mail buildMail (
             final String subject,

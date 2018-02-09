@@ -3,6 +3,7 @@ package io.tchepannou.enigma.oms.service.mq.notification;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
+import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.service.Mail;
 import io.tchepannou.enigma.oms.service.mq.QueueNames;
@@ -34,7 +35,7 @@ public class MerchantConsumer extends BaseNotificationConsumer {
         LOGGER.info("Consuming {}", orderId);
         try {
             final Order order = orderRepository.findOne(orderId);
-            if (!isValidOrder(order)){
+            if (!shouldConsume(order)){
                 LOGGER.error("Order#{} is not valid", orderId);
                 return;
             }
@@ -58,7 +59,7 @@ public class MerchantConsumer extends BaseNotificationConsumer {
     private void notify (Order order, Integer merchantId)
             throws InvalidCarOfferTokenException, IOException, MessagingException
     {
-        if (!isValidOrder(order)){
+        if (!shouldConsume(order)){
             return;
         }
         final RestClient rest = createRestClient();
@@ -77,4 +78,10 @@ public class MerchantConsumer extends BaseNotificationConsumer {
 
         emailService.send(mail);
     }
+
+    private boolean shouldConsume(final Order order){
+        return order != null
+                && OrderStatus.CONFIRMED.equals(order.getStatus());
+    }
+
 }

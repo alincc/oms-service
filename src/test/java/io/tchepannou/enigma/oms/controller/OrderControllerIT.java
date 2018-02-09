@@ -21,10 +21,8 @@ import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.mq.NewOrderConsumer;
-import io.tchepannou.enigma.oms.repository.AccountRepository;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
-import io.tchepannou.enigma.oms.repository.TransactionRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
@@ -88,12 +86,6 @@ public class OrderControllerIT {
     @Autowired
     private OrderLineRepository orderLineRepository;
 
-    @Autowired
-    private AccountRepository accountRepository;
-
-    @Autowired
-    private TransactionRepository transactionRepository;
-
 
     private DateFormat dateFormat;
 
@@ -106,9 +98,6 @@ public class OrderControllerIT {
 
     @Value("${enigma.service.refdata.port}")
     private int refdataPort;
-
-    @Value("${spring.mail.port}")
-    private int smtpPort;
 
     @Value("${enigma.test.sleepMillis}")
     private long sleepMillis;
@@ -408,156 +397,6 @@ public class OrderControllerIT {
         ;
 
     }
-
-
-    /* ==== TRANSACTIONS ==== */
-//    @Test
-//    public void shouldRecordTransactionOnCheckout() throws Exception {
-//        final CheckoutOrderRequest request = createCheckoutOrderRequest();
-//
-//        mockMvc
-//                .perform(
-//                        post("/v1/orders/110/checkout")
-//                                .contentType(MediaType.APPLICATION_JSON)
-//                                .content(mapper.writeValueAsString(request))
-//                )
-//
-//
-//                .andDo(MockMvcResultHandlers.print())
-//                .andExpect(status().isOk())
-//
-//                .andReturn();
-//
-//        // Then
-//        final Order order = orderRepository.findOne(110);
-//        Thread.sleep(15000);
-//
-//        final Account account1101 = accountRepository.findByTypeAndReferenceId(AccountType.MERCHANT, 1101);
-//        assertThat(account1101.getBalance()).isEqualTo(new BigDecimal(5300.00).setScale(2));
-//        assertThat(account1101.getCurrencyCode()).isEqualTo("XAF");
-//        assertThat(account1101.getReferenceId()).isEqualTo(1101);
-//        assertThat(account1101.getType()).isEqualTo(AccountType.MERCHANT);
-//        assertThat(account1101.getSiteId()).isEqualTo(11);
-//
-//        final List<Transaction> tx1101 = transactionRepository.findByAccount(account1101);
-//        assertThat(tx1101).hasSize(1);
-//        assertThat(tx1101.get(0).getAmount()).isEqualTo(new BigDecimal(6000.00).setScale(2));
-//        assertThat(tx1101.get(0).getFees()).isEqualTo(new BigDecimal(700.00).setScale(2));
-//        assertThat(tx1101.get(0).getNet()).isEqualTo(new BigDecimal(5300.00).setScale(2));
-//        assertThat(tx1101.get(0).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
-//        assertThat(tx1101.get(0).getType()).isEqualTo(TransactionType.BOOKING);
-//        assertThat(tx1101.get(0).getReferenceId()).isEqualTo(1000);
-//
-//
-//        final Account account1102 = accountRepository.findByTypeAndReferenceId(AccountType.MERCHANT, 1102);
-//        assertThat(account1102.getBalance()).isEqualTo(new BigDecimal((10000.00 + 10700.00)).setScale(2));
-//        assertThat(account1102.getCurrencyCode()).isEqualTo("XAF");
-//        assertThat(account1102.getReferenceId()).isEqualTo(1102);
-//        assertThat(account1102.getType()).isEqualTo(AccountType.MERCHANT);
-//        assertThat(account1102.getSiteId()).isEqualTo(11);
-//
-//        final List<Transaction> tx1102 = transactionRepository.findByAccount(account1102);
-//        assertThat(tx1102).hasSize(1);
-//        assertThat(tx1102.get(0).getAmount()).isEqualTo(new BigDecimal(12000.00).setScale(2));
-//        assertThat(tx1102.get(0).getFees()).isEqualTo(new BigDecimal(1300.00).setScale(2));
-//        assertThat(tx1102.get(0).getNet()).isEqualTo(new BigDecimal(10700.00).setScale(2));
-//        assertThat(tx1102.get(0).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
-//        assertThat(tx1102.get(0).getType()).isEqualTo(TransactionType.BOOKING);
-//        assertThat(tx1102.get(0).getReferenceId()).isEqualTo(1001);
-//
-//        final Account account11 = accountRepository.findByTypeAndReferenceId(AccountType.SITE, 11);
-//        assertThat(account11.getBalance()).isEqualTo(new BigDecimal((2000)).setScale(2));
-//        assertThat(account11.getCurrencyCode()).isEqualTo("XAF");
-//        assertThat(account11.getReferenceId()).isEqualTo(11);
-//        assertThat(account11.getType()).isEqualTo(AccountType.SITE);
-//        assertThat(account11.getSiteId()).isEqualTo(11);
-//
-//        final List<Transaction> tx11 = transactionRepository.findByAccount(account11);
-//        assertThat(tx11).hasSize(2);
-//
-//        assertThat(tx11.get(0).getAmount()).isEqualTo(new BigDecimal(700.00).setScale(2));
-//        assertThat(tx11.get(0).getFees()).isEqualTo(new BigDecimal(0.00).setScale(2));
-//        assertThat(tx11.get(0).getNet()).isEqualTo(new BigDecimal(700.00).setScale(2));
-//        assertThat(tx11.get(0).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
-//        assertThat(tx11.get(0).getType()).isEqualTo(TransactionType.BOOKING);
-//        assertThat(tx11.get(0).getReferenceId()).isEqualTo(1000);
-//
-//        assertThat(tx11.get(1).getAmount()).isEqualTo(new BigDecimal(1300.00).setScale(2));
-//        assertThat(tx11.get(1).getFees()).isEqualTo(new BigDecimal(0.00).setScale(2));
-//        assertThat(tx11.get(1).getNet()).isEqualTo(new BigDecimal(1300.00).setScale(2));
-//        assertThat(tx11.get(1).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
-//        assertThat(tx11.get(1).getType()).isEqualTo(TransactionType.BOOKING);
-//        assertThat(tx11.get(1).getReferenceId()).isEqualTo(1001);
-//    }
-//
-//    @Test
-//    public void shouldSendEmailToCustomerAndMerchantOnCheckout() throws Exception {
-//        final CheckoutOrderRequest request = createCheckoutOrderRequest();
-//
-//        mockMvc
-//                .perform(
-//                        post("/v1/orders/110/checkout")
-//                                .contentType(MediaType.APPLICATION_JSON)
-//                                .content(mapper.writeValueAsString(request))
-//                )
-//
-//                .andDo(MockMvcResultHandlers.print())
-//                .andExpect(status().isOk())
-//
-//                .andReturn();
-//
-//        // Then
-//        mail.waitForIncomingEmail(5000, 1);
-//        final MimeMessage[] msgs = mail.getReceivedMessages();
-//
-//        // Then
-//        assertThat(msgs).hasSize(1);
-//    }
-
-//    /* ==== SEND EMAIL NOTIFICATION_CUSTOMER ==== */
-//    @Test
-//    public void shouldSendEmailToCustomer() throws Exception {
-//        // Given
-//        mockMvc
-//                .perform(get("/v1/orders/300/notify/customer"))
-//
-//                .andDo(MockMvcResultHandlers.print())
-//                .andExpect(status().isOk());
-//
-//        // When
-////        mail.waitForIncomingEmail(5000, 1);
-////        final MimeMessage[] msgs = mail.getReceivedMessages();
-////
-////        // Then
-////        assertThat(msgs).hasSize(1);
-////        assertThat(Arrays.asList(msgs[0].getRecipients(Message.RecipientType.TO))).containsExactly(new InternetAddress("ray@gmail.com"));
-////        assertThat(Arrays.asList(msgs[0].getSubject())).contains("[Enigma-Voyages] Travel Confirmation - Order #300");
-//    }
-//
-//
-//    /* ==== SEND EMAIL NOTIFICATION_CUSTOMER ==== */
-//    @Test
-//    public void shouldSendEmailToMerchant() throws Exception {
-//        // Given
-//        mockMvc
-//                .perform(get("/v1/orders/300/notify/merchants"))
-//
-//                .andDo(MockMvcResultHandlers.print())
-//                .andExpect(status().isOk());
-//
-//        // When
-////        mail.waitForIncomingEmail(5000, 1);
-////        final MimeMessage[] msgs = mail.getReceivedMessages();
-//
-//        // Then
-////        assertThat(msgs).isNotEmpty();
-//
-////        assertThat(Arrays.asList(msgs[0].getRecipients(Message.RecipientType.TO))).containsExactly(new InternetAddress("merchant2001@gmail.com"));
-////        assertThat(Arrays.asList(msgs[0].getSubject())).contains("[Enigma-Voyages] Travel Confirmation - Order #300");
-////
-////        assertThat(Arrays.asList(msgs[1].getRecipients(Message.RecipientType.TO))).containsExactly(new InternetAddress("merchant2002@gmail.com"));
-////        assertThat(Arrays.asList(msgs[1].getSubject())).contains("[Enigma-Voyages] Travel Confirmation - Order #300");
-//    }
 
 
 

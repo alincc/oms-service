@@ -23,6 +23,7 @@ public class MQTestConfig {
     public Binding testBinding(){
         // Given
         final Queue queue = new Queue(QUEUE, false);
+//        admin.declareQueue(queue);
 
         return BindingBuilder
                 .bind(queue)

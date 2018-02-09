@@ -109,6 +109,9 @@ public class OrderControllerIT {
     @Value("${spring.mail.port}")
     private int smtpPort;
 
+    @Value("${enigma.test.sleepMillis}")
+    private long sleepMillis;
+
     @Autowired
     private NewOrderConsumer receiver;
 
@@ -351,7 +354,7 @@ public class OrderControllerIT {
         ;
 
         // Then
-        Thread.sleep(5000);
+        Thread.sleep(sleepMillis);
 
         assertThat(receiver.getOrderId()).isEqualTo(110);
     }

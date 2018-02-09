@@ -4,6 +4,8 @@ spring:
     port: 3025
 
 enigma:
+  test:
+    sleepMillis: 30000
   service:
     ferari:
       port: 38081

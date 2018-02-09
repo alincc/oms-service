@@ -18,25 +18,26 @@ import java.util.Collections;
 
 @Component
 public class CustomerConsumer extends BaseNotificationConsumer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MerchantConsumer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CustomerConsumer.class);
 
     @Transactional
     @RabbitListener(queues = QueueNames.QUEUE_NOTIFICATION_CUSTOMER)
     public void consume (Integer orderId){
         LOGGER.info("Consuming {}", orderId);
         try {
-            notify(orderId);
+            final Order order = orderRepository.findOne(orderId);
+            if (!isValidOrder(order)){
+                LOGGER.error("Order#{} is not valid", orderId);
+                return;
+            }
+            notify(order);
         } catch (Exception e){
             LOGGER.warn("Unable to consume message: {}", orderId, e);
         }
     }
 
-    private void notify (Integer orderId)
+    private void notify (final Order order)
         throws InvalidCarOfferTokenException, IOException, MessagingException {
-        final Order order = orderRepository.findOne(orderId);
-        if (!isValidOrder(order)){
-            return;
-        }
 
         final RestClient rest = createRestClient();
         final SiteDto site = siteBackend.findById(order.getSiteId(), rest);

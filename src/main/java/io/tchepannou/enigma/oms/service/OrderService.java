@@ -36,8 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Component
 @ConfigurationProperties("enigma.service.order")
@@ -178,29 +176,9 @@ public class OrderService {
     }
 
     public void notify(final Integer orderId){
-        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_FINANCE, "", orderId);
-        notifyCustomer(orderId);
-        notifyMerchants(orderId);
+        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_NEW_ORDER, "", orderId);
     }
 
-    public void notifyCustomer(Integer orderId) {
-        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_NOTIFICATION_CUSTOMER, "", orderId);
-    }
-
-    public void notifyMerchants(Integer orderId){
-        final Order order = orderRepository.findOne(orderId);
-        if (order == null){
-            return;
-        }
-
-        final Set<Integer> merchantIds = order.getLines().stream()
-                .map(l -> l.getMerchantId())
-                .collect(Collectors.toSet());
-
-        for (Integer merchantId : merchantIds){
-            rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_NOTIFICATION_MERCHANT, "", orderId + "." + merchantId);
-        }
-    }
 
     private void book(final Order order){
         if (OrderStatus.PENDING.equals(order)){

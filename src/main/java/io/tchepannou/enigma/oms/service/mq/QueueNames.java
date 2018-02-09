@@ -5,7 +5,5 @@ public interface QueueNames {
     String QUEUE_NOTIFICATION_CUSTOMER = "enigma-order-customer-queue";
     String QUEUE_NOTIFICATION_MERCHANT = "enigma-order-merchant-queue";
 
-    String EXCHANGE_FINANCE = "enigma-order-finance-exchange";
-    String EXCHANGE_NOTIFICATION_CUSTOMER = "enigma-order-customer-exchange";
-    String EXCHANGE_NOTIFICATION_MERCHANT = "enigma-order-merchant-exchange";
+    String EXCHANGE_NEW_ORDER = "enigma-new-order-exchange";
 }

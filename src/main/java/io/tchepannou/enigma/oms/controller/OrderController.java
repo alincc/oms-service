@@ -5,7 +5,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.tchepannou.core.rest.Headers;
-import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
@@ -25,9 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.mail.MessagingException;
 import javax.validation.Valid;
-import java.io.IOException;
 
 @RestController
 @RequestMapping(value="/v1/orders", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -78,27 +75,5 @@ public class OrderController {
     })
     public GetOrderResponse findById(@PathVariable Integer orderId) {
         return orderService.findById(orderId);
-    }
-
-    @RequestMapping(value="/{orderId}/notify/customer", method = RequestMethod.GET)
-    @ApiOperation(value = "Get")
-    @ApiResponses({
-            @ApiResponse(code=200, message = "Success"),
-            @ApiResponse(code=404, message = "Order not found", response = OMSErrorResponse.class),
-    })
-    public void notifyCustomer(@PathVariable Integer orderId)
-        throws InvalidCarOfferTokenException, IOException, MessagingException {
-        orderService.notifyCustomer(orderId);
-    }
-
-    @RequestMapping(value="/{orderId}/notify/merchants", method = RequestMethod.GET)
-    @ApiOperation(value = "Get")
-    @ApiResponses({
-            @ApiResponse(code=200, message = "Success"),
-            @ApiResponse(code=404, message = "Order not found", response = OMSErrorResponse.class),
-    })
-    public void notifyMerchants(@PathVariable Integer orderId)
-            throws InvalidCarOfferTokenException, IOException, MessagingException {
-        orderService.notifyMerchants(orderId);
     }
 }

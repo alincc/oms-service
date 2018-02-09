@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.config;
+package io.tchepannou.enigma.ferari.config;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;

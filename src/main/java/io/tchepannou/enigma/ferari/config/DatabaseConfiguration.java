@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.config;
+package io.tchepannou.enigma.ferari.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

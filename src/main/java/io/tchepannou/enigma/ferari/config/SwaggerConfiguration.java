@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.config;
+package io.tchepannou.enigma.ferari.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;

@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.config;
+package io.tchepannou.enigma.ferari.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tchepannou.core.rest.CurrentRequestProvider;
@@ -10,9 +10,6 @@ import io.tchepannou.enigma.oms.service.CurrentRequestProviderImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
 
 @Configuration
 public class RestConfiguration {

@@ -33,6 +33,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -340,6 +341,7 @@ public class OrderControllerIT {
     }
 
     @Test
+    @Ignore
     public void shouldPublishEventOnCheckout() throws Exception {
         // When
         final CheckoutOrderRequest request = createCheckoutOrderRequest();

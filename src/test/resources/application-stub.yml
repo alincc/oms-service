@@ -5,7 +5,7 @@ spring:
 
 enigma:
   test:
-    sleepMillis: 30000
+    sleepMillis: 5000
   service:
     ferari:
       port: 38081

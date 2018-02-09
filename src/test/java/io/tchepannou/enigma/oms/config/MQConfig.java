@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.mq;
+package io.tchepannou.enigma.oms.config;
 
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class MQTestConfig {
+public class MQConfig {
     public static final String QUEUE = "order-test";
 
     @Autowired
@@ -23,8 +23,9 @@ public class MQTestConfig {
     public Binding testBinding(){
         // Given
         final Queue queue = new Queue(QUEUE, false);
-//        admin.declareQueue(queue);
-
+        if (admin.getQueueProperties(QUEUE) == null){
+            admin.declareQueue(queue);
+        }
         return BindingBuilder
                 .bind(queue)
                 .to(newOrderFanout)

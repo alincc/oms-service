@@ -2,7 +2,6 @@ package io.tchepannou.enigma.oms.backend.profile;
 
 import io.tchepannou.core.logger.Loggable;
 import io.tchepannou.core.rest.RestClient;
-import io.tchepannou.core.rest.exception.HttpException;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.exception.NotFoundException;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
@@ -46,13 +45,7 @@ public class MerchantBackend {
     public List<MerchantDto> search(final Collection<Integer> merchantIds, final RestClient rest){
         final SearchMerchantRequest request = new SearchMerchantRequest();
         request.setIds(new ArrayList<>(merchantIds));
-        try {
-
-            return rest.post(url + "/search", request, SearchMerchantResponse.class).getBody().getMerchants();
-
-        } catch (HttpException e){
-            throw new ProfileException(e);
-        }
+        return rest.post(url + "/search", request, SearchMerchantResponse.class).getBody().getMerchants();
     }
 
     public String getUrl() {

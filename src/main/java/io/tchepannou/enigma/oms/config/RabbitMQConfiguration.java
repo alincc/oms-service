@@ -61,31 +61,25 @@ public class RabbitMQConfiguration {
 
     @Bean
     public Binding financeBinding() {
-        final Queue queue = new Queue(QueueNames.QUEUE_FINANCE, false);
-        final Exchange exchange = newOrderFanoutExchange();
-
-        return BindingBuilder
-                .bind(queue)
-                .to(exchange)
-                .with(queue.getName())
-                .noargs();
+        return createBinding(QueueNames.QUEUE_FINANCE, newOrderFanoutExchange());
     }
 
     @Bean
     public Binding customerNotificationBinding() {
-        final Queue queue = new Queue(QueueNames.QUEUE_NOTIFICATION_CUSTOMER, false);
-        final Exchange exchange = newOrderFanoutExchange();
-        return BindingBuilder
-                .bind(queue)
-                .to(exchange)
-                .with(queue.getName())
-                .noargs();
+        return createBinding(QueueNames.QUEUE_NOTIFICATION_CUSTOMER, newOrderFanoutExchange());
     }
 
     @Bean
     public Binding merchantNotificationBinding() {
-        final Queue queue = new Queue(QueueNames.QUEUE_NOTIFICATION_MERCHANT, false);
-        final Exchange exchange = newOrderFanoutExchange();
+        return createBinding(QueueNames.QUEUE_NOTIFICATION_MERCHANT, newOrderFanoutExchange());
+    }
+
+    private Binding createBinding(final String name, final Exchange exchange){
+        final Queue queue = new Queue(name, false);
+
+        if (!isQueueExist(name)) {
+            amqpAdmin().declareQueue(queue);
+        }
         return BindingBuilder
                 .bind(queue)
                 .to(exchange)
@@ -93,4 +87,7 @@ public class RabbitMQConfiguration {
                 .noargs();
     }
 
+    private boolean isQueueExist(final String name){
+        return amqpAdmin().getQueueProperties(name) != null;
+    }
 }

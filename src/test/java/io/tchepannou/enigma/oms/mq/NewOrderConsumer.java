@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.mq;
 
+import io.tchepannou.enigma.oms.config.MQConfig;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +14,7 @@ public class NewOrderConsumer {
 
     private Integer orderId;
 
-    @RabbitListener(queues = MQTestConfig.QUEUE)
+    @RabbitListener(queues = MQConfig.QUEUE)
     public void onReceive(Integer orderId){
         LOGGER.info("Consuming {}", orderId);
         this.orderId = orderId;

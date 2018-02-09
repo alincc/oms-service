@@ -3,7 +3,6 @@ package io.tchepannou.enigma.oms.backend.refdata;
 import com.google.common.base.Joiner;
 import io.tchepannou.core.logger.Loggable;
 import io.tchepannou.core.rest.RestClient;
-import io.tchepannou.core.rest.exception.HttpException;
 import io.tchepannou.enigma.refdata.client.dto.CityDto;
 import io.tchepannou.enigma.refdata.client.rr.CityListResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,15 +26,8 @@ public class CityBackend {
     }
 
     public List<CityDto> search(Collection<Integer> ids, RestClient rest){
-        try {
-
-            final String uri = url + "?ids=" + Joiner.on(",").join(ids) + "&limit=" + Integer.MAX_VALUE;
-            return rest.get(uri, CityListResponse.class).getBody().getCities();
-
-        } catch (HttpException e){
-            throw new RefDataException(e);
-        }
-
+        final String uri = url + "?ids=" + Joiner.on(",").join(ids) + "&limit=" + Integer.MAX_VALUE;
+        return rest.get(uri, CityListResponse.class).getBody().getCities();
     }
 
     public String getUrl() {

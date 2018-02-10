@@ -81,6 +81,7 @@ CREATE TABLE T_TRANSACTION(
   entry_datetime   DATETIME      NOT NULL,
   transaction_datetime DATETIME  NOT NULL,
 
+  UNIQUE(account_fk, reference_id, type),
   PRIMARY KEY (id)
 ) ENGINE = InnoDB;
 

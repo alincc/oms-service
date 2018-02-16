@@ -5,7 +5,7 @@ import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetupTest;
 import io.tchepannou.core.rest.Headers;
 import io.tchepannou.core.test.jetty.StubHandler;
-import io.tchepannou.enigma.ferari.client.CarOfferToken;
+import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
@@ -429,11 +429,11 @@ public class OrderControllerIT {
 
     private CreateOrderRequest createCreateOrderRequest(int travellerCount) throws Exception {
         final Date departureDate = dateFormat.parse("2030-04-15T05:00:00+0000");
-        final CarOfferToken carOfferToken = createCarOfferToken(100, 1000 , departureDate, travellerCount);
+        final TransportationOfferToken TransportationOfferToken = createTransportationOfferToken(100, 1000 , departureDate, travellerCount);
 
         final List<OfferLineDto> lines = new ArrayList();
         final OfferLineDto line = new OfferLineDto();
-        line.setToken(carOfferToken.toString());
+        line.setToken(TransportationOfferToken.toString());
         line.setType(OfferType.CAR);
         line.setDescription("description #1");
         line.setMerchantId(101);
@@ -449,8 +449,8 @@ public class OrderControllerIT {
         return request;
     }
 
-    private CarOfferToken createCarOfferToken(Integer productId, Integer priceId, Date departureDate, int travellerCount){
-        final CarOfferToken token = new CarOfferToken();
+    private TransportationOfferToken createTransportationOfferToken(Integer productId, Integer priceId, Date departureDate, int travellerCount){
+        final TransportationOfferToken token = new TransportationOfferToken();
         token.setProductId(productId);
         token.setTravellerCount(travellerCount);
         token.setPriceId(priceId);

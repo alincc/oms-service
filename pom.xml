@@ -23,7 +23,7 @@
 
         <!-- Library versions - in ALPHABETICAL ORDER-->
         <rest-client.version>1.0.6</rest-client.version>
-        <ferari-client.version>1.0.21</ferari-client.version>
+        <ferari-client.version>1.0.26</ferari-client.version>
         <profile-client.version>1.0.4</profile-client.version>
         <oms-client.version>1.0.13</oms-client.version>
         <ref-data-client.version>1.0.9</ref-data-client.version>

@@ -1,7 +1,7 @@
 package io.tchepannou.enigma.oms.service;
 
-import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
+import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.dto.CustomerDto;
@@ -41,9 +41,9 @@ public class Mapper {
     public OrderLine toOrderLine(
             final OfferLineDto dto,
             final Order order
-    ) throws InvalidCarOfferTokenException{
+    ) throws InvalidCarOfferTokenException {
 
-        final CarOfferToken token = CarOfferToken.decode(dto.getToken());
+        final TransportationOfferToken token = TransportationOfferToken.decode(dto.getToken());
         final BigDecimal unitPrice = token.getAmount();
         final BigDecimal quantity = new BigDecimal(token.getTravellerCount());
 

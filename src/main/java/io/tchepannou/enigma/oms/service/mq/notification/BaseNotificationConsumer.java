@@ -1,8 +1,8 @@
 package io.tchepannou.enigma.oms.service.mq.notification;
 
 import io.tchepannou.core.rest.RestClient;
-import io.tchepannou.enigma.ferari.client.CarOfferToken;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
+import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.backend.refdata.CityBackend;
 import io.tchepannou.enigma.oms.backend.refdata.SiteBackend;
@@ -76,9 +76,9 @@ public abstract class BaseNotificationConsumer extends MQConsumer {
         // Cities
         final Set<Integer> merchantIds = new HashSet<>();
         final Set<Integer> cityIds = new HashSet<>();
-        final Map<Integer, CarOfferToken> offerTokens = new HashMap<>();
+        final Map<Integer, TransportationOfferToken> offerTokens = new HashMap<>();
         for (OrderLine line : order.getLines()){
-            final CarOfferToken token = CarOfferToken.decode(line.getOfferToken());
+            final TransportationOfferToken token = TransportationOfferToken.decode(line.getOfferToken());
 
             cityIds.add(token.getDestinationId());
             cityIds.add(token.getOriginId());
@@ -99,7 +99,7 @@ public abstract class BaseNotificationConsumer extends MQConsumer {
             order.getLines().stream()
                     .filter(line -> filter.accept(line))
                     .map(line -> {
-                        final CarOfferToken token = offerTokens.get(line.getId());
+                        final TransportationOfferToken token = offerTokens.get(line.getId());
 
                         OrderLineModel data = new OrderLineModel();
                         data.setId(line.getId());

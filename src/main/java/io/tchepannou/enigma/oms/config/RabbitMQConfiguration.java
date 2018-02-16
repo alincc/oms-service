@@ -20,7 +20,7 @@ import java.net.URISyntaxException;
 
 @Configuration
 public class RabbitMQConfiguration {
-    @Value("${environment.CLOUDAMQP_URL:amqp://guest:guest@127.0.0.1}")
+    @Value("${amqp.url:amqp://guest:guest@127.0.0.1}")
     private String amqpUrl;
 
     @Bean

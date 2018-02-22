@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -65,13 +66,14 @@ public class MerchantConsumer extends BaseNotificationConsumer {
         final RestClient rest = createRestClient();
         final SiteDto site = siteBackend.findById(order.getSiteId(), rest);
         final MerchantDto merchant = merchantBackend.findById(merchantId, rest);
-
-        final OrderMailModel model = buildOrderMail(order, site, (l) -> merchantId.equals(l.getMerchantId()), rest);
+        final Locale locale = new Locale(merchant.getLanguage(), merchant.getCountryCode());
+        final OrderMailModel model = buildOrderMail(order, site, locale, (l) -> merchantId.equals(l.getMerchantId()), rest);
 
         final Mail mail = buildMail(
                 "Travel Confirmation - Order #" + order.getId(),
                 merchant.getEmail(),
                 "merchant",
+                locale,
                 site
         );
         mail.setModel(Collections.singletonMap("model", model));

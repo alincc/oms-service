@@ -54,6 +54,7 @@ public abstract class BaseNotificationConsumer extends MQConsumer {
             final String subject,
             final String to,
             final String template,
+            final Locale locale,
             final SiteDto site
     ){
         final String subjectPrefix = "[" + site.getBrandName() + "]";
@@ -61,12 +62,14 @@ public abstract class BaseNotificationConsumer extends MQConsumer {
         mail.setSubject(subjectPrefix + " " + subject);
         mail.setTo(to);
         mail.setTemplate(template);
+        mail.setLocale(locale);
         return mail;
     }
 
     protected OrderMailModel buildOrderMail(
             final Order order,
             final SiteDto site,
+            final Locale locale,
             final OrderLineFilter filter,
             final RestClient rest
     ) throws InvalidCarOfferTokenException{
@@ -93,8 +96,8 @@ public abstract class BaseNotificationConsumer extends MQConsumer {
 
         // Lines
         final DateFormat timeFormat = new SimpleDateFormat("HH:mm");
-        final DateFormat dateFormat = SimpleDateFormat.getDateInstance(DateFormat.MEDIUM);
-        final DateFormat dateTimeFormat = SimpleDateFormat.getDateTimeInstance();
+        final DateFormat dateFormat = SimpleDateFormat.getDateInstance(DateFormat.MEDIUM, locale);
+        final DateFormat dateTimeFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, locale);
         model.setLines(
             order.getLines().stream()
                     .filter(line -> filter.accept(line))

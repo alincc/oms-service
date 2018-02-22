@@ -43,7 +43,6 @@ public class OrderExpirerService {
 
         final RestConfig config = new RestConfig();
         config.setSerializer(new JsonSerializer(objectMapper));
-        config.setClientInfo("oms-service");
         final RestClient rest = new DefaultRestClient(config);
 
         LOGGER.info("{} {} orders to expire", orders.size(), status);

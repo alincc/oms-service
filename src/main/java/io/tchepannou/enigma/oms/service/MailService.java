@@ -36,6 +36,7 @@ public class MailService {
 
         Context context = new Context();
         context.setVariables(mail.getModel());
+        context.setLocale(mail.getLocale());
         String html = templateEngine.process(mail.getTemplate(), context);
 
         helper.setTo(mail.getTo());

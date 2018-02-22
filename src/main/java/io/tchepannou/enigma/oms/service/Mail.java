@@ -3,6 +3,7 @@ package io.tchepannou.enigma.oms.service;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Locale;
 import java.util.Map;
 
 @Getter
@@ -14,4 +15,5 @@ public class Mail {
     private String content;
     private Map<String, Object> model;
     private String template;
+    private Locale locale = Locale.getDefault();
 }

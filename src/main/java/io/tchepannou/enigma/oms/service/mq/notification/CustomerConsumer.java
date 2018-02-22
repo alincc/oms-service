@@ -11,16 +11,22 @@ import io.tchepannou.enigma.refdata.client.dto.SiteDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Locale;
 
 @Component
 public class CustomerConsumer extends BaseNotificationConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomerConsumer.class);
+
+    @Autowired
+    private MessageSource messageSource;
 
     @Transactional
     @RabbitListener(queues = QueueNames.QUEUE_NOTIFICATION_CUSTOMER)
@@ -50,11 +56,13 @@ public class CustomerConsumer extends BaseNotificationConsumer {
         final RestClient rest = createRestClient();
         final SiteDto site = siteBackend.findById(order.getSiteId(), rest);
 
-        final OrderMailModel model = buildOrderMail(order, site, (l) -> true, rest);
+        final Locale locale = Locale.US;
+        final OrderMailModel model = buildOrderMail(order, site, locale, (l) -> true, rest);
         final Mail mail = buildMail(
-                "Travel Confirmation - Order #" + order.getId(),
+                messageSource.getMessage("mail.merchant.subject", new Object[]{}, locale),
                 order.getEmail(),
                 "customer",
+                locale,
                 site
         );
         mail.setModel(Collections.singletonMap("model", model));

@@ -37,7 +37,7 @@ public class CustomerConsumerIT extends NotificationConsumerTestBase {
         // Then
         assertThat(msgs).hasSize(1);
         assertThat(Arrays.asList(msgs[0].getRecipients(Message.RecipientType.TO))).containsExactly(new InternetAddress("ray.sponsible@gmail.com"));
-        assertThat(Arrays.asList(msgs[0].getSubject())).contains("[Enigma-Voyages] Travel Confirmation - Order #100");
+        assertThat(Arrays.asList(msgs[0].getSubject())).contains("[Enigma-Voyages] Confirmation de Voyage");
     }
 
     @Test

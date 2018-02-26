@@ -178,7 +178,7 @@ public class OrderControllerIT {
         assertThat(order.getStatus()).isEqualTo(OrderStatus.NEW);
         assertThat(order.getTotalAmount()).isEqualTo(new BigDecimal(12000).setScale(2));
         assertThat(order.getSiteId()).isEqualTo(request.getSiteId());
-        assertThat(order.getLanguageCode()).isNotNull();
+        assertThat(order.getLanguageCode()).isNull();
 
 
         final List<OrderLine> lines = orderLineRepository.findByOrder(order);

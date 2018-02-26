@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.service.mq.notification;
 
+import com.google.common.base.Strings;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
@@ -71,7 +72,7 @@ public class MerchantConsumer extends BaseNotificationConsumer {
         final RestClient rest = createRestClient();
         final SiteDto site = siteBackend.findById(order.getSiteId(), rest);
         final MerchantDto merchant = merchantBackend.findById(merchantId, rest);
-        final Locale locale = new Locale(merchant.getLanguage(), merchant.getCountryCode());
+        final Locale locale = getLocale(merchant, site);
         final OrderMailModel model = buildOrderMail(order, site, locale, (l) -> merchantId.equals(l.getMerchantId()), rest);
 
         final Mail mail = buildMail(
@@ -84,6 +85,13 @@ public class MerchantConsumer extends BaseNotificationConsumer {
         mail.setModel(Collections.singletonMap("model", model));
 
         emailService.send(mail);
+    }
+
+    private Locale getLocale(final MerchantDto merchant, final SiteDto site) {
+        final String lang = merchant.getLanguage();
+        return Strings.isNullOrEmpty(lang)
+                ? new Locale(site.getLanguage().getCode())
+                : new Locale(lang);
     }
 
     private boolean shouldConsume(final Order order){

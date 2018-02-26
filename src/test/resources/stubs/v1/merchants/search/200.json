@@ -6,6 +6,8 @@
       "thumbnailUrl": "https://scontent-dft4-1.xx.fbcdn.net/v/t1.0-1/c0.53.320.320/p320x320/293731_10200486280872043_1366685790_n.jpg?oh=0387036eba5efe6ac7ba6bc2e750d5e0&oe=5ABCEFEE",
       "websiteUrl": "https://www.facebook.com/pages/Buca-Voyages/424917690913003",
       "email": "merchant1000@gmail.com",
+      "countryCode": "CM",
+      "language": "en",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -17,6 +19,8 @@
       "id": 1001,
       "name": "Le Voyageur",
       "email": "merchant1001@gmail.com",
+      "countryCode": "CM",
+      "language": "fr",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -28,6 +32,8 @@
       "id": 1002,
       "name": "Touristique Express SA",
       "email": "merchant1002@gmail.com",
+      "countryCode": "CM",
+      "language": "en",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -39,6 +45,8 @@
       "id": 1101,
       "name": "Le Voyageur",
       "email": "merchant1101@gmail.com",
+      "countryCode": "CM",
+      "language": "en",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -50,6 +58,8 @@
       "id": 1102,
       "name": "Touristique Express SA",
       "email": "merchant1102@gmail.com",
+      "language": "en",
+      "countryCode": "CM",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -61,6 +71,8 @@
       "id": 2001,
       "name": "Test Express SA #2001",
       "email": "merchant2001@gmail.com",
+      "language": "en",
+      "countryCode": "CM",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -72,6 +84,8 @@
       "id": 2002,
       "name": "Test Express SA #2002",
       "email": "merchant2002@gmail.com",
+      "language": "en",
+      "countryCode": "CM",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -79,6 +93,5 @@
         "percent": 0.10
       }
     }
-
   ]
 }

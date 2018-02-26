@@ -178,6 +178,8 @@ public class OrderControllerIT {
         assertThat(order.getStatus()).isEqualTo(OrderStatus.NEW);
         assertThat(order.getTotalAmount()).isEqualTo(new BigDecimal(12000).setScale(2));
         assertThat(order.getSiteId()).isEqualTo(request.getSiteId());
+        assertThat(order.getLanguageCode()).isNotNull();
+
 
         final List<OrderLine> lines = orderLineRepository.findByOrder(order);
         assertThat(lines).hasSize(1);
@@ -249,6 +251,7 @@ public class OrderControllerIT {
         assertThat(order.getLastName()).isEqualTo(request.getLastName());
         assertThat(order.getEmail()).isEqualTo(request.getEmail());
         assertThat(order.getDeviceUID()).isEqualTo(deviceUID);
+        assertThat(order.getLanguageCode()).isEqualTo(request.getLanguageCode());
 
         final List<Traveller> travellers = travellerRepository.findByOrder(order);
         assertThat(travellers).hasSize(2);
@@ -379,6 +382,7 @@ public class OrderControllerIT {
                 .andExpect(jsonPath("$.order.paymentId", is(123)))
                 .andExpect(jsonPath("$.order.siteId", is(1)))
                 .andExpect(jsonPath("$.order.deviceUID", is("1234-1234")))
+                .andExpect(jsonPath("$.order.languageCode", is("fr")))
 
                 .andExpect(jsonPath("$.order.lines.length()", is(1)))
                 .andExpect(jsonPath("$.order.lines[0].bookingId", is(5678)))
@@ -423,6 +427,7 @@ public class OrderControllerIT {
         request.setLastName("Sponsible");
         request.setEmail("ray.sponsible@gmail.com");
         request.setMobilePayment(mobile);
+        request.setLanguageCode("fr");
 
         return request;
     }

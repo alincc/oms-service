@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>${subject}</title>
+    <title th:utext="#{mail.customer.subject}">Subject</title>
 
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -31,23 +31,19 @@
     <tr>
         <td style="padding: 20px;">
             <h3 style="color: darkgreen">Thanks</h3>
-            <p>
-                Your reservation has been booked and confirmed.
-                There is no need to call us to reconfirm this reservation.
-            </p>
+            <span th:utext="#{mail.customer.line1}">Your reservation has been booked and confirmed.</span>
+            <br/>
+            <span th:utext="#{mail.customer.line2}">There is no need to call us to reconfirm this reservation.</span>
         </td>
     </tr>
     <tr>
         <td style="padding: 20px;">
             <table width="100%">
                 <tr>
-                    <td>
-                        Order #<span class="order-id" th:text="${model.orderId}" style="color: darkgreen; font-size: larger">320392039209</span>
+                    <td align="right">
+                        <span th:text="${model.formattedOrderDateTime}">12 Jun, 2010</span>
                         <br/>
-                        <span class="order-date" th:text="${model.formattedOrderDateTime}">12 Jun, 2010</span>
-                    </td>
-                    <td class="customer-name" th:text="${model.customerName}">
-                        Ray Sponsible
+                        <span th:text="${model.customerName}">Ray Sponsible</span>
                     </td>
                 </tr>
             </table>
@@ -59,30 +55,30 @@
                 <table width="100%">
                     <tr>
                         <td colspan="3">
-                            <span class="departure-date" th:text="${line.formattedDepartureDate}">2018-01-01</span>
+                            <span th:text="${line.formattedDepartureDate}">2018-01-01</span>
                         </td>
                     </tr>
                     <tr>
                         <td width="40%">
-                            <h3 class="origin" style="margin: 0; padding: 0" th:text="${line.origin.displayName}">Yaounde</h3>
-                            <span class="departure-time" th:text="${line.formattedDepartureTime}">07:30</span>
+                            <h3 tyle="margin: 0; padding: 0" th:text="${line.origin.displayName}">Yaounde</h3>
+                            <span th:text="${line.formattedDepartureTime}">07:30</span>
                         </td>
                         <td><h3 style="margin: 0; padding: 0">&rarr;</h3></td>
                         <td width="40%">
-                            <h3 class="origin" style="margin: 0; padding: 0" th:text="${line.destination.displayName}">Douala</h3>
-                            <span class="arrival-time" th:text="${line.formattedArrivalTime}">11:30</span>
+                            <h3 th:text="${line.destination.displayName}" style="margin: 0; padding: 0" >Douala</h3>
+                            <span th:text="${line.formattedArrivalTime}">11:30</span>
                         </td>
                     </tr>
                     <tr>
                         <td colspan="2">
-                            <span class="carrier-name" th:text="${line.merchant.name}">BUCA VOYAGES</span>
+                            <span th:text="${line.merchant.name}" style="text-transform: uppercase">BUCA VOYAGES</span>
                             <br />
-                            <span class="traveller-count" th:text="${line.quantity}">3</span> Traveller(s)<br/>
+                            <span th:text="${line.quantity}">3</span>  <span th:text="#{mail.traveller_s}">Travellers</span><br/>
                             <br />
-                            Booking #: <span class="booking-id" th:text="${line.bookingId}">4309430</span>
+                            <span th:text="#{mail.booking_no}">Booking #</span>: <b th:text="${line.bookingId}">4309430</b>
                         </td>
                         <td valign="top">
-                            <span class="total-price" th:text="${line.formattedTotalPrice}">$350</span>
+                            <span th:text="${line.formattedTotalPrice}">$350</span>
                         </td>
                     </tr>
                 </table>
@@ -93,15 +89,20 @@
     </tr>
     <tr>
         <td style="padding: 40px 0 30px 0;">
-            Total: <span style="font-size: larger" th:text="${model.formattedTotalPrice}"></span>
+            <span th:text="#{mail.total}">Total</span>:
+            <span style="font-size: larger" th:text="${model.formattedTotalPrice}"></span>
         </td>
     </tr>
 </table>
 
+
 <hr />
 <div style="font-size: smaller; color: #404040">
-    Please do not reply to this message. This email was sent from a notification-only email address that cannot accept incoming email.
-    You are receiving this transactional email based on a recent booking or account-related update on <span th:text="${model.siteBrandName}" style="font-weight: bold;">Enigma-Voyages</span>.
+    <span th:utext="#{mail.footer.line1}">blablabla</span>
+    <br/>
+
+    <span th:utext="#{mail.footer.line2}">blablabla</span>
+    <span th:text="${model.siteBrandName}" style="font-weight: bold;">Enigma-Voyages</span>.
 </div>
 </body>
 </html>

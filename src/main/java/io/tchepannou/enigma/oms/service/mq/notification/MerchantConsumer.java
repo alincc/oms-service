@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,10 @@ public class MerchantConsumer extends BaseNotificationConsumer {
 
     @Autowired
     private MerchantBackend merchantBackend;
+
+    @Autowired
+    private MessageSource messageSource;
+
 
     @Transactional
     @RabbitListener(queues = QueueNames.QUEUE_NOTIFICATION_MERCHANT)
@@ -70,7 +75,7 @@ public class MerchantConsumer extends BaseNotificationConsumer {
         final OrderMailModel model = buildOrderMail(order, site, locale, (l) -> merchantId.equals(l.getMerchantId()), rest);
 
         final Mail mail = buildMail(
-                "Travel Confirmation - Order #" + order.getId(),
+                messageSource.getMessage("mail.merchant.subject", new Object[]{}, locale),
                 merchant.getEmail(),
                 "merchant",
                 locale,

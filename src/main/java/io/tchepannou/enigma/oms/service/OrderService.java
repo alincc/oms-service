@@ -122,6 +122,7 @@ public class OrderService {
         order.setFirstName(request.getFirstName());
         order.setLastName(request.getLastName());
         order.setEmail(request.getEmail());
+        order.setLanguageCode(request.getLanguageCode());
 
         // Save travellers
         for (final TravellerDto traveller : request.getTravellers()){

@@ -72,6 +72,9 @@ public class Order extends Persistent {
 
     private String email;
 
+    @Column(name="language_code")
+    private String languageCode;
+
     public boolean isExpired(){
         return expiryDateTime != null && expiryDateTime.getTime() < System.currentTimeMillis();
     }

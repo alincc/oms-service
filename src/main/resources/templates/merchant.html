@@ -30,18 +30,17 @@
 
     <tr>
         <td style="padding: 20px;">
-            <p th:utext="#{mail.merchant.line1}">A new reservation!!!</p>
+            <span th:utext="#{mail.merchant.line1}">A new reservation!!!</span>
         </td>
     </tr>
     <tr>
         <td style="padding: 20px;">
             <table width="100%">
                 <tr>
-                    <td>
-                        <span class="order-date" th:text="${model.formattedOrderDateTime}">12 Jun, 2010</span>
-                    </td>
-                    <td class="customer-name" th:text="${model.customerName}">
-                        Ray Sponsible
+                    <td align="right">
+                        <span th:text="${model.formattedOrderDateTime}">12 Jun, 2010</span>
+                        <br/>
+                        <span th:text="${model.customerName}">Ray Sponsible</span>
                     </td>
                 </tr>
             </table>
@@ -53,30 +52,30 @@
                 <table width="100%">
                     <tr>
                         <td colspan="3">
-                            <span class="departure-date" th:text="${line.formattedDepartureDate}">2018-01-01</span>
+                            <span th:text="${line.formattedDepartureDate}">2018-01-01</span>
                         </td>
                     </tr>
                     <tr>
                         <td width="40%">
-                            <h3 class="origin" style="margin: 0; padding: 0" th:text="${line.origin.displayName}">Yaounde</h3>
-                            <span class="departure-time" th:text="${line.formattedDepartureTime}">07:30</span>
+                            <h3 style="margin: 0; padding: 0" th:text="${line.origin.displayName}">Yaounde</h3>
+                            <span th:text="${line.formattedDepartureTime}">07:30</span>
                         </td>
                         <td><h3 style="margin: 0; padding: 0">&rarr;</h3></td>
                         <td width="40%">
-                            <h3 class="origin" style="margin: 0; padding: 0" th:text="${line.destination.displayName}">Douala</h3>
-                            <span class="arrival-time" th:text="${line.formattedArrivalTime}">11:30</span>
+                            <h3 style="margin: 0; padding: 0" th:text="${line.destination.displayName}">Douala</h3>
+                            <span th:text="${line.formattedArrivalTime}">11:30</span>
                         </td>
                     </tr>
                     <tr>
                         <td colspan="2">
-                            <span class="carrier-name" th:text="${line.merchant.name}">BUCA VOYAGES</span>
+                            <span th:text="${line.merchant.name}" style="text-transform: uppercase">BUCA VOYAGES</span>
                             <br />
-                            <span class="traveller-count" th:text="${line.quantity}">3</span> <span th:text="#{mail.traveller_s}">Travellers</span><br/>
+                            <span  th:text="${line.quantity}">3</span> <span th:text="#{mail.traveller_s}">Travellers</span><br/>
                             <br />
-                            <span th:text="#{mail.booking_no}">Booking #</span>: <span class="booking-id" th:text="${line.bookingId}">4309430</span>
+                            <span th:text="#{mail.booking_no}">Booking #</span>: <b th:text="${line.bookingId}">4309430</b>
                         </td>
                         <td valign="top">
-                            <span class="total-price" th:text="${line.formattedTotalPrice}">$350</span>
+                            <span th:text="${line.formattedTotalPrice}">$350</span>
                         </td>
                     </tr>
                 </table>

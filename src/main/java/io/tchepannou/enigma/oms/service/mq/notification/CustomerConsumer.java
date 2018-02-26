@@ -56,10 +56,10 @@ public class CustomerConsumer extends BaseNotificationConsumer {
         final RestClient rest = createRestClient();
         final SiteDto site = siteBackend.findById(order.getSiteId(), rest);
 
-        final Locale locale = Locale.US;
+        final Locale locale = getLocale(order, site);
         final OrderMailModel model = buildOrderMail(order, site, locale, (l) -> true, rest);
         final Mail mail = buildMail(
-                messageSource.getMessage("mail.merchant.subject", new Object[]{}, locale),
+                messageSource.getMessage("mail.customer.subject", new Object[]{}, locale),
                 order.getEmail(),
                 "customer",
                 locale,
@@ -68,5 +68,12 @@ public class CustomerConsumer extends BaseNotificationConsumer {
         mail.setModel(Collections.singletonMap("model", model));
 
         emailService.send(mail);
+    }
+
+    private Locale getLocale(final Order order, final SiteDto site) {
+        final String lang = order.getLanguageCode();
+        return Strings.isNullOrEmpty(lang)
+                ? new Locale(site.getLanguage().getCode())
+                : new Locale(lang);
     }
 }

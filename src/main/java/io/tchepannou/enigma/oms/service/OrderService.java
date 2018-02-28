@@ -11,6 +11,7 @@ import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
+import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
@@ -64,6 +65,9 @@ public class OrderService {
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    private TicketService ticketService;
 
     @Transactional
     public CreateOrderResponse create(final CreateOrderRequest request){
@@ -137,7 +141,7 @@ public class OrderService {
         charge(order, request);
 
         // Confirm order
-        confirm(order);
+        final List<TicketDto> tickets = confirm(order);
 
         // Log
         kv.add("OrderID", order.getId());
@@ -145,7 +149,7 @@ public class OrderService {
         kv.add("Action", "Checkout");
 
         // Saved order
-        return new CheckoutOrderResponse(order.getId());
+        return new CheckoutOrderResponse(order.getId(), tickets);
 
     }
 
@@ -206,18 +210,22 @@ public class OrderService {
         }
     }
 
-    private void confirm(final Order order){
+    private List<TicketDto> confirm(final Order order){
         if (OrderStatus.CONFIRMED.equals(order)){
             // Do not book pending request
             LOGGER.info("Order#{} has already been confirmed", order.getId());
-            return;
+            return ticketService.findByOrder(order);
         }
 
         try {
+
             ferari.confirm(order);
 
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepository.save(order);
+
+            return ticketService.create(order);
+
         } catch (FerrariException e){
             throw toOrderException(e, OMSErrorCode.CONFIRM_FAILURE);
         }
@@ -230,7 +238,9 @@ public class OrderService {
             return;
         }
 
-//            final Integer transactionId = tontine.charge(order, request);
+        if ("411 111 1111".equals(request.getMobilePayment().getNumber())){
+            throw new OrderException(OMSErrorCode.PAYMENT_FAILURE);
+        }
         order.setPaymentMethod(PaymentMethod.ONLINE);
         order.setPaymentId(-1);
         order.setStatus(OrderStatus.PAID);

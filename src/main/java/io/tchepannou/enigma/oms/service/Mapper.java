@@ -9,10 +9,12 @@ import io.tchepannou.enigma.oms.client.dto.ErrorDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.OrderDto;
 import io.tchepannou.enigma.oms.client.dto.OrderLineDto;
+import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
+import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
@@ -129,6 +131,20 @@ public class Mapper {
         dto.setOfferType(obj.getOfferType());
         dto.setOfferToken(obj.getOfferToken());
         dto.setMerchantId(obj.getMerchantId());
+        return dto;
+    }
+
+    public TicketDto toDto(final Ticket obj){
+        final TicketDto dto = new TicketDto();
+
+        dto.setId(obj.getId());
+        dto.setOrderId(obj.getOrder().getId());
+        dto.setBookingId(obj.getBookingId());
+        dto.setMerchantId(obj.getMerchantId());
+        dto.setPrintDateTime(obj.getPrintDateTime());
+        dto.setExpiryDateTime(obj.getExpiryDateTime());
+        dto.setOfferToken(obj.getOfferToken());
+        dto.setHash(obj.getHash());
         return dto;
     }
 

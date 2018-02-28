@@ -19,10 +19,12 @@ import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
+import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.mq.NewOrderConsumer;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
+import io.tchepannou.enigma.oms.repository.TicketRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
@@ -85,6 +87,9 @@ public class OrderControllerIT {
 
     @Autowired
     private OrderLineRepository orderLineRepository;
+
+    @Autowired
+    private TicketRepository ticketRepository;
 
 
     private DateFormat dateFormat;
@@ -222,6 +227,7 @@ public class OrderControllerIT {
     public void shouldCheckoutOrderWithMobileMoney() throws Exception {
         final CheckoutOrderRequest request = createCheckoutOrderRequest();
         final String deviceUID = UUID.randomUUID().toString();
+        final Date now = DateHelper.now();
 
         mockMvc
                 .perform(
@@ -268,11 +274,34 @@ public class OrderControllerIT {
         assertThat(lines).hasSize(2);
         assertThat(lines.get(0).getBookingId()).isEqualTo(1000);
         assertThat(lines.get(1).getBookingId()).isEqualTo(1001);
+
+        final List<Ticket> tickets = ticketRepository.findByOrder(order);
+        assertThat(tickets).hasSize(3);
+
+        assertThat(tickets.get(0).getMerchantId()).isEqualTo(lines.get(0).getMerchantId());
+        assertThat(tickets.get(0).getBookingId()).isEqualTo(lines.get(0).getBookingId());
+        assertThat(tickets.get(0).getOfferToken()).isEqualTo(lines.get(0).getOfferToken());
+        assertThat(tickets.get(0).getPrintDateTime()).isAfter(now);
+        assertThat(tickets.get(0).getExpiryDateTime()).isNotNull();
+        assertThat(tickets.get(0).getHash()).isNotNull();
+
+        assertThat(tickets.get(1).getMerchantId()).isEqualTo(lines.get(1).getMerchantId());
+        assertThat(tickets.get(1).getBookingId()).isEqualTo(lines.get(1).getBookingId());
+        assertThat(tickets.get(1).getOfferToken()).isEqualTo(lines.get(1).getOfferToken());
+        assertThat(tickets.get(1).getPrintDateTime()).isAfter(now);
+        assertThat(tickets.get(1).getExpiryDateTime()).isNotNull();
+        assertThat(tickets.get(1).getHash()).isNotNull();
+
+        assertThat(tickets.get(2).getMerchantId()).isEqualTo(lines.get(1).getMerchantId());
+        assertThat(tickets.get(2).getBookingId()).isEqualTo(lines.get(1).getBookingId());
+        assertThat(tickets.get(2).getOfferToken()).isEqualTo(lines.get(1).getOfferToken());
+        assertThat(tickets.get(2).getPrintDateTime()).isAfter(now);
+        assertThat(tickets.get(2).getExpiryDateTime()).isNotNull();
+        assertThat(tickets.get(2).getHash()).isNotNull();
     }
 
 //    @Test
 //    public void shouldNotCheckoutOrderWhenPaymentFailed() throws Exception {
-//        tontineHanderStub.setStatus(HttpStatus.CONFLICT.value());
 //        final CheckoutOrderRequest request = createCheckoutOrderRequest();
 //
 //        mockMvc

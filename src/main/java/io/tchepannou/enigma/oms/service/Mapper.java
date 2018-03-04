@@ -4,6 +4,7 @@ import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
+import io.tchepannou.enigma.oms.client.TicketToken;
 import io.tchepannou.enigma.oms.client.dto.CustomerDto;
 import io.tchepannou.enigma.oms.client.dto.ErrorDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
@@ -135,22 +136,18 @@ public class Mapper {
     }
 
     public TicketDto toDto(final Ticket obj){
-        final TravellerDto traveller = new TravellerDto();
-        traveller.setSex(obj.getSex());
-        traveller.setLastName(obj.getLastName());
-        traveller.setFirstName(obj.getFirstName());
+        final TicketToken token = new TicketToken();
+        token.setLastName(obj.getLastName());
+        token.setFirstName(obj.getFirstName());
+        token.setOfferToken(obj.getOrderLine().getOfferToken());
+        token.setMerchantId(obj.getOrderLine().getMerchantId());
+        token.setSequenceNumber(obj.getSequenceNumber());
+        token.setOrderLineId(obj.getOrderLine().getId());
+        token.setOrderId(obj.getOrderLine().getOrder().getId());
 
         final TicketDto dto = new TicketDto();
-        dto.setExpiryDateTime(obj.getExpiryDateTime());
         dto.setId(obj.getId());
-        dto.setMerchantId(obj.getOrderLine().getMerchantId());
-        dto.setOfferToken(obj.getOrderLine().getOfferToken());
-        dto.setOrderId(obj.getOrderLine().getOrder().getId());
-        dto.setOrderLineId(obj.getOrderLine().getId());
-        dto.setPrintDateTime(obj.getPrintDateTime());
-        dto.setSequenceNumber(obj.getSequenceNumber());
-        dto.setTraveller(traveller);
-
+        dto.setToken(token.toString());
         return dto;
     }
 

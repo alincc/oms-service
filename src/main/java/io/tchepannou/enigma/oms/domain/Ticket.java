@@ -1,10 +1,13 @@
 package io.tchepannou.enigma.oms.domain;
 
+import io.tchepannou.enigma.oms.client.Sex;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -23,17 +26,20 @@ public class Ticket extends Persistent {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name="order_fk")
-    private Order order;
+    @JoinColumn(name="order_line_fk")
+    private OrderLine orderLine;
 
-    @Column(name="merchant_id")
-    private Integer merchantId;
+    @Column(name="sequence_number")
+    private Integer sequenceNumber;
 
-    @Column(name="booking_id")
-    private Integer bookingId;
+    @Column(name="first_name")
+    private String firstName;
 
-    @Column(name="offer_token")
-    private String offerToken;
+    @Column(name="last_name")
+    private String lastName;
+
+    @Enumerated(EnumType.STRING)
+    private Sex sex;
 
     private String hash;
 

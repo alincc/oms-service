@@ -8,6 +8,7 @@
       "email": "merchant1000@gmail.com",
       "countryCode": "CM",
       "language": "en",
+      "apiKey": "bc25a5f8-dd0c-4219-8bc5-ca89e9293f70",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -21,6 +22,7 @@
       "email": "merchant1001@gmail.com",
       "countryCode": "CM",
       "language": "fr",
+      "apiKey": "686bfbfc-909a-40c6-a122-741d00c55c93",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -34,6 +36,7 @@
       "email": "merchant1002@gmail.com",
       "countryCode": "CM",
       "language": "en",
+      "apiKey": "f59db9e7-824c-4bd9-b4eb-0e28e75c4def",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -47,6 +50,7 @@
       "email": "merchant1101@gmail.com",
       "countryCode": "CM",
       "language": "en",
+      "apiKey": "01e0070f-57f9-4a01-8c25-fb9d12c69235",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -60,6 +64,7 @@
       "email": "merchant1102@gmail.com",
       "language": "en",
       "countryCode": "CM",
+      "apiKey": "dee33c4d-f042-4828-adbf-8c59072e4b2a",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -73,6 +78,7 @@
       "email": "merchant2001@gmail.com",
       "language": "en",
       "countryCode": "CM",
+      "apiKey": "d786f4f9-7d73-4005-bc4c-163be5252b83",
       "plan": {
         "id": 1,
         "name": "Premium",
@@ -86,6 +92,7 @@
       "email": "merchant2002@gmail.com",
       "language": "en",
       "countryCode": "CM",
+      "apiKey": "c3ffaa32-9adc-420d-bbfe-4285ef66798c",
       "plan": {
         "id": 1,
         "name": "Premium",

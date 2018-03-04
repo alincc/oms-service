@@ -135,16 +135,22 @@ public class Mapper {
     }
 
     public TicketDto toDto(final Ticket obj){
-        final TicketDto dto = new TicketDto();
+        final TravellerDto traveller = new TravellerDto();
+        traveller.setSex(obj.getSex());
+        traveller.setLastName(obj.getLastName());
+        traveller.setFirstName(obj.getFirstName());
 
-        dto.setId(obj.getId());
-        dto.setOrderId(obj.getOrder().getId());
-        dto.setBookingId(obj.getBookingId());
-        dto.setMerchantId(obj.getMerchantId());
-        dto.setPrintDateTime(obj.getPrintDateTime());
+        final TicketDto dto = new TicketDto();
         dto.setExpiryDateTime(obj.getExpiryDateTime());
-        dto.setOfferToken(obj.getOfferToken());
-        dto.setHash(obj.getHash());
+        dto.setId(obj.getId());
+        dto.setMerchantId(obj.getOrderLine().getMerchantId());
+        dto.setOfferToken(obj.getOrderLine().getOfferToken());
+        dto.setOrderId(obj.getOrderLine().getOrder().getId());
+        dto.setOrderLineId(obj.getOrderLine().getId());
+        dto.setPrintDateTime(obj.getPrintDateTime());
+        dto.setSequenceNumber(obj.getSequenceNumber());
+        dto.setTraveller(traveller);
+
         return dto;
     }
 

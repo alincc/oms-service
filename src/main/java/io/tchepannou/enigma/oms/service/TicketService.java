@@ -116,7 +116,7 @@ public class TicketService {
         final OrderLine line = ticket.getOrderLine();
 
         final String str = String.format("%s-%s-%s-%s-%s-%s",
-                line.getId(),
+                line.getOrder().getId(),
                 sequenceNumber,
                 line.getId(),
                 ticket.getFirstName(),

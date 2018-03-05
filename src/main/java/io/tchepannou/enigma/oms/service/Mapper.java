@@ -137,6 +137,7 @@ public class Mapper {
 
     public TicketDto toDto(final Ticket obj){
         final TicketToken token = new TicketToken();
+        token.setId(obj.getId());
         token.setLastName(obj.getLastName());
         token.setFirstName(obj.getFirstName());
         token.setOfferToken(obj.getOrderLine().getOfferToken());

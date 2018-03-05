@@ -3,6 +3,7 @@ package io.tchepannou.enigma.oms.service;
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
+import io.tchepannou.enigma.oms.client.rr.GetTicketsResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Component
 public class TicketService {
@@ -59,6 +61,15 @@ public class TicketService {
                 .stream()
                 .map(t -> mapper.toDto(t))
                 .collect(Collectors.toList());
+    }
+
+    public GetTicketsResponse findByIds(List<Integer> ids){
+        final Iterable<Ticket> tickets = ticketRepository.findAll(ids);
+        return new GetTicketsResponse(
+                StreamSupport.stream(tickets.spliterator(), false)
+                .map(t -> mapper.toDto(t))
+                .collect(Collectors.toList())
+        );
     }
 
     private Ticket createTicket(

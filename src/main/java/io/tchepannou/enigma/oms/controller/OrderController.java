@@ -12,10 +12,7 @@ import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
 import io.tchepannou.enigma.oms.service.OrderService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,13 +27,8 @@ import javax.validation.Valid;
 @RequestMapping(value="/v1/orders", produces = MediaType.APPLICATION_JSON_VALUE)
 @Api(value = "/v1/orders", description = "Order API")
 public class OrderController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OrderController.class);
-
     @Autowired
     private OrderService orderService;
-
-    @Value("${server.port}")
-    private int serverPort;
 
     @RequestMapping(method = RequestMethod.POST)
     @ApiOperation(value = "Create")

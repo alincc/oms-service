@@ -65,11 +65,12 @@ public class TicketService {
 
     public GetTicketsResponse findByIds(List<Integer> ids){
         final Iterable<Ticket> tickets = ticketRepository.findAll(ids);
-        return new GetTicketsResponse(
-                StreamSupport.stream(tickets.spliterator(), false)
+        final GetTicketsResponse response = new GetTicketsResponse();
+        response.setTickets(StreamSupport.stream(tickets.spliterator(), false)
                 .map(t -> mapper.toDto(t))
                 .collect(Collectors.toList())
         );
+        return response;
     }
 
     private Ticket createTicket(

@@ -2,12 +2,15 @@ package io.tchepannou.enigma.oms.service;
 
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
+import io.tchepannou.enigma.oms.client.OMSErrorCode;
+import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
-import io.tchepannou.enigma.oms.client.rr.GetTicketsResponse;
+import io.tchepannou.enigma.oms.client.rr.GetTicketResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
+import io.tchepannou.enigma.oms.exception.NotFoundException;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
@@ -20,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Component
 public class TicketService {
@@ -63,14 +65,19 @@ public class TicketService {
                 .collect(Collectors.toList());
     }
 
-    public GetTicketsResponse findByIds(List<Integer> ids){
-        final Iterable<Ticket> tickets = ticketRepository.findAll(ids);
-        final GetTicketsResponse response = new GetTicketsResponse();
-        response.setTickets(StreamSupport.stream(tickets.spliterator(), false)
-                .map(t -> mapper.toDto(t))
-                .collect(Collectors.toList())
-        );
-        return response;
+    public GetTicketResponse findById(Integer id){
+        final Ticket ticket = ticketRepository.findOne(id);
+        if (ticket == null){
+            throw new NotFoundException(OMSErrorCode.TICKET_NOT_FOUND);
+        }
+
+        /* make sure order is not confirmed */
+        final Order order = ticket.getOrderLine().getOrder();
+        if (!OrderStatus.CONFIRMED.equals(order.getStatus())){
+            throw new NotFoundException(OMSErrorCode.ORDER_NOT_CONFIRMED);
+        }
+
+        return new GetTicketResponse(mapper.toDto(ticket));
     }
 
     private Ticket createTicket(

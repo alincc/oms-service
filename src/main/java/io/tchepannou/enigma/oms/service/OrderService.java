@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.service;
 
+import com.google.common.base.Joiner;
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpStatusException;
@@ -27,6 +28,7 @@ import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.mq.QueueNames;
+import io.tchepannou.enigma.oms.service.ticket.TicketService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -127,6 +129,16 @@ public class OrderService {
         order.setLastName(request.getLastName());
         order.setEmail(request.getEmail());
         order.setLanguageCode(request.getLanguageCode());
+        order.setMobileNumber(
+                Joiner
+                    .on("")
+                    .skipNulls()
+                    .join(
+                        request.getMobilePayment().getCountryCode(),
+                        request.getMobilePayment().getAreaCode(),
+                        request.getMobilePayment().getNumber()
+                    )
+        );
 
         // Save travellers
         for (final TravellerDto traveller : request.getTravellers()){
@@ -224,7 +236,11 @@ public class OrderService {
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepository.save(order);
 
-            return ticketService.create(order);
+            final List<TicketDto> tickets = ticketService.create(order);
+            for (final TicketDto ticket : tickets){
+                ticketService.sms(ticket.getId());
+            }
+            return tickets;
 
         } catch (FerrariException e){
             throw toOrderException(e, OMSErrorCode.CONFIRM_FAILURE);
@@ -238,7 +254,7 @@ public class OrderService {
             return;
         }
 
-        if ("411 111 1111".equals(request.getMobilePayment().getNumber())){
+        if ("411 111 1111".equals(order.getMobileNumber())){
             throw new OrderException(OMSErrorCode.PAYMENT_FAILURE);
         }
         order.setPaymentMethod(PaymentMethod.ONLINE);

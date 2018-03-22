@@ -1,9 +1,8 @@
-package io.tchepannou.enigma.oms.service;
+package io.tchepannou.enigma.oms.service.ticket;
 
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
-import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.rr.GetTicketResponse;
 import io.tchepannou.enigma.oms.domain.Order;
@@ -12,6 +11,7 @@ import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.exception.NotFoundException;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
+import io.tchepannou.enigma.oms.service.Mapper;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +33,9 @@ public class TicketService {
     private TicketRepository ticketRepository;
 
     @Autowired
+    private TicketSmsSender smsSender;
+
+    @Autowired
     private Mapper mapper;
 
     @Transactional
@@ -45,7 +48,7 @@ public class TicketService {
             for (int i=0 ; i<line.getQuantity() ; i++) {
                 final Traveller traveller = CollectionUtils.isEmpty(travellers) ? null : travellers.get(i);
                 final Ticket ticket = createTicket(++sequenceNumber, line, traveller);
-                final TicketDto dto = mapper.toDto(ticket);
+                final TicketDto dto = mapper.toTicketDto(ticket);
                 result.add(dto);
             }
         }
@@ -61,8 +64,17 @@ public class TicketService {
     public List<TicketDto> findByOrder(Order order){
         return ticketRepository.findByOrder(order)
                 .stream()
-                .map(t -> mapper.toDto(t))
+                .map(t -> mapper.toTicketDto(t))
                 .collect(Collectors.toList());
+    }
+
+    public void sms(Integer id) {
+        final Ticket ticket = ticketRepository.findOne(id);
+        if (ticket == null){
+            throw new NotFoundException(OMSErrorCode.TICKET_NOT_FOUND);
+        }
+
+        smsSender.send(ticket);
     }
 
     public GetTicketResponse findById(Integer id){
@@ -71,13 +83,7 @@ public class TicketService {
             throw new NotFoundException(OMSErrorCode.TICKET_NOT_FOUND);
         }
 
-        /* make sure order is not confirmed */
-        final Order order = ticket.getOrderLine().getOrder();
-        if (!OrderStatus.CONFIRMED.equals(order.getStatus())){
-            throw new NotFoundException(OMSErrorCode.ORDER_NOT_CONFIRMED);
-        }
-
-        return new GetTicketResponse(mapper.toDto(ticket));
+        return new GetTicketResponse(mapper.toTicketDto(ticket));
     }
 
     private Ticket createTicket(
@@ -92,8 +98,14 @@ public class TicketService {
         final Ticket ticket = new Ticket();
         ticket.setSequenceNumber(sequenceNumber);
         ticket.setOrderLine(line);
+        ticket.setOriginId(token.getOriginId());
+        ticket.setDestinationId(token.getDestinationId());
+        ticket.setMerchantId(line.getMerchantId());
+        ticket.setProductId(token.getProductId());
+        ticket.setDepartureDateTime(token.getDepartureDateTime());
         ticket.setPrintDateTime(DateHelper.now());
         ticket.setExpiryDateTime(expiryDate);
+
         if (traveller != null){
             ticket.setFirstName(traveller.getFirstName());
             ticket.setLastName(traveller.getLastName());

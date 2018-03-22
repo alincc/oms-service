@@ -93,6 +93,7 @@ public class Mapper {
         dto.setSiteId(obj.getSiteId());
         dto.setDeviceUID(obj.getDeviceUID());
         dto.setLanguageCode(obj.getLanguageCode());
+        dto.setMobileNumber(obj.getMobileNumber());
 
         if (obj.getTravellers() != null) {
             dto.setTravellers(
@@ -135,7 +136,7 @@ public class Mapper {
         return dto;
     }
 
-    public TicketDto toDto(final Ticket obj){
+    public TicketDto toTicketDto(final Ticket obj){
         final TicketToken token = new TicketToken();
         token.setId(obj.getId());
         token.setLastName(obj.getLastName());
@@ -149,6 +150,19 @@ public class Mapper {
         final TicketDto dto = new TicketDto();
         dto.setId(obj.getId());
         dto.setToken(token.toString());
+        dto.setExpiryDateTime(obj.getExpiryDateTime());
+        dto.setDepartureDateTime(obj.getDepartureDateTime());
+        dto.setDestinationId(obj.getDestinationId());
+        dto.setExpiryDateTime(obj.getExpiryDateTime());
+        dto.setMerchantId(obj.getMerchantId());
+        dto.setOriginId(obj.getOriginId());
+        dto.setPrintDateTime(obj.getPrintDateTime());
+        dto.setProductId(obj.getProductId());
+        dto.setFirstName(obj.getFirstName());
+        dto.setLastName(obj.getLastName());
+        dto.setOrderId(obj.getOrderLine().getOrder().getId());
+        dto.setOrderLineId(obj.getOrderLine().getId());
+        dto.setSequenceNumber(obj.getSequenceNumber());
         return dto;
     }
 

@@ -258,6 +258,7 @@ public class OrderControllerIT {
         assertThat(order.getEmail()).isEqualTo(request.getEmail());
         assertThat(order.getDeviceUID()).isEqualTo(deviceUID);
         assertThat(order.getLanguageCode()).isEqualTo(request.getLanguageCode());
+        assertThat(order.getMobileNumber()).isEqualTo("23799505678");
 
         final List<Traveller> travellers = travellerRepository.findByOrder(order);
         assertThat(travellers).hasSize(2);

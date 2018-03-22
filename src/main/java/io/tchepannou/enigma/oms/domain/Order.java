@@ -72,6 +72,9 @@ public class Order extends Persistent {
 
     private String email;
 
+    @Column(name="mobile_number")
+    private String mobileNumber;
+
     @Column(name="language_code")
     private String languageCode;
 

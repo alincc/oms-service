@@ -35,6 +35,21 @@ public class Ticket extends Persistent {
     @Column(name="last_name")
     private String lastName;
 
+    @Column(name="departure_datetime")
+    private Date departureDateTime;
+
+    @Column(name="origin_id")
+    private Integer originId;
+
+    @Column(name="destination_id")
+    private Integer destinationId;
+
+    @Column(name="merchant_id")
+    private Integer merchantId;
+
+    @Column(name="product_id")
+    private Integer productId;
+
     @Column(name="print_datetime")
     private Date printDateTime;
 

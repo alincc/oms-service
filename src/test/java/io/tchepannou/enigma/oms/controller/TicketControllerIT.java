@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.web.context.WebApplicationContext;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -48,28 +49,20 @@ public class TicketControllerIT {
                 .andExpect(status().isOk())
 
                 .andExpect(jsonPath("$.ticket.id", is(100)))
-                .andExpect(jsonPath("$.ticket.token", is("100;100;100;1;1001;100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060;Ray;Sponsible")))
+                .andExpect(jsonPath("$.ticket.orderId", is(100)))
+                .andExpect(jsonPath("$.ticket.orderLineId", is(100)))
+                .andExpect(jsonPath("$.ticket.firstName", is("Ray")))
+                .andExpect(jsonPath("$.ticket.lastName", is("Sponsible")))
+                .andExpect(jsonPath("$.ticket.productId", is(1001)))
+                .andExpect(jsonPath("$.ticket.merchantId", is(1)))
+                .andExpect(jsonPath("$.ticket.sequenceNumber", is(0)))
+                .andExpect(jsonPath("$.ticket.originId", is(2370001)))
+                .andExpect(jsonPath("$.ticket.destinationId", is(2370002)))
+                .andExpect(jsonPath("$.ticket.departureDateTime", notNullValue()))
+                .andExpect(jsonPath("$.ticket.token", is("100;100;100;0;1001;100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060;Ray;Sponsible")))
 
                 .andReturn();
     }
-
-    @Test
-    public void shouldReturn404ForOrderNotConfirmed() throws Exception {
-        mockMvc
-                .perform(
-                        get("/v1/tickets/111")
-                )
-
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(status().isNotFound())
-
-                .andExpect(jsonPath("$.errors.length()", is(1)))
-                .andExpect(jsonPath("$.errors[0].code", is(OMSErrorCode.ORDER_NOT_CONFIRMED.getCode())))
-                .andExpect(jsonPath("$.errors[0].text", is(OMSErrorCode.ORDER_NOT_CONFIRMED.getText())))
-        ;
-
-    }
-
 
     @Test
     public void shouldReturn404ForInvalidTicket() throws Exception {

@@ -5,7 +5,10 @@ enigma:
   assetUrl: "http://localhost:28080"
   service:
     ferari:
-      url: "http://localhost:18081"
+      port: 18081
+      url: "http://localhost:${enigma.service.ferari.port}/"
+      product:
+        url: "http://localhost:${enigma.service.ferari.port}/v1/products"
     refdata:
       port: 18080
       city:

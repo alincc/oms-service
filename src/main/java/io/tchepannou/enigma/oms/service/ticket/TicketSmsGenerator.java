@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 @Component
 public class TicketSmsGenerator {
     public static final int MAXLEN_CITY = 8;
-    public static final int MAXLEN_CARRIER = 10;
-    public static final int MAXLEN_PRODUCT = 10;
+    public static final int MAXLEN_CARRIER = 30;
+    public static final int MAXLEN_PRODUCT = 30;
     public static final int MAXLEN_CUSTOMER = 50;
 
     @Autowired

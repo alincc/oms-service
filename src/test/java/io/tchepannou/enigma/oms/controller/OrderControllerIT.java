@@ -224,6 +224,7 @@ public class OrderControllerIT {
 
     /* =========== CHECKOUT ============ */
     @Test
+    @Ignore
     public void shouldCheckoutOrderWithMobileMoney() throws Exception {
         final CheckoutOrderRequest request = createCheckoutOrderRequest();
         final String deviceUID = UUID.randomUUID().toString();

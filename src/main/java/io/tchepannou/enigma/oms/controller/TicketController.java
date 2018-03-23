@@ -20,9 +20,13 @@ public class TicketController {
 
     @RequestMapping(value="/{id}", method = RequestMethod.GET)
     @ApiOperation("findById")
-    public GetTicketResponse findById(
-            @PathVariable Integer id
-    ) {
+    public GetTicketResponse findById(@PathVariable Integer id) {
         return ticketService.findById(id);
+    }
+
+    @RequestMapping(value="/{id}/sms", method = RequestMethod.GET)
+    @ApiOperation("sms")
+    public void sms(@PathVariable Integer id){
+        ticketService.sms(id);
     }
 }

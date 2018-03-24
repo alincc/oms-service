@@ -1,10 +1,8 @@
 package io.tchepannou.enigma.oms.service.ticket;
 
 import io.tchepannou.core.logger.KVLogger;
-import io.tchepannou.enigma.oms.backend.refdata.SiteBackend;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.service.sms.SmsGateway;
-import io.tchepannou.enigma.refdata.client.dto.SiteDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,25 +19,18 @@ public class TicketSmsSender {
     private TicketSmsGenerator messageGenerator;
 
     @Autowired
-    private SiteBackend siteBackend;
-
-    @Autowired
     private SmsGateway gateway;
 
     public String send(final Ticket ticket) {
-        final SiteDto site = siteBackend.findById(ticket.getOrderLine().getOrder().getSiteId());
-
-        final String sender = site.getBrandName();
         final String mobileNumber = ticket.getOrderLine().getOrder().getMobileNumber();
         final String message = messageGenerator.generate(ticket);
-        logger.add("SmsSender", sender);
         logger.add("SmsNumber", mobileNumber);
         logger.add("SmsMessage", message);
         logger.add("SmsGateway", gateway.getClass());
 
         try {
 
-            final String result = gateway.send(sender, mobileNumber, message);
+            final String result = gateway.send(null, mobileNumber, message);
             logger.add("SmsTransactionID", result);
             return result;
 

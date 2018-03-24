@@ -64,10 +64,10 @@ public class RabbitMQConfiguration {
         return createBinding(QueueNames.QUEUE_FINANCE, newOrderFanoutExchange());
     }
 
-    @Bean
-    public Binding ticketSmsBinding() {
-        return createBinding(QueueNames.QUEUE_TICKET_SMS, newOrderFanoutExchange());
-    }
+//    @Bean
+//    public Binding ticketSmsBinding() {
+//        return createBinding(QueueNames.QUEUE_TICKET_SMS, newOrderFanoutExchange());
+//    }
 
     @Bean
     public Binding merchantNotificationBinding() {

@@ -2,7 +2,6 @@ package io.tchepannou.enigma.oms.service.order;
 
 import com.google.common.base.Joiner;
 import io.tchepannou.core.logger.KVLogger;
-import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpStatusException;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
@@ -122,6 +121,11 @@ public class OrderService {
         if (order.isCancelled()){
             throw new OrderException(OMSErrorCode.ORDER_CANCELLED);
         }
+        if (OrderStatus.CONFIRMED.equals(order.getStatus())){
+            // Do not book pending request
+            LOGGER.info("Order#{} has already been confirmed", order.getId());
+            return new CheckoutOrderResponse(order.getId(), ticketService.findByOrder(order));
+        }
 
         // Customer information
         order.setDeviceUID(deviceUID);
@@ -167,21 +171,6 @@ public class OrderService {
     }
 
     @Transactional
-    public void expire (final Integer id, final RestClient rest){
-        final Order order = orderRepository.findOne(id);
-        if (id == null){
-            throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
-        }
-
-        if (OrderStatus.PENDING.equals(order.getStatus())) {
-            // Expire the booking
-            ferari.expire(order, rest);
-        }
-        order.setStatus(OrderStatus.CANCELLED);
-        orderRepository.save(order);
-    }
-
-    @Transactional
     public GetOrderResponse findById(final Integer orderId){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
@@ -198,12 +187,6 @@ public class OrderService {
     }
 
     private void book(final Order order){
-        if (OrderStatus.PENDING.equals(order)){
-            // Do not book pending request
-            LOGGER.info("Order#{} has already been booked", order.getId());
-            return;
-        }
-
         try {
             final List<BookingDto> bookings = ferari.book(order);
 
@@ -211,11 +194,10 @@ public class OrderService {
             for (int i = 0; i < bookings.size(); i++) {
                 final BookingDto dto = bookings.get(i);
                 final OrderLine line = order.getLines().get(i);
-
                 line.setBookingId(dto.getId());
+                orderLineRepository.save(line);
             }
 
-            order.setStatus(OrderStatus.PENDING);
             orderRepository.save(order);
         } catch (FerrariException e){
             throw toOrderException(e, OMSErrorCode.BOOKING_FAILURE);
@@ -223,12 +205,6 @@ public class OrderService {
     }
 
     private List<TicketDto> confirm(final Order order){
-        if (OrderStatus.CONFIRMED.equals(order)){
-            // Do not book pending request
-            LOGGER.info("Order#{} has already been confirmed", order.getId());
-            return ticketService.findByOrder(order);
-        }
-
         try {
 
             ferari.confirm(order);
@@ -244,18 +220,12 @@ public class OrderService {
     }
 
     private void charge(final Order order, final CheckoutOrderRequest request){
-        if (OrderStatus.PAID.equals(order)){
-            // Do not pay PAID request
-            LOGGER.info("Order#{} has already been charged", order.getId());
-            return;
-        }
-
         if ("411 111 1111".equals(order.getMobileNumber())){
             throw new OrderException(OMSErrorCode.PAYMENT_FAILURE);
         }
+
         order.setPaymentMethod(PaymentMethod.ONLINE);
-        order.setPaymentId(-1);
-        order.setStatus(OrderStatus.PAID);
+        order.setPaymentId(23203290);
         orderRepository.save(order);
     }
 

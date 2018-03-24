@@ -1,6 +1,5 @@
-package io.tchepannou.enigma.oms.service.mq.notification;
+package io.tchepannou.enigma.oms.service.order;
 
-import io.tchepannou.enigma.oms.service.mq.NotificationConsumerTestBase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,19 +43,6 @@ public class CustomerConsumerIT extends NotificationConsumerTestBase {
     public void shouldNotSendEmailToCustomerForNewOrder() throws Exception {
         // Given
         consumer.consume(101);
-
-        // When
-        mail.waitForIncomingEmail(5000, 1);
-        final MimeMessage[] msgs = mail.getReceivedMessages();
-
-        // Then
-        assertThat(msgs).hasSize(0);
-    }
-
-    @Test
-    public void shouldNotSendEmailToCustomerForPendingOrder() throws Exception {
-        // Given
-        consumer.consume(102);
 
         // When
         mail.waitForIncomingEmail(5000, 1);

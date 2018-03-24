@@ -12,10 +12,6 @@ INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, offer_type, offe
 INSERT INTO T_ORDER(id, site_id, customer_id, email, expiry_datetime, status, total_amount, currency_code)
   VALUES(101, 1, 1, 'ray.sponsible@gmail.com', '2030-10-11', 'NEW', '12000', 'XAF');
 
--- pending
-INSERT INTO T_ORDER(id, site_id, customer_id, email, expiry_datetime, status, total_amount, currency_code)
-  VALUES(102, 1, 1, 'ray.sponsible@gmail.com', '2030-10-11', 'PENDING', '12000', 'XAF');
-
 -- cancelled
 INSERT INTO T_ORDER(id, site_id, customer_id, email, expiry_datetime, status, total_amount, currency_code)
   VALUES(103, 1, 1, 'ray.sponsible@gmail.com', '2030-10-11', 'CANCELLED', '12000', 'XAF');

@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.mq.notification;
+package io.tchepannou.enigma.oms.service.order.model;
 
 import lombok.Getter;
 import lombok.Setter;

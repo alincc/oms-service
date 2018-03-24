@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.mq.notification;
+package io.tchepannou.enigma.oms.service.order;
 
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
@@ -12,6 +12,8 @@ import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.service.Mail;
 import io.tchepannou.enigma.oms.service.MailService;
 import io.tchepannou.enigma.oms.service.mq.MQConsumer;
+import io.tchepannou.enigma.oms.service.order.model.OrderLineModel;
+import io.tchepannou.enigma.oms.service.order.model.OrderMailModel;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
 import io.tchepannou.enigma.refdata.client.dto.CityDto;
 import io.tchepannou.enigma.refdata.client.dto.SiteDto;

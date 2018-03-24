@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.mq;
+package io.tchepannou.enigma.oms.service.order;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetupTest;

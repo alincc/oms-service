@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.mq.notification;
+package io.tchepannou.enigma.oms.service.order;
 
 import com.google.common.base.Strings;
 import io.tchepannou.core.rest.RestClient;
@@ -7,6 +7,7 @@ import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.service.Mail;
 import io.tchepannou.enigma.oms.service.mq.QueueNames;
+import io.tchepannou.enigma.oms.service.order.model.OrderMailModel;
 import io.tchepannou.enigma.refdata.client.dto.SiteDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

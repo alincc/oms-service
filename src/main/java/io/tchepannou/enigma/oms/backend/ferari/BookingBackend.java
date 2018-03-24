@@ -3,10 +3,7 @@ package io.tchepannou.enigma.oms.backend.ferari;
 import io.tchepannou.core.logger.Loggable;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.exception.HttpException;
-import io.tchepannou.enigma.ferari.client.CancellationReason;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
-import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
-import io.tchepannou.enigma.ferari.client.rr.CancelBookingResponse;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
 import io.tchepannou.enigma.oms.domain.Order;
@@ -52,24 +49,6 @@ public class BookingBackend {
         } catch (HttpException e){
             throw new FerrariException("Unable to book Order#" + order.getId(), e);
         }
-    }
-
-    @Loggable("Ferari.Booking.expire")
-    public void expire (final Order order, final RestClient rest) {
-        try {
-
-            final CancelBookingRequest request = new CancelBookingRequest();
-            request.setReason(CancellationReason.EXPIRED);
-
-            for (final OrderLine line : order.getLines()) {
-                final String cancelUrl = String.format("%s/%s/cancel", url, line.getBookingId());
-                rest.post(cancelUrl, request, CancelBookingResponse.class);
-            }
-
-        } catch (HttpException e){
-            throw new FerrariException("Unable to cancel Order#" + order.getId(), e);
-        }
-
     }
 
     public String getUrl() {

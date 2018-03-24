@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.RestConfig;
+import io.tchepannou.core.rest.exception.HttpIOException;
 import io.tchepannou.core.rest.exception.HttpNotFoundException;
 import io.tchepannou.core.rest.impl.DefaultRestClient;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
@@ -126,7 +127,7 @@ public class TicketService {
             final String url = "http://127.0.0.1:" + port + "/v1/tickets/" + ticket.getId() + "/sms";
             try {
                 rest.get(url, SendSmsResponse.class);
-            } catch (HttpNotFoundException e) {
+            } catch (HttpNotFoundException | HttpIOException e) {
                 LOGGER.error("Unable to send via SMS Ticket#{}", url, e);
             }
         }

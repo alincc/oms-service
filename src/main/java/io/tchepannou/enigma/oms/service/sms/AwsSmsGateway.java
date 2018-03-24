@@ -14,8 +14,8 @@ public class AwsSmsGateway implements SmsGateway {
     private AmazonSNS sns;
 
     @Override
-    public String send(final String phone, final String message) {
-        final Map<String, MessageAttributeValue> attrs = new HashMap<>();
+    public String send(final String sender, final String phone, final String message) {
+        final Map<String, MessageAttributeValue> attrs = attributes(sender);
         final PublishResult result = sns.publish(new PublishRequest()
                 .withMessage(message)
                 .withPhoneNumber(formatPhone(phone))
@@ -23,14 +23,27 @@ public class AwsSmsGateway implements SmsGateway {
         return result.getMessageId();
     }
 
-    private String formatPhone(String phone){
+    private String formatPhone(String phone) {
         StringBuilder sb = new StringBuilder();
-        for (int i=0  ; i<phone.length() ; i++){
+        for (int i = 0; i < phone.length(); i++) {
             char ch = phone.charAt(i);
-            if (Character.isDigit(ch)){
+            if (Character.isDigit(ch)) {
                 sb.append(ch);
             }
         }
         return "+1" + sb.toString();
+    }
+
+    private Map<String, MessageAttributeValue> attributes(final String sender) {
+        Map<String, MessageAttributeValue> smsAttributes = new HashMap<>();
+        smsAttributes.put("AWS.SNS.SMS.SenderID", new MessageAttributeValue()
+                .withStringValue(sender)
+                .withDataType("String"));
+
+        smsAttributes.put("AWS.SNS.SMS.SMSType", new MessageAttributeValue()
+                .withStringValue("Transactional") //Sets the type to promotional.
+                .withDataType("String"));
+
+        return smsAttributes;
     }
 }

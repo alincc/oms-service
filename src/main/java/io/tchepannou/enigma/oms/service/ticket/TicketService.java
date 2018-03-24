@@ -110,12 +110,12 @@ public class TicketService {
 
     @Transactional
     @RabbitListener(queues = QueueNames.QUEUE_TICKET_SMS)
-    public void onNewOrder(Integer orderId){
-        onNewOrder(orderId, new DefaultRestClient(new RestConfig()));
+    public void onOrderConfirmed(Integer orderId){
+        onOrderConfirmed(orderId, new DefaultRestClient(new RestConfig()));
     }
 
     @VisibleForTesting
-    protected void onNewOrder(Integer orderId, RestClient rest){
+    protected void onOrderConfirmed(Integer orderId, RestClient rest){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
             LOGGER.error("Order#{} not found", orderId);

@@ -1,10 +1,12 @@
 package io.tchepannou.enigma.oms.service.ticket;
 
 import io.tchepannou.core.logger.KVLogger;
+import io.tchepannou.enigma.oms.backend.refdata.SiteBackend;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.service.sms.SmsGateway;
+import io.tchepannou.enigma.refdata.client.dto.SiteDto;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -27,44 +29,62 @@ public class TicketSmsSenderTest {
     @Mock
     private SmsGateway gateway;
 
+    @Mock
+    private SiteBackend siteBackend;
+
     @InjectMocks
     private TicketSmsSender service;
 
     @Test
     public void shouldSendSms() throws Exception {
         // Given
-        final Ticket ticket = createTicket("5147550101");
+        final SiteDto site = createSite(1, "Test");
+        when(siteBackend.findById(1)).thenReturn(site);
+
+        final Ticket ticket = createTicket("5147550101", 1);
         when(generator.generate(ticket)).thenReturn("This is a message");
 
-        when(gateway.send(any(), any())).thenReturn("123");
+        when(gateway.send(any(), any(), any())).thenReturn("123");
 
         // When
         String result = service.send(ticket);
 
         // Then
         assertThat(result).isEqualTo("123");
-        verify(gateway).send("5147550101", "This is a message");
+        verify(gateway).send(site.getBrandName(),"5147550101", "This is a message");
     }
 
     @Test
     public void shouldLogMessage() throws Exception {
         // Given
-        final Ticket ticket = createTicket("5147550101");
+        final SiteDto site = createSite(1, "Test");
+        when(siteBackend.findById(1)).thenReturn(site);
+
+        final Ticket ticket = createTicket("5147550101", 1);
         when(generator.generate(ticket)).thenReturn("This is a message");
-        when(gateway.send(any(), any())).thenReturn("12345");
+        when(gateway.send(any(), any(), any())).thenReturn("12345");
 
         // When
         service.send(ticket);
 
         // When
+        verify(logger).add("SmsSender", "Test");
         verify(logger).add("SmsNumber", "5147550101");
         verify(logger).add("SmsMessage", "This is a message");
         verify(logger).add("SmsTransactionID", "12345");
     }
 
-    private Ticket createTicket(final String number){
+    private SiteDto createSite(final Integer id, final String name){
+        SiteDto site = new SiteDto();
+        site.setBrandName(name);
+        site.setId(id);
+        return site;
+    }
+
+    private Ticket createTicket(final String number, final Integer siteId){
         final Order order = new Order ();
         order.setMobileNumber(number);
+        order.setSiteId(siteId);
 
         final OrderLine line = new OrderLine();
         line.setOrder(order);

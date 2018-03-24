@@ -41,7 +41,7 @@ public class OrderFinanceConsumerIT extends NotificationConsumerTestBase {
     @Test
     public void shouldRecordTransactionsOnCheckout() throws Exception {
         // Given
-        consumer.consume(100);
+        consumer.onOrderConfirmed(100);
 
         // Then
         final Order order = orderRepository.findOne(100);

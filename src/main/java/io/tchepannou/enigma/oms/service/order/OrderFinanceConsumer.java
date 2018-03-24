@@ -1,6 +1,5 @@
 package io.tchepannou.enigma.oms.service.order;
 
-import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.domain.Account;
 import io.tchepannou.enigma.oms.domain.AccountType;
@@ -11,7 +10,6 @@ import io.tchepannou.enigma.oms.domain.TransactionType;
 import io.tchepannou.enigma.oms.repository.AccountRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
-import io.tchepannou.enigma.oms.service.mq.MQConsumer;
 import io.tchepannou.enigma.oms.service.mq.QueueNames;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
@@ -30,7 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
-public class OrderFinanceConsumer extends MQConsumer {
+public class OrderFinanceConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(OrderFinanceConsumer.class);
 
     @Autowired
@@ -47,26 +45,20 @@ public class OrderFinanceConsumer extends MQConsumer {
 
     @Transactional
     @RabbitListener(queues = QueueNames.QUEUE_FINANCE)
-    public void consume (Integer orderId){
+    public void onOrderConfirmed(Integer orderId){
         LOGGER.info("Consuming {}", orderId);
-        try {
-            notify(orderId);
-        } catch (Exception e){
-            LOGGER.warn("Unable to consume message: {}", orderId, e);
-        }
-    }
-
-
-    private void notify(Integer orderId) {
         final Order order = orderRepository.findOne(orderId);
+        if (order == null){
+            LOGGER.warn("Order#{} not found", orderId);
+            return;
+        }
 
         // Merchant
-        final RestClient rest = createRestClient();
         final Set<Integer> merchantIds = order.getLines().stream()
                 .map(l -> l.getMerchantId())
                 .collect(Collectors.toSet());
 
-        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds, rest).stream()
+        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds).stream()
                 .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));
 
         // Site

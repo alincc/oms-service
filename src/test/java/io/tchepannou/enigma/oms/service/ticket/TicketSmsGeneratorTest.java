@@ -69,7 +69,7 @@ public class TicketSmsGeneratorTest {
         final DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         fmt.setTimeZone(TimeZone.getTimeZone(origin.getTimezoneId()));
 
-        final String expected = "000011\n"
+        final String expected = "000001-000011\n"
                 + "YAOUNDE,BAFFOUSS\n"
                 + fmt.format(offerToken.getDepartureDateTime()) + "\n"
                 + "BUCA VOYAGES,VIP";

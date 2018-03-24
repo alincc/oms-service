@@ -148,7 +148,7 @@ public class TicketServiceTest {
     }
 
     @Test
-    public void onNewOrder() throws Exception {
+    public void onOrderConfirmed() throws Exception {
         // Given
         Order order = createOrder(11);
         when(orderRepository.findOne(11)).thenReturn(order);
@@ -161,7 +161,7 @@ public class TicketServiceTest {
 
         // When
         service.setPort(8080);
-        service.onNewOrder(11, rest);
+        service.onOrderConfirmed(11, rest);
 
         // Verify
         verify(rest).get("http://127.0.0.1:8080/v1/tickets/1/sms", SendSmsResponse.class);
@@ -170,12 +170,12 @@ public class TicketServiceTest {
 
 
     @Test
-    public void onNewOrderDontSendSMSOnInvalidOrder() throws Exception {
+    public void onOrderConfirmedDontSendSMSOnInvalidOrder() throws Exception {
         // Given
         RestClient rest = mock(RestClient.class);
 
         // When
-        service.onNewOrder(11, rest);
+        service.onOrderConfirmed(11, rest);
 
         // Verify
         verify(rest, never()).get(any(), any());

@@ -31,7 +31,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -64,9 +63,6 @@ public class OrderServiceTest {
 
     @Mock
     private BookingBackend ferari;
-
-    @Mock
-    private RabbitTemplate rabbitTemplate;
 
     @Mock
     private TicketService ticketService;

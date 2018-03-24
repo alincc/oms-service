@@ -164,8 +164,8 @@ public class TicketServiceTest {
         service.onNewOrder(11, rest);
 
         // Verify
-        verify(rest).get("http://localhost:8080/v1/tickets/1/sms", SendSmsResponse.class);
-        verify(rest).get("http://localhost:8080/v1/tickets/2/sms", SendSmsResponse.class);
+        verify(rest).get("http://127.0.0.1:8080/v1/tickets/1/sms", SendSmsResponse.class);
+        verify(rest).get("http://127.0.0.1:8080/v1/tickets/2/sms", SendSmsResponse.class);
     }
 
 

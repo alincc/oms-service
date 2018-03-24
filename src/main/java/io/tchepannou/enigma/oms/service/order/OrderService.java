@@ -27,11 +27,9 @@ import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
-import io.tchepannou.enigma.oms.service.mq.QueueNames;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -64,9 +62,6 @@ public class OrderService {
     private BookingBackend ferari;
 
     private int orderTTLMinutes;
-
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
 
     @Autowired
     private TicketService ticketService;
@@ -182,9 +177,6 @@ public class OrderService {
         return response;
     }
 
-    public void notify(final Integer orderId){
-        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_NEW_ORDER, "", orderId);
-    }
 
     private void book(final Order order){
         try {

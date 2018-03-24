@@ -25,9 +25,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Sql({"classpath:/sql/clean.sql", "classpath:/sql/FinanceConsumer.sql"})
 @ActiveProfiles(profiles = {"stub"})
-public class FinanceConsumerIT extends NotificationConsumerTestBase {
+public class OrderFinanceConsumerIT extends NotificationConsumerTestBase {
     @Autowired
-    private FinanceConsumer consumer;
+    private OrderFinanceConsumer consumer;
 
     @Autowired
     private AccountRepository accountRepository;

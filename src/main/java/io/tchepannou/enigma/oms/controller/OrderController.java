@@ -11,7 +11,9 @@ import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
+import io.tchepannou.enigma.oms.service.mq.QueueNames;
 import io.tchepannou.enigma.oms.service.order.OrderService;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +31,9 @@ import javax.validation.Valid;
 public class OrderController {
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     @RequestMapping(method = RequestMethod.POST)
     @ApiOperation(value = "Create")
@@ -54,10 +59,9 @@ public class OrderController {
             @RequestBody @Valid CheckoutOrderRequest request
     ) {
         final CheckoutOrderResponse response = orderService.checkout(orderId, deviceUID, request);
-        orderService.notify(orderId);
+        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_NEW_ORDER, "", orderId);
         return response;
     }
-
 
     @RequestMapping(value="/{orderId}", method = RequestMethod.GET)
     @ApiOperation(value = "Get")

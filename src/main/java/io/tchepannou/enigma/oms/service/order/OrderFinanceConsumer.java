@@ -30,8 +30,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
-public class FinanceConsumer extends MQConsumer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FinanceConsumer.class);
+public class OrderFinanceConsumer extends MQConsumer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OrderFinanceConsumer.class);
 
     @Autowired
     private AccountRepository accountRepository;

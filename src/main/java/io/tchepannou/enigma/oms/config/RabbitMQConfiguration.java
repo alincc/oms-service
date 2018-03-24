@@ -69,11 +69,6 @@ public class RabbitMQConfiguration {
         return createBinding(QueueNames.QUEUE_TICKET_SMS, newOrderFanoutExchange());
     }
 
-    @Bean
-    public Binding merchantNotificationBinding() {
-        return createBinding(QueueNames.QUEUE_NOTIFICATION_MERCHANT, newOrderFanoutExchange());
-    }
-
     private Binding createBinding(final String name, final Exchange exchange){
         final Queue queue = new Queue(name, false);
 

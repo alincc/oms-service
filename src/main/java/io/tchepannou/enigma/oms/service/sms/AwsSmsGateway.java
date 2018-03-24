@@ -1,7 +1,6 @@
 package io.tchepannou.enigma.oms.service.sms;
 
 import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.model.InvalidParameterValueException;
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
@@ -20,16 +19,12 @@ public class AwsSmsGateway implements SmsGateway {
 
     @Override
     public String send(final String sender, final String phone, final String message) {
-        try {
-            final Map<String, MessageAttributeValue> attrs = attributes(sender);
-            final PublishResult result = sns.publish(new PublishRequest()
-                    .withMessage(message)
-                    .withPhoneNumber(formatPhone(phone))
-                    .withMessageAttributes(attrs));
-            return result.getMessageId();
-        } catch (InvalidParameterValueException e){
-            LOGGER.warn("Unable to send SMS to {}", phone, e);
-        }
+        final Map<String, MessageAttributeValue> attrs = attributes(sender);
+        final PublishResult result = sns.publish(new PublishRequest()
+                .withMessage(message)
+                .withPhoneNumber(formatPhone(phone))
+                .withMessageAttributes(attrs));
+        return result.getMessageId();
     }
 
     private String formatPhone(String phone) {
@@ -45,9 +40,12 @@ public class AwsSmsGateway implements SmsGateway {
 
     private Map<String, MessageAttributeValue> attributes(final String sender) {
         Map<String, MessageAttributeValue> smsAttributes = new HashMap<>();
-        smsAttributes.put("AWS.SNS.SMS.SenderID", new MessageAttributeValue()
-                .withStringValue(sender)
-                .withDataType("String"));
+
+        if (sender != null) {
+            smsAttributes.put("AWS.SNS.SMS.SenderID", new MessageAttributeValue()
+                    .withStringValue(sender)
+                    .withDataType("String"));
+        }
 
         smsAttributes.put("AWS.SNS.SMS.SMSType", new MessageAttributeValue()
                 .withStringValue("Transactional") //Sets the type to promotional.

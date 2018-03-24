@@ -44,4 +44,24 @@ public class AwsSmsGatewayTest {
         assertThat(request.getValue().getMessageAttributes().get("AWS.SNS.SMS.SMSType").getStringValue()).isEqualTo("Transactional");
     }
 
+    @Test
+    public void sendWithNoSender() throws Exception {
+        PublishResult expected = mock(PublishResult.class);
+        when(expected.getMessageId()).thenReturn("this-is-message-id");
+        when (sns.publish(any())).thenReturn(expected);
+
+        // When
+        String result = gateway.send(null, "(514)544-11 11", "Hello world");
+
+        // Then
+        assertThat(result).isEqualTo("this-is-message-id");
+
+        ArgumentCaptor<PublishRequest> req = ArgumentCaptor.forClass(PublishRequest.class);
+        verify(sns).publish(req.capture());
+        assertThat(req.getValue().getMessage()).isEqualTo("Hello world");
+        assertThat(req.getValue().getPhoneNumber()).isEqualTo("+15145441111");
+        assertThat(req.getValue().getMessageAttributes().containsKey("AWS.SNS.SMS.SenderID")).isFalse();
+        assertThat(req.getValue().getMessageAttributes().get("AWS.SNS.SMS.SMSType").getStringValue()).isEqualTo("Transactional");
+    }
+
 }

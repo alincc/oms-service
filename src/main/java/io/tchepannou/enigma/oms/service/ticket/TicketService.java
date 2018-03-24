@@ -3,9 +3,7 @@ package io.tchepannou.enigma.oms.service.ticket;
 import com.google.common.annotations.VisibleForTesting;
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.core.rest.RestClient;
-import io.tchepannou.core.rest.RestConfig;
 import io.tchepannou.core.rest.exception.HttpNotFoundException;
-import io.tchepannou.core.rest.impl.DefaultRestClient;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
@@ -19,12 +17,10 @@ import io.tchepannou.enigma.oms.exception.NotFoundException;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
-import io.tchepannou.enigma.oms.service.mq.QueueNames;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -107,11 +103,11 @@ public class TicketService {
         return new GetTicketResponse(mapper.toTicketDto(ticket));
     }
 
-    @Transactional
-    @RabbitListener(queues = QueueNames.QUEUE_TICKET_SMS)
-    public void onNewOrder(Integer orderId){
-        onNewOrder(orderId, new DefaultRestClient(new RestConfig()));
-    }
+//    @Transactional
+//    @RabbitListener(queues = QueueNames.QUEUE_TICKET_SMS)
+//    public void onNewOrder(Integer orderId){
+//        onNewOrder(orderId, new DefaultRestClient(new RestConfig()));
+//    }
 
     @VisibleForTesting
     protected void onNewOrder(Integer orderId, RestClient rest){

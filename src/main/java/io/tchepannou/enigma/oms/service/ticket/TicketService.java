@@ -123,7 +123,7 @@ public class TicketService {
 
         final List<Ticket> tickets = ticketRepository.findByOrder(order);
         for (Ticket ticket : tickets) {
-            final String url = "http://127.0.0.1:" + port + "/v1/tickets/" + ticket.getId() + "/sms";
+            final String url = "http://localhost:" + port + "/v1/tickets/" + ticket.getId() + "/sms";
             try {
                 rest.get(url, SendSmsResponse.class);
             } catch (HttpNotFoundException e) {

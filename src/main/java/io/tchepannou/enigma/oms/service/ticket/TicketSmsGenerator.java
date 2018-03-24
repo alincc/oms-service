@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 /**
  * Ticket message generator:
  * <code>
- * TID:_ID_
+ * TID:_BOOKING_ID_
  * _ORIGIN_,_DESTINATION_,_DEPARTURE_DATE_
  * _CARRIER_,_PRODUCT_
  * _CUSTOMER_NAME_
@@ -67,7 +67,7 @@ public class TicketSmsGenerator {
 
     private String id(final Ticket ticket) {
         final NumberFormat fmt = new DecimalFormat("000000");
-        return fmt.format(ticket.getId());
+        return fmt.format(ticket.getOrderLine().getBookingId());
     }
 
     private String name(final CityDto city) {

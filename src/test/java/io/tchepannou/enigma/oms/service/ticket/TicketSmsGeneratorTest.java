@@ -50,7 +50,7 @@ public class TicketSmsGeneratorTest {
     public void generate() throws Exception {
         // Given
         final TransportationOfferToken offerToken = createOfferToken(1, 2, 100);
-        final Ticket ticket = createTicket(1, 1000, "Ray", "Sponsible", offerToken);
+        final Ticket ticket = createTicket(1, 11, 1000, "Ray", "Sponsible", offerToken);
 
         final MerchantDto merchant = createMerchant(ticket.getMerchantId(), "Buca Voyages");
         when(merchantBackend.findById(1000)).thenReturn(merchant);
@@ -69,7 +69,7 @@ public class TicketSmsGeneratorTest {
         final DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         fmt.setTimeZone(TimeZone.getTimeZone(origin.getTimezoneId()));
 
-        final String expected = "000001\n"
+        final String expected = "000011\n"
                 + "YAOUNDE,BAFFOUSS\n"
                 + fmt.format(offerToken.getDepartureDateTime()) + "\n"
                 + "BUCA VOYAGES,VIP";
@@ -101,6 +101,7 @@ public class TicketSmsGeneratorTest {
     }
     private Ticket createTicket(
             final Integer id,
+            final Integer bookingId,
             final Integer merchantId,
             final String firstName,
             final String lastName,
@@ -113,6 +114,7 @@ public class TicketSmsGeneratorTest {
         line.setOrder(order);
         line.setMerchantId(merchantId);
         line.setOfferToken(offerToken.toString());
+        line.setBookingId(bookingId);
 
         final Ticket ticket = new Ticket();
         ticket.setOrderLine(line);

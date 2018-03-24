@@ -1,20 +1,32 @@
 package io.tchepannou.enigma.oms.service.ticket;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.tchepannou.core.logger.KVLogger;
+import io.tchepannou.core.rest.RestClient;
+import io.tchepannou.core.rest.RestConfig;
+import io.tchepannou.core.rest.exception.HttpNotFoundException;
+import io.tchepannou.core.rest.impl.DefaultRestClient;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.rr.GetTicketResponse;
+import io.tchepannou.enigma.oms.client.rr.SendSmsResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.exception.NotFoundException;
+import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
+import io.tchepannou.enigma.oms.service.mq.QueueNames;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -26,6 +38,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class TicketService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Logger.class);
+
     @Autowired
     private KVLogger kv;
 
@@ -33,10 +47,16 @@ public class TicketService {
     private TicketRepository ticketRepository;
 
     @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
     private TicketSmsSender smsSender;
 
     @Autowired
     private Mapper mapper;
+
+    @Value("${server.port}")
+    private int port;
 
     @Transactional
     public List<TicketDto> create(Order order){
@@ -68,13 +88,14 @@ public class TicketService {
                 .collect(Collectors.toList());
     }
 
-    public void sms(Integer id) {
+    public SendSmsResponse sms(Integer id) {
         final Ticket ticket = ticketRepository.findOne(id);
         if (ticket == null){
             throw new NotFoundException(OMSErrorCode.TICKET_NOT_FOUND);
         }
 
-        smsSender.send(ticket);
+        final String transactionId = smsSender.send(ticket);
+        return new SendSmsResponse(transactionId);
     }
 
     public GetTicketResponse findById(Integer id){
@@ -84,6 +105,31 @@ public class TicketService {
         }
 
         return new GetTicketResponse(mapper.toTicketDto(ticket));
+    }
+
+    @Transactional
+    @RabbitListener(queues = QueueNames.QUEUE_TICKET_SMS)
+    public void onNewOrder(Integer orderId){
+        onNewOrder(orderId, new DefaultRestClient(new RestConfig()));
+    }
+
+    @VisibleForTesting
+    protected void onNewOrder(Integer orderId, RestClient rest){
+        final Order order = orderRepository.findOne(orderId);
+        if (order == null){
+            LOGGER.error("Order#{} not found", orderId);
+            return;
+        }
+
+        final List<Ticket> tickets = ticketRepository.findByOrder(order);
+        for (Ticket ticket : tickets) {
+            final String url = "http://127.0.0.1:" + port + "/v1/tickets/" + ticket.getId() + "/sms";
+            try {
+                rest.get(url, SendSmsResponse.class);
+            } catch (HttpNotFoundException e) {
+                LOGGER.error("Unable to send via SMS Ticket#{}", url, e);
+            }
+        }
     }
 
     private Ticket createTicket(
@@ -117,6 +163,14 @@ public class TicketService {
 
         ticketRepository.save(ticket);
         return ticket;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(final int port) {
+        this.port = port;
     }
 }
 

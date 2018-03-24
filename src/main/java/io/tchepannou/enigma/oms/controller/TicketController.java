@@ -3,6 +3,7 @@ package io.tchepannou.enigma.oms.controller;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.tchepannou.enigma.oms.client.rr.GetTicketResponse;
+import io.tchepannou.enigma.oms.client.rr.SendSmsResponse;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -26,7 +27,7 @@ public class TicketController {
 
     @RequestMapping(value="/{id}/sms", method = RequestMethod.GET)
     @ApiOperation("sms")
-    public void sms(@PathVariable Integer id){
-        ticketService.sms(id);
+    public SendSmsResponse sms(@PathVariable Integer id){
+        return ticketService.sms(id);
     }
 }

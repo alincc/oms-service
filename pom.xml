@@ -18,14 +18,14 @@
 
     <properties>
         <database.name>oms</database.name>
-        <jacoco.threshold.line>0.82</jacoco.threshold.line>
-        <jacoco.threshold.class>0.82</jacoco.threshold.class>
+        <jacoco.threshold.line>0.80</jacoco.threshold.line>
+        <jacoco.threshold.class>0.80</jacoco.threshold.class>
 
         <!-- Library versions - in ALPHABETICAL ORDER-->
         <aws-java-sdk.version>1.11.298</aws-java-sdk.version>
         <ferari-client.version>1.0.29</ferari-client.version>
         <profile-client.version>1.0.6</profile-client.version>
-        <oms-client.version>1.0.21</oms-client.version>
+        <oms-client.version>1.0.22</oms-client.version>
         <ref-data-client.version>1.0.9</ref-data-client.version>
 
         <!-- Test -->

@@ -1,14 +1,17 @@
 package io.tchepannou.enigma.oms.service.ticket;
 
 import io.tchepannou.core.logger.KVLogger;
+import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.ferari.client.Direction;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.rr.GetTicketResponse;
+import io.tchepannou.enigma.oms.client.rr.SendSmsResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.exception.NotFoundException;
+import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
 import org.apache.commons.lang.time.DateUtils;
@@ -27,6 +30,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +39,9 @@ import static org.mockito.Mockito.when;
 public class TicketServiceTest {
     @Mock
     private KVLogger kv;
+
+    @Mock
+    private OrderRepository orderRepository;
 
     @Mock
     private TicketRepository ticketRepository;
@@ -131,11 +138,47 @@ public class TicketServiceTest {
         Ticket ticket = mock(Ticket.class);
         when(ticketRepository.findOne(1)).thenReturn(ticket);
 
+        when(smsSender.send(ticket)).thenReturn("1232");
+
         // When
-        service.sms(1);
+        SendSmsResponse response = service.sms(1);
 
         // Then
-        smsSender.send(ticket);
+        assertThat(response.getSmsTransactionId()).isEqualTo("1232");
+    }
+
+    @Test
+    public void onNewOrder() throws Exception {
+        // Given
+        Order order = createOrder(11);
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        Ticket ticket1 = createTicket(1);
+        Ticket ticket2 = createTicket(2);
+        when(ticketRepository.findByOrder(order)).thenReturn(Arrays.asList(ticket1, ticket2));
+
+        RestClient rest = mock(RestClient.class);
+
+        // When
+        service.setPort(8080);
+        service.onNewOrder(11, rest);
+
+        // Verify
+        verify(rest).get("http://127.0.0.1:8080/v1/tickets/1/sms", SendSmsResponse.class);
+        verify(rest).get("http://127.0.0.1:8080/v1/tickets/2/sms", SendSmsResponse.class);
+    }
+
+
+    @Test
+    public void onNewOrderDontSendSMSOnInvalidOrder() throws Exception {
+        // Given
+        RestClient rest = mock(RestClient.class);
+
+        // When
+        service.onNewOrder(11, rest);
+
+        // Verify
+        verify(rest, never()).get(any(), any());
     }
 
     @Test(expected = NotFoundException.class)
@@ -168,6 +211,12 @@ public class TicketServiceTest {
         service.findById(999);
     }
 
+
+    private Ticket createTicket(Integer id){
+        Ticket ticket = new Ticket();
+        ticket.setId(id);
+        return ticket;
+    }
 
     private TransportationOfferToken createOfferToken(
             Direction direction,
@@ -204,8 +253,10 @@ public class TicketServiceTest {
         order.setId(id);
         order.setFirstName("Ray");
         order.setLastName("Sponsible");
-        order.setLines(Arrays.asList(lines));
-        order.getLines().forEach(line -> line.setOrder(order));
+        if (lines != null) {
+            order.setLines(Arrays.asList(lines));
+            order.getLines().forEach(line -> line.setOrder(order));
+        }
         return order;
     }
 }

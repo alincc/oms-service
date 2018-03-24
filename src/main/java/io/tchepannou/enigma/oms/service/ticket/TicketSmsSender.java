@@ -21,7 +21,7 @@ public class TicketSmsSender {
     @Autowired
     private SmsGateway gateway;
 
-    public void send(final Ticket ticket) {
+    public String send(final Ticket ticket) {
         final String mobileNumber = ticket.getOrderLine().getOrder().getMobileNumber();
         final String message = messageGenerator.generate(ticket);
         logger.add("SmsNumber", mobileNumber);
@@ -31,6 +31,7 @@ public class TicketSmsSender {
 
             final String result = gateway.send(mobileNumber, message);
             logger.add("SmsTransactionID", result);
+            return result;
 
         } catch (RuntimeException e){
 
@@ -38,6 +39,7 @@ public class TicketSmsSender {
             logger.add("SmsExceptionMessage", e.getMessage());
 
             LOGGER.error("Unable to send message to {}", mobileNumber, e);
+            throw e;
         }
     }
 }

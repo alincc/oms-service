@@ -26,6 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyCollection;
@@ -66,7 +67,7 @@ public class TicketSmsGeneratorTest {
 
         // Then
         final DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-//        fmt.setTimeZone(DateHelper.getTimeZone());
+        fmt.setTimeZone(TimeZone.getTimeZone(origin.getTimezoneId()));
 
         final String expected = "000001\n"
                 + "YAOUNDE,BAFFOUSS\n"
@@ -149,6 +150,7 @@ public class TicketSmsGeneratorTest {
         city.setId(id);
         city.setName(name);
         city.setDisplayName(name);
+        city.setTimezoneId(DateHelper.getTimeZone().getID());
         return city;
     }
 }

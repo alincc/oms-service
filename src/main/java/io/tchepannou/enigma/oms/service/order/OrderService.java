@@ -105,7 +105,7 @@ public class OrderService {
         }
     }
 
-    @Transactional(noRollbackFor = OrderException.class)
+    @Transactional
     public CheckoutOrderResponse checkout(
             final Integer orderId,
             final String deviceUID,

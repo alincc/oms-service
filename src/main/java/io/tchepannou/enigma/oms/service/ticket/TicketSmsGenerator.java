@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -58,7 +59,7 @@ public class TicketSmsGenerator {
         return String.format(
                 "%s\n%s,%s\n%s\n%s,%s",
                 id(ticket),
-                name(origin), name(destination), departureDate(ticket),
+                name(origin), name(destination), departureDate(ticket, origin),
                 carrier(ticket), product(ticket),
                 passenger(ticket)
         ).toUpperCase();
@@ -74,8 +75,10 @@ public class TicketSmsGenerator {
         return toString(displayName, MAXLEN_CITY);
     }
 
-    private String departureDate(final Ticket ticket) {
+    private String departureDate(final Ticket ticket, CityDto city) {
+        final TimeZone tz = TimeZone.getTimeZone(city.getTimezoneId());
         final DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        fmt.setTimeZone(tz);
         return fmt.format(ticket.getDepartureDateTime());
     }
 

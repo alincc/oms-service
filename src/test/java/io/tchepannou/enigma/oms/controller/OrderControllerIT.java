@@ -224,7 +224,6 @@ public class OrderControllerIT {
 
     /* =========== CHECKOUT ============ */
     @Test
-    @Ignore
     public void shouldCheckoutOrderWithMobileMoney() throws Exception {
         final CheckoutOrderRequest request = createCheckoutOrderRequest();
         final String deviceUID = UUID.randomUUID().toString();
@@ -250,7 +249,7 @@ public class OrderControllerIT {
         final Order order = orderRepository.findOne(100);
         assertThat(order).isNotNull();
 
-        assertThat(order.getPaymentId()).isEqualTo(-1);
+        assertThat(order.getPaymentId()).isEqualTo(23203290);
         assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
         assertThat(order.getCustomerId()).isEqualTo(request.getCustomerId());

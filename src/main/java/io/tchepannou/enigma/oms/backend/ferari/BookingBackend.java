@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-@ConfigurationProperties("enigma.service.ferari")
+@ConfigurationProperties("enigma.service.ferari.booking")
 public class BookingBackend {
     @Autowired
     private FerariMapper bookingMapper;
@@ -33,7 +33,7 @@ public class BookingBackend {
         try {
 
             final CreateBookingRequest request = bookingMapper.toCreateBookingRequest(order);
-            return rest.post(url + "/v1/bookings", request, CreateBookingResponse.class).getBody().getBookings();
+            return rest.post(url, request, CreateBookingResponse.class).getBody().getBookings();
 
         } catch (HttpException e){
             throw new FerrariException("Unable to book Order#" + order.getId(), e);
@@ -45,7 +45,7 @@ public class BookingBackend {
         try {
 
             for (final OrderLine line : order.getLines()) {
-                final String confirmUrl = String.format("%s/v1/bookings/%s/confirm", url, line.getBookingId());
+                final String confirmUrl = String.format("%s/%s/confirm", url, line.getBookingId());
                 rest.get(confirmUrl, Object.class);
             }
 
@@ -62,7 +62,7 @@ public class BookingBackend {
             request.setReason(CancellationReason.EXPIRED);
 
             for (final OrderLine line : order.getLines()) {
-                final String cancelUrl = String.format("%s/v1/bookings/%s/cancel", url, line.getBookingId());
+                final String cancelUrl = String.format("%s/%s/cancel", url, line.getBookingId());
                 rest.post(cancelUrl, request, CancelBookingResponse.class);
             }
 

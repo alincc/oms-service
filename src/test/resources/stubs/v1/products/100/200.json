@@ -1,0 +1,27 @@
+{
+  "id": 100,
+  "originId": 2370001,
+  "destinationId": 2370002,
+  "numberOfStops": 0,
+  "numberOfSeats": 30,
+  "duration": {
+    "hours": 1,
+    "minutes": 0
+  },
+  "amenityCodes": [
+    "AC",
+    "TOILET"
+  ],
+  "productClass": {
+    "id": 10,
+    "code": "1C",
+    "name": "First class"
+  },
+  "productType": {
+    "id": 1000,
+    "name": "FLEX",
+    "description": "Description of FLEX",
+    "transportationMode": "BUS",
+    "merchantId": 1000
+  }
+}

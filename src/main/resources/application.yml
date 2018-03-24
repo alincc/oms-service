@@ -92,7 +92,10 @@ enigma:
     order:
       orderTTLMinutes: 10
     ferari:
-      url: "https://io-tchepannou-ferari.herokuapp.com"
+      booking:
+        url: "https://io-tchepannou-ferari.herokuapp.com/v1/bookings"
+      product:
+        url: "https://io-tchepannou-ferari.herokuapp.com/v1/products"
     refdata:
       city:
         url: "https://io-tchepannou-ref-data.herokuapp.com/v1/cities"

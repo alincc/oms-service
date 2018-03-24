@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service;
+package io.tchepannou.enigma.oms.service.order;
 
 import com.google.common.base.Joiner;
 import io.tchepannou.core.logger.KVLogger;
@@ -27,6 +27,7 @@ import io.tchepannou.enigma.oms.exception.OrderException;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
+import io.tchepannou.enigma.oms.service.Mapper;
 import io.tchepannou.enigma.oms.service.mq.QueueNames;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
 import org.slf4j.Logger;
@@ -196,7 +197,6 @@ public class OrderService {
         rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_NEW_ORDER, "", orderId);
     }
 
-
     private void book(final Order order){
         if (OrderStatus.PENDING.equals(order)){
             // Do not book pending request
@@ -236,11 +236,7 @@ public class OrderService {
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepository.save(order);
 
-            final List<TicketDto> tickets = ticketService.create(order);
-            for (final TicketDto ticket : tickets){
-                ticketService.sms(ticket.getId());
-            }
-            return tickets;
+            return ticketService.create(order);
 
         } catch (FerrariException e){
             throw toOrderException(e, OMSErrorCode.CONFIRM_FAILURE);

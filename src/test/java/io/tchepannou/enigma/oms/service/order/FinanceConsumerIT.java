@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service.mq.finance;
+package io.tchepannou.enigma.oms.service.order;
 
 import io.tchepannou.enigma.oms.domain.Account;
 import io.tchepannou.enigma.oms.domain.AccountType;

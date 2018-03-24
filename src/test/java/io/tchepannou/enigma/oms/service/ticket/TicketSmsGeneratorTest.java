@@ -10,6 +10,7 @@ import io.tchepannou.enigma.oms.backend.refdata.CityBackend;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
+import io.tchepannou.enigma.oms.support.DateHelper;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
 import io.tchepannou.enigma.refdata.client.dto.CityDto;
 import org.apache.commons.lang.time.DateUtils;
@@ -20,8 +21,10 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.math.BigDecimal;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +51,7 @@ public class TicketSmsGeneratorTest {
         final TransportationOfferToken offerToken = createOfferToken(1, 2, 100);
         final Ticket ticket = createTicket(1, 1000, "Ray", "Sponsible", offerToken);
 
-        final MerchantDto merchant = createMerchant(ticket.getMerchantId(), "Buca");
+        final MerchantDto merchant = createMerchant(ticket.getMerchantId(), "Buca Voyages");
         when(merchantBackend.findById(1000)).thenReturn(merchant);
 
         final ProductDto product = createProduct(offerToken.getProductId(), "vip");
@@ -62,10 +65,13 @@ public class TicketSmsGeneratorTest {
         final String result = generator.generate(ticket);
 
         // Then
+        final DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+//        fmt.setTimeZone(DateHelper.getTimeZone());
+
         final String expected = "000001\n"
                 + "YAOUNDE,BAFFOUSS\n"
-                + new SimpleDateFormat("yyyy-MM-dd HH:mm").format(offerToken.getDepartureDateTime()) + "\n"
-                + "BUCA,VIP";
+                + fmt.format(offerToken.getDepartureDateTime()) + "\n"
+                + "BUCA VOYAGES,VIP";
         assertThat(result).isEqualTo(expected);
     }
 
@@ -75,13 +81,17 @@ public class TicketSmsGeneratorTest {
             Integer productId
     ){
         final TransportationOfferToken token = new TransportationOfferToken();
+        final Calendar departureDate = DateHelper.getCalendar();
+        departureDate.set(Calendar.HOUR_OF_DAY, 15);
+        departureDate.set(Calendar.MINUTE, 30);
+
         token.setDirection(Direction.OUTBOUND);
         token.setOriginId(originId);
         token.setAmount(new BigDecimal(100d));
         token.setDestinationId(destinationId);
         token.setArrivalDateTime(new Date());
         token.setCurrencyCode("XAF");
-        token.setDepartureDateTime(new Date());
+        token.setDepartureDateTime(departureDate.getTime());
         token.setExpiryDateTime(DateUtils.addDays(new Date(), 1));
         token.setPriceId(1);
         token.setProductId(productId);

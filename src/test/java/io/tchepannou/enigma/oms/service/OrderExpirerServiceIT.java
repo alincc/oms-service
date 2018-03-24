@@ -4,6 +4,7 @@ import io.tchepannou.core.test.jetty.StubHandler;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
+import io.tchepannou.enigma.oms.service.order.OrderExpirerService;
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
 import org.junit.Before;

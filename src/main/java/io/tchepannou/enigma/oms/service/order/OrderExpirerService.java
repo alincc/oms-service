@@ -1,4 +1,4 @@
-package io.tchepannou.enigma.oms.service;
+package io.tchepannou.enigma.oms.service.order;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tchepannou.core.rest.RestClient;

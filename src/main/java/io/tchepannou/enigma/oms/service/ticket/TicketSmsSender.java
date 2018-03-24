@@ -26,6 +26,7 @@ public class TicketSmsSender {
         final String message = messageGenerator.generate(ticket);
         logger.add("SmsNumber", mobileNumber);
         logger.add("SmsMessage", message);
+        logger.add("SmsGateway", gateway.getClass());
 
         try {
 

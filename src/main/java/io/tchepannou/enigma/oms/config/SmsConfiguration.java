@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.config;
 
+import io.tchepannou.enigma.oms.service.sms.AwsSmsGateway;
 import io.tchepannou.enigma.oms.service.sms.NullSmsGateway;
 import io.tchepannou.enigma.oms.service.sms.SmsGateway;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +18,7 @@ public class SmsConfiguration {
     @Bean
     @Profile("int")
     public SmsGateway smsGateway(){
-        return new NullSmsGateway();
+        return new AwsSmsGateway();
     }
 }
 

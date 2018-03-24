@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -56,7 +57,7 @@ public class OrderFinanceConsumerTest {
         when(orderRepository.findOne(1)).thenReturn(order);
 
         MerchantDto merchant = createMerchant(11, 50, .1);
-        when(merchantBackend.search(anyCollection())).thenReturn(Arrays.asList(merchant));
+        when(merchantBackend.search(anyCollection(), any())).thenReturn(Arrays.asList(merchant));
 
         Account siteAccount = createAccount(21,  order.getSiteId(), AccountType.SITE, 100);
         when(accountRepository.findByTypeAndReferenceId(AccountType.SITE, order.getSiteId())).thenReturn(siteAccount);
@@ -107,7 +108,7 @@ public class OrderFinanceConsumerTest {
         when(orderRepository.findOne(1)).thenReturn(order);
 
         MerchantDto merchant = createMerchant(11, 50, .1);
-        when(merchantBackend.search(anyCollection())).thenReturn(Arrays.asList(merchant));
+        when(merchantBackend.search(anyCollection(), any())).thenReturn(Arrays.asList(merchant));
 
         Account siteAccount = createAccount(21,  order.getSiteId(), AccountType.SITE, 100);
         when(accountRepository.findByTypeAndReferenceId(AccountType.SITE, order.getSiteId())).thenReturn(siteAccount);

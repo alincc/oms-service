@@ -1,5 +1,8 @@
 package io.tchepannou.enigma.oms.service.order;
 
+import io.tchepannou.core.rest.RestClient;
+import io.tchepannou.core.rest.RestConfig;
+import io.tchepannou.core.rest.impl.DefaultRestClient;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.domain.Account;
 import io.tchepannou.enigma.oms.domain.AccountType;
@@ -54,11 +57,12 @@ public class OrderFinanceConsumer {
         }
 
         // Merchant
+        RestClient rest = new DefaultRestClient(new RestConfig());
         final Set<Integer> merchantIds = order.getLines().stream()
                 .map(l -> l.getMerchantId())
                 .collect(Collectors.toSet());
 
-        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds).stream()
+        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds, rest).stream()
                 .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));
 
         // Site

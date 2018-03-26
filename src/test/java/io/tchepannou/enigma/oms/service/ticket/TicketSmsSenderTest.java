@@ -1,12 +1,13 @@
 package io.tchepannou.enigma.oms.service.ticket;
 
 import io.tchepannou.core.logger.KVLogger;
-import io.tchepannou.enigma.oms.backend.refdata.SiteBackend;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.service.sms.SmsGateway;
+import io.tchepannou.enigma.refdata.client.SiteBackend;
 import io.tchepannou.enigma.refdata.client.dto.SiteDto;
+import io.tchepannou.enigma.refdata.client.rr.SiteResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -39,7 +40,7 @@ public class TicketSmsSenderTest {
     public void shouldSendSms() throws Exception {
         // Given
         final SiteDto site = createSite(1, "Test");
-        when(siteBackend.findById(1)).thenReturn(site);
+        when(siteBackend.findById(1)).thenReturn(new SiteResponse(site));
 
         final Ticket ticket = createTicket("5147550101", 1);
         when(generator.generate(ticket)).thenReturn("This is a message");
@@ -58,7 +59,7 @@ public class TicketSmsSenderTest {
     public void shouldLogMessage() throws Exception {
         // Given
         final SiteDto site = createSite(1, "Test");
-        when(siteBackend.findById(1)).thenReturn(site);
+        when(siteBackend.findById(1)).thenReturn(new SiteResponse(site));
 
         final Ticket ticket = createTicket("5147550101", 1);
         when(generator.generate(ticket)).thenReturn("This is a message");

@@ -27,6 +27,7 @@ import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.support.DateHelper;
+import io.tchepannou.enigma.refdata.client.RefDataEnvironment;
 import org.apache.commons.lang.time.DateUtils;
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
@@ -91,6 +92,9 @@ public class OrderControllerIT {
     @Autowired
     private TicketRepository ticketRepository;
 
+    @Autowired
+    private RefDataEnvironment refDataEnvironment;
+
 
     private DateFormat dateFormat;
 
@@ -100,9 +104,6 @@ public class OrderControllerIT {
 
     @Value("${enigma.service.profile.port}")
     private int profilePort;
-
-    @Value("${enigma.service.refdata.port}")
-    private int refdataPort;
 
     @Value("${enigma.test.sleepMillis}")
     private long sleepMillis;
@@ -139,6 +140,7 @@ public class OrderControllerIT {
         ferariHanderStub = new StubHandler();
         ferari = StubHandler.start(ferariPort, ferariHanderStub);
 
+        int refdataPort = refDataEnvironment.getPort();
         refdata = StubHandler.start(refdataPort, new StubHandler());
         profile = StubHandler.start(profilePort, new StubHandler());
 

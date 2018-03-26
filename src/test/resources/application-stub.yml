@@ -16,12 +16,6 @@ enigma:
     tontine:
       port: 38082
       url: "http://localhost:${enigma.service.tontine.port}"
-    refdata:
-      port: 38883
-      city:
-        url: "http://localhost:${enigma.service.refdata.port}/v1/cities"
-      site:
-        url: "http://localhost:${enigma.service.refdata.port}/v1/sites"
     profile:
       port: 38884
       merchant:

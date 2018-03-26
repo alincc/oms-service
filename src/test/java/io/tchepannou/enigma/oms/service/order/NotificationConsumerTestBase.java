@@ -3,9 +3,11 @@ package io.tchepannou.enigma.oms.service.order;
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetupTest;
 import io.tchepannou.core.test.jetty.StubHandler;
+import io.tchepannou.enigma.refdata.client.RefDataEnvironment;
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
 import org.junit.Before;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 public abstract class NotificationConsumerTestBase {
@@ -16,8 +18,8 @@ public abstract class NotificationConsumerTestBase {
     @Value("${enigma.service.profile.port}")
     private int profilePort;
 
-    @Value("${enigma.service.refdata.port}")
-    private int refdataPort;
+    @Autowired
+    private RefDataEnvironment refDataEnvironment;
 
     protected GreenMail mail;
     private Server ferari;
@@ -31,7 +33,7 @@ public abstract class NotificationConsumerTestBase {
         mail.start();
 
         ferari = StubHandler.start(ferariPort, new StubHandler());
-        refdata = StubHandler.start(refdataPort, new StubHandler());
+        refdata = StubHandler.start(refDataEnvironment.getPort(), new StubHandler());
         profile = StubHandler.start(profilePort, new StubHandler());
     }
 

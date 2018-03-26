@@ -6,13 +6,14 @@ import io.tchepannou.enigma.ferari.client.dto.ProductDto;
 import io.tchepannou.enigma.ferari.client.dto.ProductTypeDto;
 import io.tchepannou.enigma.oms.backend.ferari.ProductBackend;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
-import io.tchepannou.enigma.oms.backend.refdata.CityBackend;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
+import io.tchepannou.enigma.refdata.client.CityBackend;
 import io.tchepannou.enigma.refdata.client.dto.CityDto;
+import io.tchepannou.enigma.refdata.client.rr.CityListResponse;
 import org.apache.commons.lang.time.DateUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,7 +61,7 @@ public class TicketSmsGeneratorTest {
 
         final CityDto origin = createCity(1, "Yaounde");
         final CityDto destination = createCity(2, "Baffoussam");
-        when(cityBackend.search(anyCollection())).thenReturn(Arrays.asList(origin, destination));
+        when(cityBackend.findByIds(anyCollection())).thenReturn(new CityListResponse(Arrays.asList(origin, destination)));
 
         // When
         final String result = generator.generate(ticket);

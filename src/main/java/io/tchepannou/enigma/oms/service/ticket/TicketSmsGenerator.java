@@ -4,10 +4,10 @@ import com.google.common.base.Joiner;
 import io.tchepannou.enigma.ferari.client.dto.ProductDto;
 import io.tchepannou.enigma.oms.backend.ferari.ProductBackend;
 import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
-import io.tchepannou.enigma.oms.backend.refdata.CityBackend;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
+import io.tchepannou.enigma.refdata.client.CityBackend;
 import io.tchepannou.enigma.refdata.client.dto.CityDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -50,7 +50,7 @@ public class TicketSmsGenerator {
 
     public String generate(final Ticket ticket) {
         final List<Integer> cityIds = Arrays.asList(ticket.getOriginId(), ticket.getDestinationId());
-        final Map<Integer, CityDto> cities = cityBackend.search(cityIds)
+        final Map<Integer, CityDto> cities = cityBackend.findByIds(cityIds).getCities()
                 .stream()
                 .collect(Collectors.toMap(CityDto::getId, Function.identity()));
         final CityDto origin = cities.get(ticket.getOriginId());

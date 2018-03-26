@@ -1,8 +1,6 @@
 package io.tchepannou.enigma.oms.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.icegreen.greenmail.util.GreenMail;
-import com.icegreen.greenmail.util.ServerSetupTest;
 import io.tchepannou.core.rest.Headers;
 import io.tchepannou.core.test.jetty.StubHandler;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
@@ -27,13 +25,12 @@ import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.support.DateHelper;
+import io.tchepannou.enigma.profile.client.ProfileEnvironment;
 import io.tchepannou.enigma.refdata.client.RefDataEnvironment;
 import org.apache.commons.lang.time.DateUtils;
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -95,15 +92,14 @@ public class OrderControllerIT {
     @Autowired
     private RefDataEnvironment refDataEnvironment;
 
+    @Autowired
+    private ProfileEnvironment profileEnvironment;
 
     private DateFormat dateFormat;
 
 
     @Value("${enigma.service.ferari.port}")
     private int ferariPort;
-
-    @Value("${enigma.service.profile.port}")
-    private int profilePort;
 
     @Value("${enigma.test.sleepMillis}")
     private long sleepMillis;
@@ -117,20 +113,6 @@ public class OrderControllerIT {
     private Server refdata;
     private Server profile;
 
-    private static GreenMail mail;
-
-    @BeforeClass
-    public static void setUpAll(){
-        mail = new GreenMail(ServerSetupTest.SMTP);
-        mail.start();
-
-    }
-
-    @AfterClass
-    public static void tearDownAll(){
-        mail.stop();
-    }
-
     @Before
     public void setUp() throws Exception{
         this.mockMvc = webAppContextSetup(webApplicationContext).build();
@@ -140,9 +122,8 @@ public class OrderControllerIT {
         ferariHanderStub = new StubHandler();
         ferari = StubHandler.start(ferariPort, ferariHanderStub);
 
-        int refdataPort = refDataEnvironment.getPort();
-        refdata = StubHandler.start(refdataPort, new StubHandler());
-        profile = StubHandler.start(profilePort, new StubHandler());
+        refdata = StubHandler.start(refDataEnvironment.getPort(), new StubHandler());
+        profile = StubHandler.start(profileEnvironment.getPort(), new StubHandler());
 
     }
 

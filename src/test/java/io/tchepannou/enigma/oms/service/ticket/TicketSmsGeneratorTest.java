@@ -5,12 +5,13 @@ import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.ferari.client.dto.ProductDto;
 import io.tchepannou.enigma.ferari.client.dto.ProductTypeDto;
 import io.tchepannou.enigma.oms.backend.ferari.ProductBackend;
-import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.support.DateHelper;
+import io.tchepannou.enigma.profile.client.MerchantBackend;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
+import io.tchepannou.enigma.profile.client.rr.GetMerchantResponse;
 import io.tchepannou.enigma.refdata.client.CityBackend;
 import io.tchepannou.enigma.refdata.client.dto.CityDto;
 import io.tchepannou.enigma.refdata.client.rr.CityListResponse;
@@ -54,7 +55,7 @@ public class TicketSmsGeneratorTest {
         final Ticket ticket = createTicket(1, 11, 1000, "Ray", "Sponsible", offerToken);
 
         final MerchantDto merchant = createMerchant(ticket.getMerchantId(), "Buca Voyages");
-        when(merchantBackend.findById(1000)).thenReturn(merchant);
+        when(merchantBackend.findById(1000)).thenReturn(new GetMerchantResponse(merchant));
 
         final ProductDto product = createProduct(offerToken.getProductId(), "vip");
         when(productBackend.findById(100)).thenReturn(product);

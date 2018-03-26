@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.service.order;
 
+import io.tchepannou.core.test.jetty.StubHandler;
 import io.tchepannou.enigma.oms.domain.Account;
 import io.tchepannou.enigma.oms.domain.AccountType;
 import io.tchepannou.enigma.oms.domain.Order;
@@ -8,6 +9,10 @@ import io.tchepannou.enigma.oms.domain.TransactionType;
 import io.tchepannou.enigma.oms.repository.AccountRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
+import io.tchepannou.enigma.profile.client.ProfileEnvironment;
+import org.eclipse.jetty.server.Server;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +42,22 @@ public class OrderFinanceConsumerIT extends NotificationConsumerTestBase {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private ProfileEnvironment profileEnvironment;
+
+    private Server profile;
+
+    @Before
+    public void setUp() throws Exception{
+        profile = StubHandler.start(profileEnvironment.getPort(), new StubHandler());
+
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        StubHandler.stop(profile);
+    }
 
     @Test
     public void shouldRecordTransactionsOnCheckout() throws Exception {

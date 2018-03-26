@@ -1,9 +1,9 @@
 package io.tchepannou.enigma.oms.service.order;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.RestConfig;
 import io.tchepannou.core.rest.impl.DefaultRestClient;
-import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
 import io.tchepannou.enigma.oms.domain.Account;
 import io.tchepannou.enigma.oms.domain.AccountType;
 import io.tchepannou.enigma.oms.domain.Order;
@@ -15,6 +15,8 @@ import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
 import io.tchepannou.enigma.oms.service.mq.QueueNames;
 import io.tchepannou.enigma.oms.support.DateHelper;
+import io.tchepannou.enigma.profile.client.MerchantBackend;
+import io.tchepannou.enigma.profile.client.ProfileEnvironment;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
 import io.tchepannou.enigma.profile.client.dto.PlanDto;
 import org.slf4j.Logger;
@@ -44,12 +46,20 @@ public class OrderFinanceConsumer {
     private OrderRepository orderRepository;
 
     @Autowired
-    private MerchantBackend merchantBackend;
+    private ProfileEnvironment profileEnvironment;
 
     @Transactional
     @RabbitListener(queues = QueueNames.QUEUE_FINANCE)
     public void onOrderConfirmed(Integer orderId){
         LOGGER.info("Consuming {}", orderId);
+
+        final RestClient rest = new DefaultRestClient(new RestConfig());
+        final MerchantBackend merchantBackend = new MerchantBackend(rest, profileEnvironment);
+        onOrderConfirmed(orderId, merchantBackend);
+    }
+
+    @VisibleForTesting
+    protected void onOrderConfirmed(Integer orderId, MerchantBackend merchantBackend){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
             LOGGER.warn("Order#{} not found", orderId);
@@ -57,12 +67,14 @@ public class OrderFinanceConsumer {
         }
 
         // Merchant
-        RestClient rest = new DefaultRestClient(new RestConfig());
+
         final Set<Integer> merchantIds = order.getLines().stream()
                 .map(l -> l.getMerchantId())
                 .collect(Collectors.toSet());
 
-        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds, rest).stream()
+        final Map<Integer, MerchantDto> merchants = merchantBackend.search(merchantIds)
+                .getMerchants()
+                .stream()
                 .collect(Collectors.toMap(MerchantDto::getId, Function.identity()));
 
         // Site

@@ -1,6 +1,6 @@
 package io.tchepannou.enigma.oms.service.order;
 
-import io.tchepannou.enigma.oms.backend.profile.MerchantBackend;
+import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.domain.Account;
 import io.tchepannou.enigma.oms.domain.AccountType;
@@ -11,8 +11,10 @@ import io.tchepannou.enigma.oms.domain.TransactionType;
 import io.tchepannou.enigma.oms.repository.AccountRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
+import io.tchepannou.enigma.profile.client.MerchantBackend;
 import io.tchepannou.enigma.profile.client.dto.MerchantDto;
 import io.tchepannou.enigma.profile.client.dto.PlanDto;
+import io.tchepannou.enigma.profile.client.rr.SearchMerchantResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -25,7 +27,6 @@ import java.util.Arrays;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -49,6 +50,7 @@ public class OrderFinanceConsumerTest {
     @InjectMocks
     private OrderFinanceConsumer service;
 
+
     @Test
     public void onOrderConfirmedOneWay() {
         // Given
@@ -57,7 +59,7 @@ public class OrderFinanceConsumerTest {
         when(orderRepository.findOne(1)).thenReturn(order);
 
         MerchantDto merchant = createMerchant(11, 50, .1);
-        when(merchantBackend.search(anyCollection(), any())).thenReturn(Arrays.asList(merchant));
+        when(merchantBackend.search(anyCollection())).thenReturn(new SearchMerchantResponse(Arrays.asList(merchant)));
 
         Account siteAccount = createAccount(21,  order.getSiteId(), AccountType.SITE, 100);
         when(accountRepository.findByTypeAndReferenceId(AccountType.SITE, order.getSiteId())).thenReturn(siteAccount);
@@ -66,7 +68,7 @@ public class OrderFinanceConsumerTest {
         when(accountRepository.findByTypeAndReferenceId(AccountType.MERCHANT, merchant.getId())).thenReturn(merchantAccount);
 
         // When
-        service.onOrderConfirmed(1);
+        service.onOrderConfirmed(1, merchantBackend);
 
         // Then
         ArgumentCaptor<Transaction> tx = ArgumentCaptor.forClass(Transaction.class);
@@ -108,7 +110,7 @@ public class OrderFinanceConsumerTest {
         when(orderRepository.findOne(1)).thenReturn(order);
 
         MerchantDto merchant = createMerchant(11, 50, .1);
-        when(merchantBackend.search(anyCollection(), any())).thenReturn(Arrays.asList(merchant));
+        when(merchantBackend.search(anyCollection())).thenReturn(new SearchMerchantResponse(Arrays.asList(merchant)));
 
         Account siteAccount = createAccount(21,  order.getSiteId(), AccountType.SITE, 100);
         when(accountRepository.findByTypeAndReferenceId(AccountType.SITE, order.getSiteId())).thenReturn(siteAccount);
@@ -117,7 +119,7 @@ public class OrderFinanceConsumerTest {
         when(accountRepository.findByTypeAndReferenceId(AccountType.MERCHANT, merchant.getId())).thenReturn(merchantAccount);
 
         // When
-        service.onOrderConfirmed(1);
+        service.onOrderConfirmed(1, merchantBackend);
 
         // Then
         ArgumentCaptor<Transaction> tx = ArgumentCaptor.forClass(Transaction.class);

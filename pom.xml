@@ -25,7 +25,7 @@
         <aws-java-sdk.version>1.11.298</aws-java-sdk.version>
         <ferari-client.version>1.0.29</ferari-client.version>
         <profile-client.version>1.0.7</profile-client.version>
-        <oms-client.version>1.0.23</oms-client.version>
+        <oms-client.version>1.0.24</oms-client.version>
         <ref-data-client.version>1.0.11</ref-data-client.version>
 
         <!-- Test -->

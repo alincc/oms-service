@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Sql({"classpath:/sql/clean.sql", "classpath:/sql/FinanceConsumer.sql"})
 @ActiveProfiles(profiles = {"stub"})
-public class OrderFinanceConsumerIT extends NotificationConsumerTestBase {
+public class OrderFinanceConsumerIT {
     @Autowired
     private OrderFinanceConsumer consumer;
 

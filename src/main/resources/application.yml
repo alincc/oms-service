@@ -91,8 +91,3 @@ enigma:
       cron: "0 0/15 * * * ?"
     order:
       orderTTLMinutes: 10
-    ferari:
-      booking:
-        url: "https://io-tchepannou-ferari.herokuapp.com/v1/bookings"
-      product:
-        url: "https://io-tchepannou-ferari.herokuapp.com/v1/products"

@@ -18,18 +18,17 @@
 
     <properties>
         <database.name>oms</database.name>
-        <jacoco.threshold.line>0.86</jacoco.threshold.line>
-        <jacoco.threshold.class>0.86</jacoco.threshold.class>
+        <jacoco.threshold.line>0.89</jacoco.threshold.line>
+        <jacoco.threshold.class>0.89</jacoco.threshold.class>
 
         <!-- Library versions - in ALPHABETICAL ORDER-->
         <aws-java-sdk.version>1.11.298</aws-java-sdk.version>
-        <ferari-client.version>1.0.29</ferari-client.version>
+        <ferari-client.version>1.0.33</ferari-client.version>
         <profile-client.version>1.0.7</profile-client.version>
         <oms-client.version>1.0.24</oms-client.version>
         <ref-data-client.version>1.0.11</ref-data-client.version>
 
         <!-- Test -->
-        <greenmail.version>1.4.0</greenmail.version>
         <jsoup.version>1.8.3</jsoup.version>
     </properties>
 
@@ -62,10 +61,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.thymeleaf</groupId>
             <artifactId>thymeleaf-spring4</artifactId>
         </dependency>
@@ -79,12 +74,6 @@
         </dependency>
 
 
-        <dependency>
-            <groupId>com.icegreen</groupId>
-            <artifactId>greenmail</artifactId>
-            <version>${greenmail.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>

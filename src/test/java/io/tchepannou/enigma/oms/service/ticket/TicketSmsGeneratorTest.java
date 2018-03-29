@@ -1,10 +1,11 @@
 package io.tchepannou.enigma.oms.service.ticket;
 
 import io.tchepannou.enigma.ferari.client.Direction;
+import io.tchepannou.enigma.ferari.client.ProductBackend;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.ferari.client.dto.ProductDto;
 import io.tchepannou.enigma.ferari.client.dto.ProductTypeDto;
-import io.tchepannou.enigma.oms.backend.ferari.ProductBackend;
+import io.tchepannou.enigma.ferari.client.rr.GetProductResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
@@ -58,7 +59,7 @@ public class TicketSmsGeneratorTest {
         when(merchantBackend.findById(1000)).thenReturn(new GetMerchantResponse(merchant));
 
         final ProductDto product = createProduct(offerToken.getProductId(), "vip");
-        when(productBackend.findById(100)).thenReturn(product);
+        when(productBackend.findById(100)).thenReturn(new GetProductResponse(product));
 
         final CityDto origin = createCity(1, "Yaounde");
         final CityDto destination = createCity(2, "Baffoussam");

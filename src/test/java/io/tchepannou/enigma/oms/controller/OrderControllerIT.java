@@ -3,6 +3,7 @@ package io.tchepannou.enigma.oms.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tchepannou.core.rest.Headers;
 import io.tchepannou.core.test.jetty.StubHandler;
+import io.tchepannou.enigma.ferari.client.FerariEnvironment;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OfferType;
@@ -31,7 +32,6 @@ import org.apache.commons.lang.time.DateUtils;
 import org.eclipse.jetty.server.Server;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,11 +95,11 @@ public class OrderControllerIT {
     @Autowired
     private ProfileEnvironment profileEnvironment;
 
+    @Autowired
+    private FerariEnvironment ferariEnvironment;
+
     private DateFormat dateFormat;
 
-
-    @Value("${enigma.service.ferari.port}")
-    private int ferariPort;
 
     @Value("${enigma.test.sleepMillis}")
     private long sleepMillis;
@@ -108,8 +108,6 @@ public class OrderControllerIT {
     private NewOrderConsumer receiver;
 
     private Server ferari;
-    private StubHandler ferariHanderStub;
-
     private Server refdata;
     private Server profile;
 
@@ -119,9 +117,7 @@ public class OrderControllerIT {
 
         this.dateFormat = DateHelper.createDateFormat();
 
-        ferariHanderStub = new StubHandler();
-        ferari = StubHandler.start(ferariPort, ferariHanderStub);
-
+        ferari = StubHandler.start(ferariEnvironment.getPort(), new StubHandler());
         refdata = StubHandler.start(refDataEnvironment.getPort(), new StubHandler());
         profile = StubHandler.start(profileEnvironment.getPort(), new StubHandler());
 
@@ -210,7 +206,6 @@ public class OrderControllerIT {
     public void shouldCheckoutOrderWithMobileMoney() throws Exception {
         final CheckoutOrderRequest request = createCheckoutOrderRequest();
         final String deviceUID = UUID.randomUUID().toString();
-        final Date now = DateHelper.now();
 
         mockMvc
                 .perform(
@@ -344,28 +339,6 @@ public class OrderControllerIT {
                 .andExpect(jsonPath("$.errors[0].code", is(OMSErrorCode.ORDER_CANCELLED.getCode())))
                 .andExpect(jsonPath("$.errors[0].text", is(OMSErrorCode.ORDER_CANCELLED.getText())))
         ;
-    }
-
-    @Test
-    @Ignore
-    public void shouldPublishEventOnCheckout() throws Exception {
-        // When
-        final CheckoutOrderRequest request = createCheckoutOrderRequest();
-
-        mockMvc
-                .perform(
-                        post("/v1/orders/110/checkout")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(mapper.writeValueAsString(request))
-                )
-
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(status().isOk())
-        ;
-        Thread.sleep(sleepMillis);
-
-        // Then
-        assertThat(receiver.getOrderId()).isEqualTo(110);
     }
 
     /* =========== GET ============ */

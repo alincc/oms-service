@@ -1,10 +1,11 @@
 package io.tchepannou.enigma.oms.service.order;
 
 import io.tchepannou.core.logger.KVLogger;
+import io.tchepannou.enigma.ferari.client.BookingBackend;
 import io.tchepannou.enigma.ferari.client.Direction;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
-import io.tchepannou.enigma.oms.backend.ferari.BookingBackend;
+import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
 import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
@@ -38,6 +39,8 @@ import java.util.Calendar;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -106,7 +109,7 @@ public class OrderServiceTest {
 
         BookingDto booking = new BookingDto();
         booking.setId(11);
-        when(ferari.book(order)).thenReturn(Arrays.asList(booking));
+        when(ferari.book(any())).thenReturn(new CreateBookingResponse(Arrays.asList(booking)));
 
         TicketDto ticket = mock(TicketDto.class);
         when(ticketService.create(order)).thenReturn(Arrays.asList(ticket));
@@ -128,11 +131,11 @@ public class OrderServiceTest {
         assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(order.getPaymentId()).isNotNull();
 
-        verify(ferari).book(order);
+        verify(ferari).book(any());
         verify(orderLineRepository).save(line);
         assertThat(line.getBookingId()).isEqualTo(booking.getId());
 
-        verify(ferari).confirm(order);
+        verify(ferari).confirm(anyInt());
 
         verify(ticketService).create(order);
         assertThat(response.getOrderId()).isEqualTo(order.getId());
@@ -156,10 +159,10 @@ public class OrderServiceTest {
         // Then
         verify(orderRepository, never()).save(order);
 
-        verify(ferari, never()).book(order);
+        verify(ferari, never()).book(any());
         verify(orderLineRepository, never()).save(line);
 
-        verify(ferari, never()).confirm(order);
+        verify(ferari, never()).confirm(anyInt());
 
         verify(ticketService, never()).create(order);
         assertThat(response.getOrderId()).isEqualTo(order.getId());

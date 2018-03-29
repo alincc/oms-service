@@ -1,8 +1,8 @@
 package io.tchepannou.enigma.oms.service.ticket;
 
 import com.google.common.base.Joiner;
+import io.tchepannou.enigma.ferari.client.ProductBackend;
 import io.tchepannou.enigma.ferari.client.dto.ProductDto;
-import io.tchepannou.enigma.oms.backend.ferari.ProductBackend;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.profile.client.MerchantBackend;
@@ -91,7 +91,7 @@ public class TicketSmsGenerator {
     }
 
     private String product (final Ticket ticket) {
-        final ProductDto product = productBackend.findById(ticket.getProductId());
+        final ProductDto product = productBackend.findById(ticket.getProductId()).getProduct();
         return toString(product.getProductType().getName(), MAXLEN_PRODUCT);
     }
 

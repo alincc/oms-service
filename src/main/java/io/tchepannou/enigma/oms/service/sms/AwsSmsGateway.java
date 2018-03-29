@@ -4,6 +4,7 @@ import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
+import com.google.common.base.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
@@ -18,6 +19,10 @@ public class AwsSmsGateway implements SmsGateway {
 
     @Override
     public String send(final String sender, final String phone, final String message) {
+        if (Strings.isNullOrEmpty(message)){
+            return null;
+        }
+
         final Map<String, MessageAttributeValue> attrs = attributes(sender);
         final PublishResult result = sns.publish(new PublishRequest()
                 .withMessage(formatMessage(message))
@@ -53,9 +58,6 @@ public class AwsSmsGateway implements SmsGateway {
     }
 
     private String formatMessage(String message){
-        if (message == null){
-            return null;
-        }
         return message.length() > MESSAGE_MAX_LEN ? message.substring(0, MESSAGE_MAX_LEN) : message;
     }
 

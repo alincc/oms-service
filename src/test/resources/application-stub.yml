@@ -11,12 +11,3 @@ enigma:
       port: 38081
       booking:
         url: "http://localhost:${enigma.service.ferari.port}/v1/bookings"
-      product:
-        url: "http://localhost:${enigma.service.ferari.port}/v1/products"
-    tontine:
-      port: 38082
-      url: "http://localhost:${enigma.service.tontine.port}"
-    profile:
-      port: 38884
-      merchant:
-        url: "http://localhost:${enigma.service.profile.port}/v1/merchants"

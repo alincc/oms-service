@@ -13,6 +13,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,7 +46,7 @@ public class AwsSmsGatewayTest {
     }
 
     @Test
-    public void sendWithNoSender() throws Exception {
+    public void sendWithNullSender() throws Exception {
         PublishResult expected = mock(PublishResult.class);
         when(expected.getMessageId()).thenReturn("this-is-message-id");
         when (sns.publish(any())).thenReturn(expected);
@@ -64,4 +65,25 @@ public class AwsSmsGatewayTest {
         assertThat(req.getValue().getMessageAttributes().get("AWS.SNS.SMS.SMSType").getStringValue()).isEqualTo("Transactional");
     }
 
+    @Test
+    public void sendWithNullMessage() throws Exception {
+        // When
+        String result = gateway.send("test", "(514)544-11 11", null);
+
+        // Then
+        assertThat(result).isNull();
+
+        verify(sns, never()).publish(any());
+    }
+
+    @Test
+    public void sendWithEmptyMessage() throws Exception {
+        // When
+        String result = gateway.send("test", "(514)544-11 11", "");
+
+        // Then
+        assertThat(result).isNull();
+
+        verify(sns, never()).publish(any());
+    }
 }

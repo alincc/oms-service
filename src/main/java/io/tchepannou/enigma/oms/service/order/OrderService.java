@@ -3,10 +3,10 @@ package io.tchepannou.enigma.oms.service.order;
 import com.google.common.base.Joiner;
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.core.rest.exception.HttpStatusException;
+import io.tchepannou.enigma.ferari.client.BookingBackend;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
-import io.tchepannou.enigma.oms.backend.ferari.BookingBackend;
-import io.tchepannou.enigma.oms.backend.ferari.FerrariException;
+import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
@@ -37,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @ConfigurationProperties("enigma.service.order")
@@ -180,7 +181,8 @@ public class OrderService {
 
     private void book(final Order order){
         try {
-            final List<BookingDto> bookings = ferari.book(order);
+            CreateBookingRequest request = toCreateBookingRequest(order);
+            final List<BookingDto> bookings = ferari.book(request).getBookings();
 
             // Book
             for (int i = 0; i < bookings.size(); i++) {
@@ -191,7 +193,7 @@ public class OrderService {
             }
 
             orderRepository.save(order);
-        } catch (FerrariException e){
+        } catch (HttpStatusException e){
             throw toOrderException(e, OMSErrorCode.BOOKING_FAILURE);
         }
     }
@@ -199,14 +201,16 @@ public class OrderService {
     private List<TicketDto> confirm(final Order order){
         try {
 
-            ferari.confirm(order);
+            for (OrderLine line : order.getLines()) {
+                ferari.confirm(line.getBookingId());
+            }
 
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepository.save(order);
 
             return ticketService.create(order);
 
-        } catch (FerrariException e){
+        } catch (HttpStatusException e){
             throw toOrderException(e, OMSErrorCode.CONFIRM_FAILURE);
         }
     }
@@ -237,4 +241,19 @@ public class OrderService {
     public void setOrderTTLMinutes(final int orderTTLMinutes) {
         this.orderTTLMinutes = orderTTLMinutes;
     }
+
+    private CreateBookingRequest toCreateBookingRequest(final Order order){
+        final CreateBookingRequest request = new CreateBookingRequest();
+        request.setOrderId(order.getId());
+        request.setLastName(order.getLastName());
+        request.setFirstName(order.getFirstName());
+        request.setEmail(order.getEmail());
+        request.setOfferTokens(
+                order.getLines().stream()
+                        .map(l -> l.getOfferToken())
+                        .collect(Collectors.toList())
+        );
+        return request;
+    }
+
 }

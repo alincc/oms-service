@@ -1,6 +1,7 @@
 package io.tchepannou.enigma.oms.controller;
 
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
+import io.tchepannou.enigma.oms.client.TicketStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,6 +60,7 @@ public class TicketControllerIT {
                 .andExpect(jsonPath("$.ticket.originId", is(2370001)))
                 .andExpect(jsonPath("$.ticket.destinationId", is(2370002)))
                 .andExpect(jsonPath("$.ticket.departureDateTime", notNullValue()))
+                .andExpect(jsonPath("$.ticket.status", is(TicketStatus.NEW.name())))
                 .andExpect(jsonPath("$.ticket.token", is("100;100;100;0;1001;100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060;Ray;Sponsible")))
 
                 .andReturn();

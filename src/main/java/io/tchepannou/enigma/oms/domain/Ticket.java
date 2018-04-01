@@ -1,10 +1,13 @@
 package io.tchepannou.enigma.oms.domain;
 
+import io.tchepannou.enigma.oms.client.TicketStatus;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -55,4 +58,10 @@ public class Ticket extends Persistent {
 
     @Column(name="expiry_datetime")
     private Date expiryDateTime;
+
+    @Enumerated(EnumType.STRING)
+    private TicketStatus status;
+
+    @Column(name="cancellation_datetime")
+    private Date cancellationDateTime;
 }

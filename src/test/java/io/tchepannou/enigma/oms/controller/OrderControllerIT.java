@@ -10,6 +10,7 @@ import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.Sex;
+import io.tchepannou.enigma.oms.client.TicketStatus;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
@@ -20,7 +21,6 @@ import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
-import io.tchepannou.enigma.oms.mq.NewOrderConsumer;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
@@ -100,12 +100,8 @@ public class OrderControllerIT {
 
     private DateFormat dateFormat;
 
-
     @Value("${enigma.test.sleepMillis}")
     private long sleepMillis;
-
-    @Autowired
-    private NewOrderConsumer receiver;
 
     private Server ferari;
     private Server refdata;
@@ -154,7 +150,6 @@ public class OrderControllerIT {
         final Order order = orderRepository.findOne(id);
         assertThat(order).isNotNull();
 
-        assertThat(order.getExpiryDateTime()).isNotNull();
         assertThat(order.getOrderDateTime()).isNotNull();
         assertThat(order.getCurrencyCode()).isEqualTo("XAF");
         assertThat(order.getCustomerId()).isEqualTo(order.getCustomerId());
@@ -193,8 +188,8 @@ public class OrderControllerIT {
                 .andExpect(status().isConflict())
 
                 .andExpect(jsonPath("$.errors.length()", is(1)))
-                .andExpect(jsonPath("$.errors[0].code", is(OMSErrorCode.MALFORMED_OFFER_TOKEN.getCode())))
-                .andExpect(jsonPath("$.errors[0].text", is(OMSErrorCode.MALFORMED_OFFER_TOKEN.getText())))
+                .andExpect(jsonPath("$.errors[0].code", is(OMSErrorCode.OFFER_MALFORMED_TOKEN.getCode())))
+                .andExpect(jsonPath("$.errors[0].text", is(OMSErrorCode.OFFER_MALFORMED_TOKEN.getText())))
         ;
 
     }
@@ -263,6 +258,8 @@ public class OrderControllerIT {
         assertThat(tickets.get(0).getLastName()).isEqualTo("Doe");
         assertThat(tickets.get(0).getPrintDateTime()).isNotNull();
         assertThat(tickets.get(0).getExpiryDateTime()).isNotNull();
+        assertThat(tickets.get(0).getCancellationDateTime()).isNull();
+        assertThat(tickets.get(0).getStatus()).isEqualTo(TicketStatus.NEW);
 
         assertThat(tickets.get(1).getOrderLine()).isEqualTo(lines.get(1));
         assertThat(tickets.get(1).getSequenceNumber()).isEqualTo(1);
@@ -270,6 +267,8 @@ public class OrderControllerIT {
         assertThat(tickets.get(1).getLastName()).isEqualTo("Doe");
         assertThat(tickets.get(1).getPrintDateTime()).isNotNull();
         assertThat(tickets.get(1).getExpiryDateTime()).isNotNull();
+        assertThat(tickets.get(1).getCancellationDateTime()).isNull();
+        assertThat(tickets.get(1).getStatus()).isEqualTo(TicketStatus.NEW);
 
         assertThat(tickets.get(2).getOrderLine()).isEqualTo(lines.get(1));
         assertThat(tickets.get(2).getSequenceNumber()).isEqualTo(2);
@@ -277,69 +276,11 @@ public class OrderControllerIT {
         assertThat(tickets.get(2).getLastName()).isEqualTo("Smith");
         assertThat(tickets.get(2).getPrintDateTime()).isNotNull();
         assertThat(tickets.get(2).getExpiryDateTime()).isNotNull();
+        assertThat(tickets.get(2).getCancellationDateTime()).isNull();
+        assertThat(tickets.get(2).getStatus()).isEqualTo(TicketStatus.NEW);
 
     }
 
-//    @Test
-//    public void shouldNotCheckoutOrderWhenPaymentFailed() throws Exception {
-//        final CheckoutOrderRequest request = createCheckoutOrderRequest();
-//
-//        mockMvc
-//                .perform(
-//                        post("/v1/orders/100/checkout")
-//                                .contentType(MediaType.APPLICATION_JSON)
-//                                .content(mapper.writeValueAsString(request))
-//                )
-//
-//                .andDo(MockMvcResultHandlers.print())
-//                .andExpect(status().isConflict())
-//        ;
-//
-//        // Then
-//        final Order order = orderRepository.findOne(100);
-//        assertThat(order).isNotNull();
-//
-//        assertThat(order.getPaymentId()).isNull();
-//        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
-//    }
-
-    @Test
-    public void shouldNotCheckoutExpiredOrder() throws Exception {
-        final CheckoutOrderRequest request = createCheckoutOrderRequest();
-
-        mockMvc
-                .perform(
-                        post("/v1/orders/900/checkout")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(mapper.writeValueAsString(request))
-                )
-
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(status().isConflict())
-
-                .andExpect(jsonPath("$.errors[0].code", is(OMSErrorCode.ORDER_EXPIRED.getCode())))
-                .andExpect(jsonPath("$.errors[0].text", is(OMSErrorCode.ORDER_EXPIRED.getText())))
-        ;
-    }
-
-    @Test
-    public void shouldNotCheckoutCancelledOrder() throws Exception {
-        final CheckoutOrderRequest request = createCheckoutOrderRequest();
-
-        mockMvc
-                .perform(
-                        post("/v1/orders/901/checkout")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(mapper.writeValueAsString(request))
-                )
-
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(status().isConflict())
-
-                .andExpect(jsonPath("$.errors[0].code", is(OMSErrorCode.ORDER_CANCELLED.getCode())))
-                .andExpect(jsonPath("$.errors[0].text", is(OMSErrorCode.ORDER_CANCELLED.getText())))
-        ;
-    }
 
     /* =========== GET ============ */
     @Test
@@ -364,7 +305,6 @@ public class OrderControllerIT {
                 .andExpect(jsonPath("$.order.currencyCode", is("XAF")))
                 .andExpect(jsonPath("$.order.totalAmount", is(6000d)))
                 .andExpect(jsonPath("$.order.orderDateTime", notNullValue()))
-                .andExpect(jsonPath("$.order.expiryDateTime", notNullValue()))
                 .andExpect(jsonPath("$.order.paymentMethod", is("ONLINE")))
                 .andExpect(jsonPath("$.order.paymentId", is(123)))
                 .andExpect(jsonPath("$.order.siteId", is(1)))
@@ -388,7 +328,6 @@ public class OrderControllerIT {
         ;
 
     }
-
 
 
     private CreateOrderRequest createCreateOrderRequest() throws Exception {

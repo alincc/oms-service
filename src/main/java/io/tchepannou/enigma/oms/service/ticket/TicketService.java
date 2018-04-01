@@ -9,14 +9,15 @@ import io.tchepannou.core.rest.exception.HttpNotFoundException;
 import io.tchepannou.core.rest.impl.DefaultRestClient;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
+import io.tchepannou.enigma.oms.client.TicketStatus;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
+import io.tchepannou.enigma.oms.client.exception.NotFoundException;
 import io.tchepannou.enigma.oms.client.rr.GetTicketResponse;
 import io.tchepannou.enigma.oms.client.rr.SendSmsResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
-import io.tchepannou.enigma.oms.exception.NotFoundException;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
@@ -109,8 +110,23 @@ public class TicketService {
     }
 
     @Transactional
+    public void cancelByBooking(Integer bookingId) {
+        final List<Ticket> tickets = ticketRepository.findByBookingId(bookingId);
+
+        for (final Ticket ticket : tickets) {
+            if (TicketStatus.NEW.equals(ticket.getStatus())) {
+                ticket.setStatus(TicketStatus.CANCELLED);
+                ticket.setCancellationDateTime(DateHelper.now());
+
+                ticketRepository.save(ticket);
+            }
+        }
+    }
+
+
+    @Transactional
     @RabbitListener(queues = QueueNames.QUEUE_TICKET_SMS)
-    public void onOrderConfirmed(Integer orderId){
+    public void onOrderConfirmed(Integer orderId) {
         onOrderConfirmed(orderId, new DefaultRestClient(new RestConfig()));
     }
 
@@ -152,6 +168,7 @@ public class TicketService {
         ticket.setDepartureDateTime(token.getDepartureDateTime());
         ticket.setPrintDateTime(DateHelper.now());
         ticket.setExpiryDateTime(expiryDate);
+        ticket.setStatus(TicketStatus.NEW);
 
         if (traveller != null){
             ticket.setFirstName(traveller.getFirstName());

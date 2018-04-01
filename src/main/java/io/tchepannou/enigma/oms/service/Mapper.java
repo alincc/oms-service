@@ -18,7 +18,6 @@ import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.support.DateHelper;
-import org.apache.commons.lang.time.DateUtils;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -27,13 +26,12 @@ import java.util.stream.Collectors;
 
 @Component
 public class Mapper {
-    public Order toOrder(final CreateOrderRequest request, final int orderTTLMinutes){
+    public Order toOrder(final CreateOrderRequest request){
         final Date now = DateHelper.now();
         final Order order = new Order();
 
         order.setCustomerId(request.getCustomerId());
         order.setOrderDateTime(now);
-        order.setExpiryDateTime(DateUtils.addMinutes(now, orderTTLMinutes));
         order.setStatus(OrderStatus.NEW);
         order.setTotalAmount(BigDecimal.ZERO);
         order.setSiteId(request.getSiteId());
@@ -82,7 +80,6 @@ public class Mapper {
     public OrderDto toDto(final Order obj){
         final OrderDto dto = new OrderDto();
         dto.setCurrencyCode(obj.getCurrencyCode());
-        dto.setExpiryDateTime(obj.getExpiryDateTime());
         dto.setId(obj.getId());
         dto.setOrderDateTime(obj.getOrderDateTime());
         dto.setPaymentId(obj.getPaymentId());
@@ -163,6 +160,8 @@ public class Mapper {
         dto.setOrderId(obj.getOrderLine().getOrder().getId());
         dto.setOrderLineId(obj.getOrderLine().getId());
         dto.setSequenceNumber(obj.getSequenceNumber());
+        dto.setStatus(obj.getStatus());
+        dto.setCancellationDateTime(obj.getCancellationDateTime());
         return dto;
     }
 

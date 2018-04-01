@@ -4,8 +4,11 @@ import com.google.common.base.Joiner;
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.core.rest.exception.HttpStatusException;
 import io.tchepannou.enigma.ferari.client.BookingBackend;
+import io.tchepannou.enigma.ferari.client.CancellationReason;
+import io.tchepannou.enigma.ferari.client.FerrariErrorCode;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
+import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
@@ -21,8 +24,8 @@ import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Traveller;
-import io.tchepannou.enigma.oms.exception.NotFoundException;
-import io.tchepannou.enigma.oms.exception.OrderException;
+import io.tchepannou.enigma.oms.client.exception.NotFoundException;
+import io.tchepannou.enigma.oms.client.exception.OrderException;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
@@ -60,9 +63,7 @@ public class OrderService {
     private Mapper mapper;
 
     @Autowired
-    private BookingBackend ferari;
-
-    private int orderTTLMinutes;
+    private BookingBackend bookingBackend;
 
     @Autowired
     private TicketService ticketService;
@@ -73,7 +74,7 @@ public class OrderService {
 
             // Create order
             final List<OrderLine> lines = new ArrayList();
-            final Order order = mapper.toOrder(request, orderTTLMinutes);
+            final Order order = mapper.toOrder(request);
             for (final OfferLineDto dto : request.getOfferLines()){
                 OrderLine line = mapper.toOrderLine(dto, order);
                 lines.add(line);
@@ -96,7 +97,7 @@ public class OrderService {
 
         } catch (InvalidCarOfferTokenException e){
 
-            throw new OrderException(e, OMSErrorCode.MALFORMED_OFFER_TOKEN);
+            throw new OrderException(e, OMSErrorCode.OFFER_MALFORMED_TOKEN);
 
         }
     }
@@ -110,12 +111,6 @@ public class OrderService {
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
             throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
-        }
-        if (order.isExpired()){
-            throw new OrderException(OMSErrorCode.ORDER_EXPIRED);
-        }
-        if (order.isCancelled()){
-            throw new OrderException(OMSErrorCode.ORDER_CANCELLED);
         }
         if (OrderStatus.CONFIRMED.equals(order.getStatus())){
             // Do not book pending request
@@ -178,11 +173,33 @@ public class OrderService {
         return response;
     }
 
+    @Transactional
+    public void cancel(final Integer bookingId) {
+        try {
+            // Cancel the booking
+            final CancelBookingRequest request = new CancelBookingRequest();
+            request.setReason(CancellationReason.OTHER);
+            bookingBackend.cancel(bookingId, request);
+
+            // Cancel the tickets
+            ticketService.cancelByBooking(bookingId);
+        } catch (io.tchepannou.enigma.ferari.client.exception.TaggedException e) {
+
+            final FerrariErrorCode code = e.getErrorCode();
+
+            if (FerrariErrorCode.BOOKING_NOT_FOUND.equals(code)) {
+                throw new NotFoundException(e, OMSErrorCode.BOOKING_NOT_FOUND);
+            } else if (FerrariErrorCode.BOOKING_ALREADY_CANCELLED.equals(code)) {
+                throw new OrderException(e, OMSErrorCode.CANCELLATION_ALREADY_CANCELLED);
+            }
+
+        }
+    }
 
     private void book(final Order order){
         try {
             CreateBookingRequest request = toCreateBookingRequest(order);
-            final List<BookingDto> bookings = ferari.book(request).getBookings();
+            final List<BookingDto> bookings = bookingBackend.book(request).getBookings();
 
             // Book
             for (int i = 0; i < bookings.size(); i++) {
@@ -193,8 +210,17 @@ public class OrderService {
             }
 
             orderRepository.save(order);
-        } catch (HttpStatusException e){
-            throw toOrderException(e, OMSErrorCode.BOOKING_FAILURE);
+        } catch (io.tchepannou.enigma.ferari.client.exception.TaggedException e) {
+
+            final FerrariErrorCode code = e.getErrorCode();
+
+            if (FerrariErrorCode.OFFER_EXPIRED.equals(code)){
+                throw new OrderException(e, OMSErrorCode.OFFER_EXPIRED);
+            } else if (FerrariErrorCode.OFFER_NOT_FOUND.equals(code)){
+                throw new OrderException(e, OMSErrorCode.OFFER_NOT_FOUND);
+            } else if (FerrariErrorCode.BOOKING_AVAILABILITY_ERROR.equals(code)){
+                throw new OrderException(e, OMSErrorCode.BOOKING_AVAILABILITY_ERROR);
+            }
         }
     }
 
@@ -202,7 +228,7 @@ public class OrderService {
         try {
 
             for (OrderLine line : order.getLines()) {
-                ferari.confirm(line.getBookingId());
+                bookingBackend.confirm(line.getBookingId());
             }
 
             order.setStatus(OrderStatus.CONFIRMED);
@@ -232,14 +258,6 @@ public class OrderService {
             return new OrderException(body, e, code);
         }
         return new OrderException(e, code);
-    }
-
-    public int getOrderTTLMinutes() {
-        return orderTTLMinutes;
-    }
-
-    public void setOrderTTLMinutes(final int orderTTLMinutes) {
-        this.orderTTLMinutes = orderTTLMinutes;
     }
 
     private CreateBookingRequest toCreateBookingRequest(final Order order){

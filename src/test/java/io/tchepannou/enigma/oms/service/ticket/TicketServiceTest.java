@@ -4,13 +4,14 @@ import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.ferari.client.Direction;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
+import io.tchepannou.enigma.oms.client.TicketStatus;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.rr.GetTicketResponse;
 import io.tchepannou.enigma.oms.client.rr.SendSmsResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
-import io.tchepannou.enigma.oms.exception.NotFoundException;
+import io.tchepannou.enigma.oms.client.exception.NotFoundException;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
@@ -23,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -37,6 +39,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TicketServiceTest {
+    @Mock
+    private Clock clock;
+
     @Mock
     private KVLogger kv;
 
@@ -85,6 +90,8 @@ public class TicketServiceTest {
         assertThat(ticket.getValue().getProductId()).isEqualTo(offerToken.getProductId());
         assertThat(ticket.getValue().getDepartureDateTime()).isEqualTo(offerToken.getDepartureDateTime());
         assertThat(ticket.getValue().getPrintDateTime()).isAfter(now);
+        assertThat(ticket.getValue().getStatus()).isEqualTo(TicketStatus.NEW);
+        assertThat(ticket.getValue().getCancellationDateTime()).isNull();
     }
 
     @Test
@@ -132,6 +139,44 @@ public class TicketServiceTest {
         assertThat(ticket.getAllValues().get(1).getPrintDateTime()).isAfter(now);
     }
 
+    @Test
+    public void cancel () throws Exception {
+        // Given
+        Ticket ticket1 = createTicket(1);
+        Ticket ticket2 = createTicket(2);
+        Ticket ticket3 = createTicket(3);
+        when(ticketRepository.findByBookingId(1)).thenReturn(Arrays.asList(ticket1, ticket2, ticket3));
+
+        // When
+        service.cancelByBooking(1);
+
+        // Then
+        assertThat(ticket1.getStatus()).isEqualTo(TicketStatus.CANCELLED);
+        assertThat(ticket1.getCancellationDateTime()).isNotNull();
+        verify(ticketRepository).save(ticket3);
+
+        assertThat(ticket2.getStatus()).isEqualTo(TicketStatus.CANCELLED);
+        assertThat(ticket2.getCancellationDateTime()).isNotNull();
+        verify(ticketRepository).save(ticket2);
+
+        assertThat(ticket3.getStatus()).isEqualTo(TicketStatus.CANCELLED);
+        assertThat(ticket3.getCancellationDateTime()).isNotNull();
+        verify(ticketRepository).save(ticket3);
+    }
+
+    @Test
+    public void cancelIgnoreCancelledTicket () throws Exception {
+        // Given
+        Ticket ticket1 = createTicket(1);
+        ticket1.setStatus(TicketStatus.CANCELLED);
+        when(ticketRepository.findByBookingId(1)).thenReturn(Arrays.asList(ticket1));
+
+        // When
+        service.cancelByBooking(1);
+
+        // Then
+        verify(ticketRepository, never()).save(ticket1);
+    }
     @Test
     public void sms() throws Exception {
         // Given
@@ -215,6 +260,7 @@ public class TicketServiceTest {
     private Ticket createTicket(Integer id){
         Ticket ticket = new Ticket();
         ticket.setId(id);
+        ticket.setStatus(TicketStatus.NEW);
         return ticket;
     }
 

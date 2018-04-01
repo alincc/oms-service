@@ -2,10 +2,15 @@ package io.tchepannou.enigma.oms.service.order;
 
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.enigma.ferari.client.BookingBackend;
+import io.tchepannou.enigma.ferari.client.CancellationReason;
 import io.tchepannou.enigma.ferari.client.Direction;
+import io.tchepannou.enigma.ferari.client.FerrariErrorCode;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
+import io.tchepannou.enigma.ferari.client.exception.BookingException;
+import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
+import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
@@ -18,8 +23,8 @@ import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
-import io.tchepannou.enigma.oms.exception.NotFoundException;
-import io.tchepannou.enigma.oms.exception.OrderException;
+import io.tchepannou.enigma.oms.client.exception.NotFoundException;
+import io.tchepannou.enigma.oms.client.exception.OrderException;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
@@ -29,6 +34,7 @@ import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -39,8 +45,10 @@ import java.util.Calendar;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -65,7 +73,7 @@ public class OrderServiceTest {
     private Mapper mapper;
 
     @Mock
-    private BookingBackend ferari;
+    private BookingBackend bookingBackend;
 
     @Mock
     private TicketService ticketService;
@@ -81,11 +89,10 @@ public class OrderServiceTest {
         CreateOrderRequest request = createOrderRequest(line1, line2);
 
         int ttl = 10;
-        service.setOrderTTLMinutes(ttl);
         Order order = createOrder(1, OrderStatus.NEW, 100d);
         OrderLine orderLine1 = mock(OrderLine.class);
         OrderLine orderLine2 = mock(OrderLine.class);
-        when (mapper.toOrder(request, ttl)).thenReturn(order);
+        when (mapper.toOrder(request)).thenReturn(order);
         when(mapper.toOrderLine(line1, order)).thenReturn(orderLine1);
         when(mapper.toOrderLine(line2, order)).thenReturn(orderLine2);
 
@@ -109,7 +116,7 @@ public class OrderServiceTest {
 
         BookingDto booking = new BookingDto();
         booking.setId(11);
-        when(ferari.book(any())).thenReturn(new CreateBookingResponse(Arrays.asList(booking)));
+        when(bookingBackend.book(any())).thenReturn(new CreateBookingResponse(Arrays.asList(booking)));
 
         TicketDto ticket = mock(TicketDto.class);
         when(ticketService.create(order)).thenReturn(Arrays.asList(ticket));
@@ -131,11 +138,11 @@ public class OrderServiceTest {
         assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(order.getPaymentId()).isNotNull();
 
-        verify(ferari).book(any());
+        verify(bookingBackend).book(any());
         verify(orderLineRepository).save(line);
         assertThat(line.getBookingId()).isEqualTo(booking.getId());
 
-        verify(ferari).confirm(anyInt());
+        verify(bookingBackend).confirm(anyInt());
 
         verify(ticketService).create(order);
         assertThat(response.getOrderId()).isEqualTo(order.getId());
@@ -159,10 +166,10 @@ public class OrderServiceTest {
         // Then
         verify(orderRepository, never()).save(order);
 
-        verify(ferari, never()).book(any());
+        verify(bookingBackend, never()).book(any());
         verify(orderLineRepository, never()).save(line);
 
-        verify(ferari, never()).confirm(anyInt());
+        verify(bookingBackend, never()).confirm(anyInt());
 
         verify(ticketService, never()).create(order);
         assertThat(response.getOrderId()).isEqualTo(order.getId());
@@ -174,30 +181,77 @@ public class OrderServiceTest {
         service.checkout(999, "4304309", checkoutOrderRequest());
     }
 
-    @Test(expected = OrderException.class)
-    public void shouldNotCheckoutCancelledOrder(){
+    @Test
+    public void shouldNotCheckoutExpiredOffer(){
         // Given
         OrderLine line = createOrderLine(1, 100d);
         Order order = createOrder(1, OrderStatus.NEW, 100d, line);
-        order.setStatus(OrderStatus.CANCELLED);
         when(orderRepository.findOne(1)).thenReturn(order);
 
+        final BookingException ex = new BookingException(FerrariErrorCode.OFFER_EXPIRED);
+        when(bookingBackend.book(any())).thenThrow(ex);
+
         // When
-        service.checkout(1, "4304309", checkoutOrderRequest());
+        try {
+            service.checkout(1, "4304309", checkoutOrderRequest());
+            fail("failed");
+        } catch (OrderException e){
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.OFFER_EXPIRED);
+        }
+    }
+
+    @Test
+    public void shouldNotCheckoutUnavailableOffer(){
+        // Given
+        OrderLine line = createOrderLine(1, 100d);
+        Order order = createOrder(1, OrderStatus.NEW, 100d, line);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        final BookingException ex = new BookingException(FerrariErrorCode.BOOKING_AVAILABILITY_ERROR);
+        when(bookingBackend.book(any())).thenThrow(ex);
+
+        // When
+        try {
+            service.checkout(1, "4304309", checkoutOrderRequest());
+            fail("failed");
+        } catch (OrderException e){
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.BOOKING_AVAILABILITY_ERROR);
+        }
+    }
+
+    @Test
+    public void cancel(){
+
+        // When
+        service.cancel(1);
+
+        // Then
+        ArgumentCaptor<CancelBookingRequest> request = ArgumentCaptor.forClass(CancelBookingRequest.class);
+        verify(bookingBackend).cancel(eq(1), request.capture());
+        assertThat(request.getValue().getReason()).isEqualTo(CancellationReason.OTHER);
+
+        verify(ticketService).cancelByBooking(1);
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void cancelShouldThrowNotFoundOnInvalidBooking(){
+        // Given
+        io.tchepannou.enigma.ferari.client.exception.NotFoundException ex = new io.tchepannou.enigma.ferari.client.exception.NotFoundException(FerrariErrorCode.BOOKING_NOT_FOUND);
+        when(bookingBackend.cancel(any(), any())).thenThrow(ex);
+
+        // When
+        service.cancel(1);
     }
 
     @Test(expected = OrderException.class)
-    public void shouldNotCheckoutExpiredOrder(){
+    public void cancelShouldOrderExceptionOnCancelledOrder(){
         // Given
-        OrderLine line = createOrderLine(1, 1d);
-        Order order = createOrder(1, OrderStatus.NEW, 1d, line);
-        order.setExpiryDateTime(DateUtils.addDays(new Date(), -1));
-        when(orderRepository.findOne(1)).thenReturn(order);
+        BookingException ex = new BookingException(FerrariErrorCode.BOOKING_ALREADY_CANCELLED);
+        when(bookingBackend.cancel(any(), any())).thenThrow(ex);
 
         // When
-        service.checkout(1, "4304309", checkoutOrderRequest());
+        service.cancel(1);
     }
-
     private Order createOrder(Integer id, OrderStatus status, double totalPrice, OrderLine...lines){
         final Order order = new Order();
         order.setId(id);

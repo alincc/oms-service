@@ -42,9 +42,6 @@ public class Order extends Persistent {
     @Column(name="order_datetime")
     private Date orderDateTime;
 
-    @Column(name="expiry_datetime")
-    private Date expiryDateTime;
-
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
@@ -77,12 +74,4 @@ public class Order extends Persistent {
 
     @Column(name="language_code")
     private String languageCode;
-
-    public boolean isExpired(){
-        return expiryDateTime != null && expiryDateTime.getTime() < System.currentTimeMillis();
-    }
-
-    public boolean isCancelled(){
-        return OrderStatus.CANCELLED.equals(status);
-    }
 }

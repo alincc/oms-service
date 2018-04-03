@@ -1,7 +1,7 @@
 package io.tchepannou.enigma.oms.service.order;
 
 import io.tchepannou.core.logger.KVLogger;
-import io.tchepannou.enigma.ferari.client.BookingBackend;
+import io.tchepannou.enigma.ferari.client.backend.BookingBackend;
 import io.tchepannou.enigma.ferari.client.CancellationReason;
 import io.tchepannou.enigma.ferari.client.Direction;
 import io.tchepannou.enigma.ferari.client.FerrariErrorCode;
@@ -9,6 +9,7 @@ import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.ferari.client.exception.BookingException;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
+import io.tchepannou.enigma.ferari.client.rr.CancelBookingResponse;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OfferType;
@@ -25,8 +26,10 @@ import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.client.exception.NotFoundException;
 import io.tchepannou.enigma.oms.client.exception.OrderException;
+import io.tchepannou.enigma.oms.domain.Cancellation;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
+import io.tchepannou.enigma.oms.repository.CancellationRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
@@ -40,6 +43,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -61,10 +65,16 @@ public class OrderServiceTest {
     private KVLogger kv;
 
     @Mock
+    private Clock clock;
+
+    @Mock
     private OrderRepository orderRepository;
 
     @Mock
     private OrderLineRepository orderLineRepository;
+
+    @Mock
+    private CancellationRepository refundRepository;
 
     @Mock
     private TravellerRepository travellerRepository;
@@ -77,6 +87,9 @@ public class OrderServiceTest {
 
     @Mock
     private TicketService ticketService;
+
+    @Mock
+    private CancellationRefundCalculator cancellationRefundCalculator;
 
     @InjectMocks
     private OrderService service;
@@ -221,6 +234,20 @@ public class OrderServiceTest {
 
     @Test
     public void cancel(){
+        // Given
+        final long now = System.currentTimeMillis();
+        when(clock.millis()).thenReturn(now);
+
+        final Order order = createOrder(11, OrderStatus.CONFIRMED, 1000);
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        final Date departureDate = DateUtils.addDays(new Date(now), 2);
+        final BookingDto booking = createBooking(1, order, departureDate, 1000);
+        final CancelBookingResponse response = new CancelBookingResponse(booking);
+        when(bookingBackend.cancel(anyInt(), any(CancelBookingRequest.class))).thenReturn(response);
+
+        final BigDecimal refundAmount = new BigDecimal(43943);
+        when(cancellationRefundCalculator.computeRefundAmount(any())).thenReturn(refundAmount);
 
         // When
         service.cancel(1);
@@ -231,6 +258,14 @@ public class OrderServiceTest {
         assertThat(request.getValue().getReason()).isEqualTo(CancellationReason.OTHER);
 
         verify(ticketService).cancelByBooking(1);
+
+        ArgumentCaptor<Cancellation> cancellation = ArgumentCaptor.forClass(Cancellation.class);
+        verify(refundRepository).save(cancellation.capture());
+        assertThat(cancellation.getValue().getCancellationDateTime()).isEqualTo(new Date(now));
+        assertThat(cancellation.getValue().getRefundAmount()).isEqualTo(refundAmount);
+        assertThat(cancellation.getValue().getCurrencyCode()).isEqualTo(booking.getCurrencyCode());
+        assertThat(cancellation.getValue().getBookingId()).isEqualTo(booking.getId());
+        assertThat(cancellation.getValue().getOrder()).isEqualTo(order);
     }
 
     @Test(expected = NotFoundException.class)
@@ -264,6 +299,17 @@ public class OrderServiceTest {
         }
         return order;
     }
+
+    private BookingDto createBooking(Integer id, Order order, Date departureDate, double amount){
+        BookingDto booking = new BookingDto();
+        booking.setId(id);
+        booking.setOrderId(order.getId());
+        booking.setDepartureDateTime(departureDate);
+        booking.setTotalPrice(new BigDecimal(amount));
+        booking.setCurrencyCode("XAF");
+        return booking;
+    }
+
 
     private OrderLine createOrderLine(Integer id, double unitPrice){
         OrderLine line = new OrderLine();

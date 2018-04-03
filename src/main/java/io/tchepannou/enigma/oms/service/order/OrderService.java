@@ -3,12 +3,13 @@ package io.tchepannou.enigma.oms.service.order;
 import com.google.common.base.Joiner;
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.core.rest.exception.HttpStatusException;
-import io.tchepannou.enigma.ferari.client.BookingBackend;
 import io.tchepannou.enigma.ferari.client.CancellationReason;
 import io.tchepannou.enigma.ferari.client.FerrariErrorCode;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
+import io.tchepannou.enigma.ferari.client.backend.BookingBackend;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
+import io.tchepannou.enigma.ferari.client.rr.CancelBookingResponse;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
@@ -16,18 +17,20 @@ import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
+import io.tchepannou.enigma.oms.client.exception.NotFoundException;
+import io.tchepannou.enigma.oms.client.exception.OrderException;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
+import io.tchepannou.enigma.oms.domain.Cancellation;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Traveller;
-import io.tchepannou.enigma.oms.client.exception.NotFoundException;
-import io.tchepannou.enigma.oms.client.exception.OrderException;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
+import io.tchepannou.enigma.oms.repository.CancellationRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
@@ -38,7 +41,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,6 +51,9 @@ import java.util.stream.Collectors;
 @ConfigurationProperties("enigma.service.order")
 public class OrderService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OrderService.class);
+
+    @Autowired
+    private Clock clock;
 
     @Autowired
     private KVLogger kv;
@@ -60,6 +68,9 @@ public class OrderService {
     private TravellerRepository travellerRepository;
 
     @Autowired
+    private CancellationRepository cancellationRepository;
+
+    @Autowired
     private Mapper mapper;
 
     @Autowired
@@ -68,8 +79,13 @@ public class OrderService {
     @Autowired
     private TicketService ticketService;
 
+    @Autowired
+    private CancellationRefundCalculator cancellationRefundCalculator;
+
     @Transactional
     public CreateOrderResponse create(final CreateOrderRequest request){
+        kv.add("Action", "Create");
+
         try {
 
             // Create order
@@ -89,8 +105,6 @@ public class OrderService {
 
             // Log
             kv.add("OrderID", order.getId());
-            kv.add("OrderStatus", order.getStatus().name());
-            kv.add("Action", "Create");
 
             // Response
             return new CreateOrderResponse(order.getId());
@@ -108,6 +122,9 @@ public class OrderService {
             final String deviceUID,
             final CheckoutOrderRequest request
     ){
+        kv.add("OrderID", orderId);
+        kv.add("Action", "Checkout");
+
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
             throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
@@ -151,11 +168,6 @@ public class OrderService {
         // Confirm order
         final List<TicketDto> tickets = confirm(order);
 
-        // Log
-        kv.add("OrderID", order.getId());
-        kv.add("OrderStatus", order.getStatus().name());
-        kv.add("Action", "Checkout");
-
         // Saved order
         return new CheckoutOrderResponse(order.getId(), tickets);
 
@@ -174,15 +186,31 @@ public class OrderService {
     }
 
     @Transactional
-    public void cancel(final Integer bookingId) {
+    public io.tchepannou.enigma.oms.client.rr.CancelBookingResponse cancel(final Integer bookingId) {
+        kv.add("BookingID", bookingId);
+        kv.add("Action", "Cancel");
+
         try {
             // Cancel the booking
             final CancelBookingRequest request = new CancelBookingRequest();
             request.setReason(CancellationReason.OTHER);
-            bookingBackend.cancel(bookingId, request);
+            final CancelBookingResponse response = bookingBackend.cancel(bookingId, request);
 
             // Cancel the tickets
             ticketService.cancelByBooking(bookingId);
+
+            // Update
+            final Cancellation cancellation = createCancellation(response.getBooking());
+
+            kv.add("OrderID", cancellation.getOrder().getId());
+            kv.add("CancellationID", cancellation.getId());
+            kv.add("RefundAmount", cancellation.getRefundAmount());
+            kv.add("RefundCurrency", cancellation.getCurrencyCode());
+
+            return new io.tchepannou.enigma.oms.client.rr.CancelBookingResponse(
+                    cancellation == null ? null : mapper.toDto(cancellation)
+            );
+
         } catch (io.tchepannou.enigma.ferari.client.exception.TaggedException e) {
 
             final FerrariErrorCode code = e.getErrorCode();
@@ -192,8 +220,21 @@ public class OrderService {
             } else if (FerrariErrorCode.BOOKING_ALREADY_CANCELLED.equals(code)) {
                 throw new OrderException(e, OMSErrorCode.CANCELLATION_ALREADY_CANCELLED);
             }
-
+            throw e;
         }
+    }
+
+    private Cancellation createCancellation(final BookingDto booking) {
+        final Order order = orderRepository.findOne(booking.getOrderId());
+        final Cancellation cancellation = new Cancellation();
+        cancellation.setOrder(order);
+        cancellation.setCancellationDateTime(new Date(clock.millis()));
+        cancellation.setBookingId(booking.getId());
+        cancellation.setCurrencyCode(booking.getCurrencyCode());
+        cancellation.setRefundAmount(cancellationRefundCalculator.computeRefundAmount(booking));
+        cancellationRepository.save(cancellation);
+
+        return cancellation;
     }
 
     private void book(final Order order){
@@ -273,5 +314,4 @@ public class OrderService {
         );
         return request;
     }
-
 }

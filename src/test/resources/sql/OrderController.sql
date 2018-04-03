@@ -43,11 +43,17 @@ INSERT INTO T_ORDER(id, site_id, customer_id, status, total_amount, currency_cod
 INSERT INTO T_ORDER(id, site_id, customer_id, status, total_amount, currency_code, payment_method, payment_id, first_name, last_name, email)
   VALUES(901, 1, 3, 'NEW', '6000', 'XAF', 'ONLINE', 123, 'Ray', 'Sponsible', 'ray@gmail.com');
 
--- Email
+-- Cancel
 INSERT INTO T_ORDER(id, site_id, customer_id, status, total_amount, currency_code, payment_method, payment_id, first_name, last_name, email)
   VALUES(300, 1, 3, 'CONFIRMED', '6000', 'XAF', 'ONLINE', 123, 'Ray', 'Sponsible', 'ray@gmail.com');
 
 INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, offer_type, offer_token, quantity, unit_price, total_price)
   VALUES(301, 300, 2001, 5678, 'CAR', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060', 1, 6000, 6000);
 INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, offer_type, offer_token, quantity, unit_price, total_price)
-  VALUES(302, 300, 2002, 5678, 'CAR', '100,1902459600000,1902466800000,1000,4000,XAF,1,2370002,2370001,I,15138644923060', 1, 4000, 4000);
+  VALUES(302, 300, 2002, 5679, 'CAR', '100,1902459600000,1902466800000,1000,4000,XAF,1,2370002,2370001,I,15138644923060', 1, 4000, 4000);
+
+INSERT INTO T_TICKET(id, order_line_fk, merchant_id, product_id, origin_id, destination_id, sequence_number, first_name, last_name, print_datetime, expiry_datetime, departure_datetime, status)
+  VALUES(301, 301, 2001, 1001, 2370001, 2370002, 0, 'Ray', 'Sponsible', '2030-01-10', '2030-01-31', '2030-01-31', 'NEW');
+
+INSERT INTO T_TICKET(id, order_line_fk, merchant_id, product_id, origin_id, destination_id, sequence_number, first_name, last_name, print_datetime, expiry_datetime, departure_datetime, status)
+  VALUES(302, 302, 2002, 1001, 2370001, 2370002, 0, 'Ray', 'Sponsible', '2030-01-10', '2030-01-31', '2030-01-31', 'NEW');

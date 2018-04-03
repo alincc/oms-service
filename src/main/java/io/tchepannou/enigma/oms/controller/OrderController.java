@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.tchepannou.core.rest.Headers;
+import io.tchepannou.enigma.oms.client.rr.CancelBookingResponse;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
@@ -61,6 +62,12 @@ public class OrderController {
         final CheckoutOrderResponse response = orderService.checkout(orderId, deviceUID, request);
         rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_NEW_ORDER, "", orderId);
         return response;
+    }
+
+    @RequestMapping(value="/bookings/{bookingId}/cancel", method = RequestMethod.GET)
+    @ApiOperation(value = "Cancel Booking")
+    public CancelBookingResponse refund(@PathVariable Integer bookingId) {
+        return orderService.cancel(bookingId);
     }
 
     @RequestMapping(value="/{orderId}", method = RequestMethod.GET)

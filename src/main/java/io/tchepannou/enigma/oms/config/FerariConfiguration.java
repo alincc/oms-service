@@ -1,12 +1,10 @@
 package io.tchepannou.enigma.oms.config;
 
 import io.tchepannou.core.rest.RestClient;
-import io.tchepannou.enigma.ferari.client.BookingBackend;
+import io.tchepannou.enigma.ferari.client.backend.BookingBackend;
 import io.tchepannou.enigma.ferari.client.FerariEnvironment;
 import io.tchepannou.enigma.ferari.client.OfferBackend;
-import io.tchepannou.enigma.ferari.client.ProductBackend;
-import io.tchepannou.enigma.profile.client.MerchantBackend;
-import io.tchepannou.enigma.profile.client.ProfileEnvironment;
+import io.tchepannou.enigma.ferari.client.backend.ProductBackend;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

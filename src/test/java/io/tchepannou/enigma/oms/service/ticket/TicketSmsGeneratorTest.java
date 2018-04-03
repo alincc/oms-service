@@ -1,7 +1,7 @@
 package io.tchepannou.enigma.oms.service.ticket;
 
 import io.tchepannou.enigma.ferari.client.Direction;
-import io.tchepannou.enigma.ferari.client.ProductBackend;
+import io.tchepannou.enigma.ferari.client.backend.ProductBackend;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.ferari.client.dto.ProductDto;
 import io.tchepannou.enigma.ferari.client.dto.ProductTypeDto;

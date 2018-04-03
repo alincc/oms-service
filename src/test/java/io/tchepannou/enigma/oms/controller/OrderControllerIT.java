@@ -14,13 +14,16 @@ import io.tchepannou.enigma.oms.client.TicketStatus;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
+import io.tchepannou.enigma.oms.client.rr.CancelBookingResponse;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
+import io.tchepannou.enigma.oms.domain.Cancellation;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
+import io.tchepannou.enigma.oms.repository.CancellationRepository;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
@@ -88,6 +91,9 @@ public class OrderControllerIT {
 
     @Autowired
     private TicketRepository ticketRepository;
+
+    @Autowired
+    private CancellationRepository cancellationRepository;
 
     @Autowired
     private RefDataEnvironment refDataEnvironment;
@@ -327,6 +333,36 @@ public class OrderControllerIT {
                 .andExpect(jsonPath("$.order.customer.email", is("ray@gmail.com")))
         ;
 
+    }
+
+
+    /* ===== CANCEL ======= */
+    @Test
+    public void shouldCancelOrder() throws Exception {
+        final MvcResult result = mockMvc
+                .perform(get("/v1/orders/bookings/5678/cancel"))
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+
+                .andReturn()
+        ;
+
+        final CancelBookingResponse response = mapper.readValue(result.getResponse().getContentAsString(), CancelBookingResponse.class);
+
+        final Cancellation cancel = cancellationRepository.findOne(response.getCancellation().getId());
+        assertThat(cancel.getCancellationDateTime()).isNotNull();
+        assertThat(cancel.getRefundAmount().doubleValue()).isEqualTo(6000.0d);
+        assertThat(cancel.getBookingId()).isEqualTo(5678);
+        assertThat(cancel.getCurrencyCode()).isEqualTo("XAF");
+        assertThat(cancel.getOrder()).isNotNull();
+        assertThat(cancel.getOrder().getId()).isEqualTo(300);
+
+        final Ticket ticket1 = ticketRepository.findOne(301);
+        assertThat(ticket1.getStatus()).isEqualTo(TicketStatus.CANCELLED);
+
+        final Ticket ticket2 = ticketRepository.findOne(302);
+        assertThat(ticket2.getStatus()).isEqualTo(TicketStatus.NEW);
     }
 
 

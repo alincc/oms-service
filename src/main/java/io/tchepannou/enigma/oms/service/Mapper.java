@@ -10,11 +10,13 @@ import io.tchepannou.enigma.oms.client.dto.ErrorDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.OrderDto;
 import io.tchepannou.enigma.oms.client.dto.OrderLineDto;
+import io.tchepannou.enigma.oms.client.dto.CancellationDto;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
+import io.tchepannou.enigma.oms.domain.Cancellation;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.support.DateHelper;
@@ -179,6 +181,15 @@ public class Mapper {
         final ErrorDto dto = new ErrorDto();
         dto.setCode(error.getCode());
         dto.setText(error.getText());
+        return dto;
+    }
+    public CancellationDto toDto(final Cancellation refund){
+        final CancellationDto dto = new CancellationDto();
+        dto.setId(refund.getId());
+        dto.setRefundAmount(refund.getRefundAmount());
+        dto.setCurrencyCode(refund.getCurrencyCode());
+        dto.setBookingId(refund.getBookingId());
+        dto.setOrderId(refund.getOrder().getId());
         return dto;
     }
 }

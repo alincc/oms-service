@@ -21,7 +21,7 @@ import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
-import io.tchepannou.enigma.oms.service.mq.QueueNames;
+import io.tchepannou.enigma.oms.service.QueueNames;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;

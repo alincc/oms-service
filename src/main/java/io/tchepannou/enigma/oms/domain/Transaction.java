@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.domain;
 
+import io.tchepannou.enigma.oms.client.TransactionType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -46,4 +47,7 @@ public class Transaction extends Persistent {
 
     @Column(name="transaction_datetime")
     private Date transactionDateTime;
+
+    @Column(name="correlation_id")
+    private String correlationId;
 }

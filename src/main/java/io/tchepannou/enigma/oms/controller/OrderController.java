@@ -12,7 +12,7 @@ import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
-import io.tchepannou.enigma.oms.service.mq.QueueNames;
+import io.tchepannou.enigma.oms.service.QueueNames;
 import io.tchepannou.enigma.oms.service.order.OrderService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,14 +60,16 @@ public class OrderController {
             @RequestBody @Valid CheckoutOrderRequest request
     ) {
         final CheckoutOrderResponse response = orderService.checkout(orderId, deviceUID, request);
-        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_NEW_ORDER, "", orderId);
+        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_ORDER_CONFIRMED, "", orderId);
         return response;
     }
 
     @RequestMapping(value="/bookings/{bookingId}/cancel", method = RequestMethod.GET)
     @ApiOperation(value = "Cancel Booking")
-    public CancelBookingResponse refund(@PathVariable Integer bookingId) {
-        return orderService.cancel(bookingId);
+    public CancelBookingResponse cancel(@PathVariable Integer bookingId) {
+        CancelBookingResponse response = orderService.cancel(bookingId);
+        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_ORDER_CANCELLED, "", response.getCancellation().getId());
+        return response;
     }
 
     @RequestMapping(value="/{orderId}", method = RequestMethod.GET)

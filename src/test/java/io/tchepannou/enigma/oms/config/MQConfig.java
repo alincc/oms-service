@@ -1,11 +1,13 @@
 package io.tchepannou.enigma.oms.config;
 
+import io.tchepannou.enigma.oms.service.QueueNames;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,7 +15,8 @@ import org.springframework.context.annotation.Configuration;
 public class MQConfig {
     public static final String QUEUE = "order-test";
 
-    @Autowired
+    @Autowired()
+    @Qualifier(QueueNames.EXCHANGE_ORDER_CONFIRMED)
     private Exchange newOrderFanout;
 
     @Autowired

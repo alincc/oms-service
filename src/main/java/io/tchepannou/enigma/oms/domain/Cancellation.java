@@ -10,8 +10,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
-import java.math.BigDecimal;
 import java.util.Date;
 
 @Getter
@@ -33,9 +33,7 @@ public class Cancellation extends Persistent {
     @Column(name="cancellation_datetime")
     private Date cancellationDateTime;
 
-    @Column(name="refund_amount")
-    private BigDecimal refundAmount;
-
-    @Column(name="currency_code")
-    private String currencyCode;
+    @OneToOne
+    @JoinColumn(name="transaction_fk")
+    private Transaction transaction;
 }

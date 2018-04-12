@@ -186,10 +186,9 @@ public class Mapper {
     public CancellationDto toDto(final Cancellation refund){
         final CancellationDto dto = new CancellationDto();
         dto.setId(refund.getId());
-        dto.setRefundAmount(refund.getRefundAmount());
-        dto.setCurrencyCode(refund.getCurrencyCode());
         dto.setBookingId(refund.getBookingId());
         dto.setOrderId(refund.getOrder().getId());
+        dto.setCancellationDateTime(refund.getCancellationDateTime());
         return dto;
     }
 }

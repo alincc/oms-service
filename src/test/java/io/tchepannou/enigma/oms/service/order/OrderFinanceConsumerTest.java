@@ -1,14 +1,14 @@
 package io.tchepannou.enigma.oms.service.order;
 
-import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.domain.Account;
-import io.tchepannou.enigma.oms.domain.AccountType;
+import io.tchepannou.enigma.oms.client.AccountType;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Transaction;
-import io.tchepannou.enigma.oms.domain.TransactionType;
+import io.tchepannou.enigma.oms.client.TransactionType;
 import io.tchepannou.enigma.oms.repository.AccountRepository;
+import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
 import io.tchepannou.enigma.profile.client.MerchantBackend;
@@ -27,7 +27,9 @@ import java.util.Arrays;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollection;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,6 +42,9 @@ public class OrderFinanceConsumerTest {
 
     @Mock
     private TransactionRepository transactionRepository;
+
+    @Mock
+    private OrderLineRepository orderLineRepository;
 
     @Mock
     private OrderRepository orderRepository;
@@ -82,6 +87,7 @@ public class OrderFinanceConsumerTest {
         assertThat(tx.getAllValues().get(0).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
         assertThat(tx.getAllValues().get(0).getEntryDateTime()).isNotNull();
         assertThat(tx.getAllValues().get(0).getAccount()).isEqualTo(merchantAccount);
+        assertThat(tx.getAllValues().get(0).getCorrelationId()).isNotNull();
 
         assertThat(tx.getAllValues().get(1).getAmount().doubleValue()).isEqualTo(150d);
         assertThat(tx.getAllValues().get(1).getFees().doubleValue()).isEqualTo(0d);
@@ -91,6 +97,8 @@ public class OrderFinanceConsumerTest {
         assertThat(tx.getAllValues().get(1).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
         assertThat(tx.getAllValues().get(1).getEntryDateTime()).isNotNull();
         assertThat(tx.getAllValues().get(1).getAccount()).isEqualTo(siteAccount);
+        assertThat(tx.getAllValues().get(1).getCorrelationId()).isEqualTo(tx.getAllValues().get(0).getCorrelationId());
+
 
         ArgumentCaptor<Account> act = ArgumentCaptor.forClass(Account.class);
         verify(accountRepository, times(2)).save(act.capture());
@@ -99,6 +107,9 @@ public class OrderFinanceConsumerTest {
 
         assertThat(act.getAllValues().get(1).getId()).isEqualTo(siteAccount.getId());
         assertThat(act.getAllValues().get(1).getBalance().doubleValue()).isEqualTo(250d);
+
+        verify(orderLineRepository).save(line);
+        assertThat(line.getTransaction()).isEqualTo(tx.getAllValues().get(0));
     }
     
     @Test
@@ -133,6 +144,7 @@ public class OrderFinanceConsumerTest {
         assertThat(tx.getAllValues().get(0).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
         assertThat(tx.getAllValues().get(0).getEntryDateTime()).isNotNull();
         assertThat(tx.getAllValues().get(0).getAccount()).isEqualTo(merchantAccount);
+        assertThat(tx.getAllValues().get(0).getCorrelationId()).isNotNull();
 
         assertThat(tx.getAllValues().get(1).getAmount().doubleValue()).isEqualTo(150d);
         assertThat(tx.getAllValues().get(1).getFees().doubleValue()).isEqualTo(0d);
@@ -142,6 +154,7 @@ public class OrderFinanceConsumerTest {
         assertThat(tx.getAllValues().get(1).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
         assertThat(tx.getAllValues().get(1).getEntryDateTime()).isNotNull();
         assertThat(tx.getAllValues().get(1).getAccount()).isEqualTo(siteAccount);
+        assertThat(tx.getAllValues().get(1).getCorrelationId()).isEqualTo(tx.getAllValues().get(0).getCorrelationId());
 
         assertThat(tx.getAllValues().get(2).getAmount().doubleValue()).isEqualTo(800d);
         assertThat(tx.getAllValues().get(2).getFees().doubleValue()).isEqualTo(130d);
@@ -151,6 +164,7 @@ public class OrderFinanceConsumerTest {
         assertThat(tx.getAllValues().get(2).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
         assertThat(tx.getAllValues().get(2).getEntryDateTime()).isNotNull();
         assertThat(tx.getAllValues().get(2).getAccount()).isEqualTo(merchantAccount);
+        assertThat(tx.getAllValues().get(2).getCorrelationId()).isNotNull();
 
         assertThat(tx.getAllValues().get(3).getAmount().doubleValue()).isEqualTo(130d);
         assertThat(tx.getAllValues().get(3).getFees().doubleValue()).isEqualTo(0d);
@@ -160,13 +174,48 @@ public class OrderFinanceConsumerTest {
         assertThat(tx.getAllValues().get(3).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
         assertThat(tx.getAllValues().get(3).getEntryDateTime()).isNotNull();
         assertThat(tx.getAllValues().get(3).getAccount()).isEqualTo(siteAccount);
+        assertThat(tx.getAllValues().get(3).getCorrelationId()).isEqualTo(tx.getAllValues().get(2).getCorrelationId());
 
 
         ArgumentCaptor<Account> act = ArgumentCaptor.forClass(Account.class);
         verify(accountRepository, times(4)).save(act.capture());
         assertThat(merchantAccount.getBalance().doubleValue()).isEqualTo(2520d);
         assertThat(siteAccount.getBalance().doubleValue()).isEqualTo(380d);
+
+        verify(orderLineRepository).save(line1);
+        assertThat(line1.getTransaction()).isEqualTo(tx.getAllValues().get(0));
+
+        verify(orderLineRepository).save(line2);
+        assertThat(line2.getTransaction()).isEqualTo(tx.getAllValues().get(2));
     }
+
+    @Test
+    public void onOrderConfirmedDoNotProcessLineTwice() {
+        // Given
+        OrderLine line = createOrderLine(1, 111, 11, 1000d);
+        line.setTransaction(new Transaction());
+
+        Order order = createOrder(1, OrderStatus.CONFIRMED, line);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        MerchantDto merchant = createMerchant(11, 50, .1);
+        when(merchantBackend.search(anyCollection())).thenReturn(new SearchMerchantResponse(Arrays.asList(merchant)));
+
+        Account siteAccount = createAccount(21,  order.getSiteId(), AccountType.SITE, 100);
+        when(accountRepository.findByTypeAndReferenceId(AccountType.SITE, order.getSiteId())).thenReturn(siteAccount);
+
+        Account merchantAccount = createAccount(22,  order.getSiteId(), AccountType.MERCHANT, 1000);
+        when(accountRepository.findByTypeAndReferenceId(AccountType.MERCHANT, merchant.getId())).thenReturn(merchantAccount);
+
+        // When
+        service.onOrderConfirmed(1, merchantBackend);
+
+        // Then
+        verify(transactionRepository, never()).save(any(Transaction.class));
+        verify(accountRepository, never()).save(any(Account.class));
+        verify(orderLineRepository, never()).save(any(OrderLine.class));
+    }
+
 
     private Order createOrder(Integer id, OrderStatus status, OrderLine...lines){
         final Order order = new Order();

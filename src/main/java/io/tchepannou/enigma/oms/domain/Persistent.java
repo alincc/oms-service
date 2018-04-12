@@ -9,7 +9,7 @@ public abstract class Persistent {
         if (getClass().equals(obj.getClass())){
             final Integer id = getId();
             if (id == null){
-                return false;
+                return super.equals(obj);
             } else {
                 return id.equals(((Persistent)obj).getId());
             }

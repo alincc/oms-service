@@ -1,6 +1,6 @@
 package io.tchepannou.enigma.oms.config;
 
-import io.tchepannou.enigma.oms.service.mq.QueueNames;
+import io.tchepannou.enigma.oms.service.QueueNames;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -54,19 +54,29 @@ public class RabbitMQConfiguration {
         return new RabbitTemplate(connectionFactory);
     }
 
-    @Bean
-    public Exchange newOrderFanoutExchange(){
-        return new FanoutExchange(QueueNames.EXCHANGE_NEW_ORDER);
+    @Bean(name=QueueNames.EXCHANGE_ORDER_CONFIRMED)
+    public Exchange orderConfirmedExchange(){
+        return new FanoutExchange(QueueNames.EXCHANGE_ORDER_CONFIRMED);
+    }
+
+    @Bean(name=QueueNames.EXCHANGE_ORDER_CANCELLED)
+    public Exchange orderCancelledExchange() {
+        return new FanoutExchange(QueueNames.EXCHANGE_ORDER_CANCELLED);
     }
 
     @Bean
-    public Binding financeBinding() {
-        return createBinding(QueueNames.QUEUE_FINANCE, newOrderFanoutExchange());
+    public Binding paymentBinding() {
+        return createBinding(QueueNames.QUEUE_ORDER_FINANCE, orderConfirmedExchange());
     }
 
     @Bean
     public Binding ticketSmsBinding() {
-        return createBinding(QueueNames.QUEUE_TICKET_SMS, newOrderFanoutExchange());
+        return createBinding(QueueNames.QUEUE_TICKET_SMS, orderConfirmedExchange());
+    }
+
+    @Bean
+    public Binding cancellationBinding() {
+        return createBinding(QueueNames.QUEUE_ORDER_CANCEL, orderCancelledExchange());
     }
 
     private Binding createBinding(final String name, final Exchange exchange){

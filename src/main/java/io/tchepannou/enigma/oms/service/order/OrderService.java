@@ -79,9 +79,6 @@ public class OrderService {
     @Autowired
     private TicketService ticketService;
 
-    @Autowired
-    private CancellationRefundCalculator cancellationRefundCalculator;
-
     @Transactional
     public CreateOrderResponse create(final CreateOrderRequest request){
         kv.add("Action", "Create");
@@ -204,8 +201,6 @@ public class OrderService {
 
             kv.add("OrderID", cancellation.getOrder().getId());
             kv.add("CancellationID", cancellation.getId());
-            kv.add("RefundAmount", cancellation.getRefundAmount());
-            kv.add("RefundCurrency", cancellation.getCurrencyCode());
 
             return new io.tchepannou.enigma.oms.client.rr.CancelBookingResponse(
                     cancellation == null ? null : mapper.toDto(cancellation)
@@ -230,8 +225,6 @@ public class OrderService {
         cancellation.setOrder(order);
         cancellation.setCancellationDateTime(new Date(clock.millis()));
         cancellation.setBookingId(booking.getId());
-        cancellation.setCurrencyCode(booking.getCurrencyCode());
-        cancellation.setRefundAmount(cancellationRefundCalculator.computeRefundAmount(booking));
         cancellationRepository.save(cancellation);
 
         return cancellation;

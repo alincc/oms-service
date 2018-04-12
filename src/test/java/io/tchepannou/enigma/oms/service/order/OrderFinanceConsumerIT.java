@@ -2,10 +2,10 @@ package io.tchepannou.enigma.oms.service.order;
 
 import io.tchepannou.core.test.jetty.StubHandler;
 import io.tchepannou.enigma.oms.domain.Account;
-import io.tchepannou.enigma.oms.domain.AccountType;
+import io.tchepannou.enigma.oms.client.AccountType;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.Transaction;
-import io.tchepannou.enigma.oms.domain.TransactionType;
+import io.tchepannou.enigma.oms.client.TransactionType;
 import io.tchepannou.enigma.oms.repository.AccountRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
@@ -82,6 +82,7 @@ public class OrderFinanceConsumerIT {
         assertThat(tx1101.get(0).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
         assertThat(tx1101.get(0).getType()).isEqualTo(TransactionType.BOOKING);
         assertThat(tx1101.get(0).getReferenceId()).isEqualTo(1000);
+        assertThat(tx1101.get(0).getCorrelationId()).isNotNull();
 
 
         final Account account1002 = accountRepository.findByTypeAndReferenceId(AccountType.MERCHANT, 1002);
@@ -99,6 +100,7 @@ public class OrderFinanceConsumerIT {
         assertThat(tx1102.get(0).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
         assertThat(tx1102.get(0).getType()).isEqualTo(TransactionType.BOOKING);
         assertThat(tx1102.get(0).getReferenceId()).isEqualTo(1001);
+        assertThat(tx1102.get(0).getCorrelationId()).isNotNull();
 
         final Account account1 = accountRepository.findByTypeAndReferenceId(AccountType.SITE, 1);
         assertThat(account1.getBalance()).isEqualTo(new BigDecimal((2000)).setScale(2));
@@ -116,6 +118,7 @@ public class OrderFinanceConsumerIT {
         assertThat(tx1.get(0).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
         assertThat(tx1.get(0).getType()).isEqualTo(TransactionType.BOOKING);
         assertThat(tx1.get(0).getReferenceId()).isEqualTo(1000);
+        assertThat(tx1.get(0).getCorrelationId()).isNotNull();
 
         assertThat(tx1.get(1).getAmount()).isEqualTo(new BigDecimal(1300.00).setScale(2));
         assertThat(tx1.get(1).getFees()).isEqualTo(new BigDecimal(0.00).setScale(2));
@@ -123,5 +126,6 @@ public class OrderFinanceConsumerIT {
         assertThat(tx1.get(1).getTransactionDateTime()).isEqualTo(order.getOrderDateTime());
         assertThat(tx1.get(1).getType()).isEqualTo(TransactionType.BOOKING);
         assertThat(tx1.get(1).getReferenceId()).isEqualTo(1001);
+        assertThat(tx1.get(1).getCorrelationId()).isNotNull();
     }
 }

@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface TransactionRepository extends CrudRepository<Transaction, Integer>{
     List<Transaction> findByAccount(Account account);
+    List<Transaction> findByCorrelationId(String correlationId);
 }

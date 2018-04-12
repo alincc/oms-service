@@ -88,9 +88,6 @@ public class OrderServiceTest {
     @Mock
     private TicketService ticketService;
 
-    @Mock
-    private CancellationRefundCalculator cancellationRefundCalculator;
-
     @InjectMocks
     private OrderService service;
 
@@ -246,9 +243,6 @@ public class OrderServiceTest {
         final CancelBookingResponse response = new CancelBookingResponse(booking);
         when(bookingBackend.cancel(anyInt(), any(CancelBookingRequest.class))).thenReturn(response);
 
-        final BigDecimal refundAmount = new BigDecimal(43943);
-        when(cancellationRefundCalculator.computeRefundAmount(any())).thenReturn(refundAmount);
-
         // When
         service.cancel(1);
 
@@ -262,8 +256,6 @@ public class OrderServiceTest {
         ArgumentCaptor<Cancellation> cancellation = ArgumentCaptor.forClass(Cancellation.class);
         verify(refundRepository).save(cancellation.capture());
         assertThat(cancellation.getValue().getCancellationDateTime()).isEqualTo(new Date(now));
-        assertThat(cancellation.getValue().getRefundAmount()).isEqualTo(refundAmount);
-        assertThat(cancellation.getValue().getCurrencyCode()).isEqualTo(booking.getCurrencyCode());
         assertThat(cancellation.getValue().getBookingId()).isEqualTo(booking.getId());
         assertThat(cancellation.getValue().getOrder()).isEqualTo(order);
     }

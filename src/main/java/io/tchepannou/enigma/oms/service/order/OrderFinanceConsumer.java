@@ -5,15 +5,16 @@ import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.RestConfig;
 import io.tchepannou.core.rest.impl.DefaultRestClient;
 import io.tchepannou.enigma.oms.domain.Account;
-import io.tchepannou.enigma.oms.domain.AccountType;
+import io.tchepannou.enigma.oms.client.AccountType;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Transaction;
-import io.tchepannou.enigma.oms.domain.TransactionType;
+import io.tchepannou.enigma.oms.client.TransactionType;
 import io.tchepannou.enigma.oms.repository.AccountRepository;
+import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
-import io.tchepannou.enigma.oms.service.mq.QueueNames;
+import io.tchepannou.enigma.oms.service.QueueNames;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import io.tchepannou.enigma.profile.client.MerchantBackend;
 import io.tchepannou.enigma.profile.client.ProfileEnvironment;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,13 +45,16 @@ public class OrderFinanceConsumer {
     private TransactionRepository transactionRepository;
 
     @Autowired
+    private OrderLineRepository orderLineRepository;
+
+    @Autowired
     private OrderRepository orderRepository;
 
     @Autowired
     private ProfileEnvironment profileEnvironment;
 
     @Transactional
-    @RabbitListener(queues = QueueNames.QUEUE_FINANCE)
+    @RabbitListener(queues = QueueNames.QUEUE_ORDER_FINANCE)
     public void onOrderConfirmed(Integer orderId){
         LOGGER.info("Consuming {}", orderId);
 
@@ -67,7 +72,6 @@ public class OrderFinanceConsumer {
         }
 
         // Merchant
-
         final Set<Integer> merchantIds = order.getLines().stream()
                 .map(l -> l.getMerchantId())
                 .collect(Collectors.toSet());
@@ -81,6 +85,11 @@ public class OrderFinanceConsumer {
         final Account siteAccount = findSiteAccount(order);
 
         for (final OrderLine line : order.getLines()){
+            if (line.getTransaction() != null){
+                LOGGER.info("OrderLine#{} already processed", line.getId());
+                continue;
+            }
+
             final PlanDto plan = merchants.get(line.getMerchantId()).getPlan();
 
             // Merchant
@@ -88,6 +97,7 @@ public class OrderFinanceConsumer {
             final Account merchantAccount = findMerchantAccount(merchant, order);
             final Transaction merchantTx = toMerchantTransaction(order, line, merchantAccount, plan);
             updateAccount(merchantTx, merchantAccount);
+            link(line, merchantTx);
 
             // Site
             updateAccount(
@@ -97,23 +107,14 @@ public class OrderFinanceConsumer {
         }
     }
 
+    private void link(OrderLine line, Transaction tx){
+        line.setTransaction(tx);
+        orderLineRepository.save(line);
+    }
+
     private void updateAccount(Transaction tx, Account account){
         account.setBalance(account.getBalance().add(tx.getNet()));
         accountRepository.save(account);
-    }
-
-    private Account findMerchantAccount(final MerchantDto merchant, final Order order){
-        Account account = accountRepository.findByTypeAndReferenceId(AccountType.MERCHANT, merchant.getId());
-        if (account == null){
-            account = new Account();
-            account.setBalance(BigDecimal.ZERO);
-            account.setCurrencyCode(order.getCurrencyCode());
-            account.setReferenceId(merchant.getId());
-            account.setSiteId(order.getSiteId());
-            account.setType(AccountType.MERCHANT);
-            accountRepository.save(account);
-        }
-        return account;
     }
 
     private Transaction toMerchantTransaction(final Order order, final OrderLine line, final Account account, final PlanDto plan) {
@@ -130,23 +131,10 @@ public class OrderFinanceConsumer {
         tx.setReferenceId(line.getBookingId());
         tx.setTransactionDateTime(order.getOrderDateTime());
         tx.setType(TransactionType.BOOKING);
+        tx.setCorrelationId(UUID.randomUUID().toString());
 
         transactionRepository.save(tx);
         return tx;
-    }
-
-    private Account findSiteAccount(final Order order){
-        Account account = accountRepository.findByTypeAndReferenceId(AccountType.SITE, order.getSiteId());
-        if (account == null){
-            account = new Account();
-            account.setBalance(BigDecimal.ZERO);
-            account.setCurrencyCode(order.getCurrencyCode());
-            account.setReferenceId(order.getSiteId());
-            account.setSiteId(order.getSiteId());
-            account.setType(AccountType.SITE);
-            accountRepository.save(account);
-        }
-        return account;
     }
 
     private Transaction toSiteTransaction(final Transaction merchantTx, final Order order, final OrderLine line, final Account account, final PlanDto plan) {
@@ -163,8 +151,37 @@ public class OrderFinanceConsumer {
         tx.setReferenceId(line.getBookingId());
         tx.setTransactionDateTime(order.getOrderDateTime());
         tx.setType(TransactionType.BOOKING);
+        tx.setCorrelationId(merchantTx.getCorrelationId());
 
         transactionRepository.save(tx);
         return tx;
+    }
+
+    private Account findMerchantAccount(final MerchantDto merchant, final Order order){
+        Account account = accountRepository.findByTypeAndReferenceId(AccountType.MERCHANT, merchant.getId());
+        if (account == null){
+            account = new Account();
+            account.setBalance(BigDecimal.ZERO);
+            account.setCurrencyCode(order.getCurrencyCode());
+            account.setReferenceId(merchant.getId());
+            account.setSiteId(order.getSiteId());
+            account.setType(AccountType.MERCHANT);
+            accountRepository.save(account);
+        }
+        return account;
+    }
+
+    private Account findSiteAccount(final Order order){
+        Account account = accountRepository.findByTypeAndReferenceId(AccountType.SITE, order.getSiteId());
+        if (account == null){
+            account = new Account();
+            account.setBalance(BigDecimal.ZERO);
+            account.setCurrencyCode(order.getCurrencyCode());
+            account.setReferenceId(order.getSiteId());
+            account.setSiteId(order.getSiteId());
+            account.setType(AccountType.SITE);
+            accountRepository.save(account);
+        }
+        return account;
     }
 }

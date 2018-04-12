@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.domain;
 
+import io.tchepannou.enigma.oms.client.AccountType;
 import lombok.Getter;
 import lombok.Setter;
 

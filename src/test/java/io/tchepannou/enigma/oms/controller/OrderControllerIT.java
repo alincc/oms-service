@@ -352,9 +352,7 @@ public class OrderControllerIT {
 
         final Cancellation cancel = cancellationRepository.findOne(response.getCancellation().getId());
         assertThat(cancel.getCancellationDateTime()).isNotNull();
-        assertThat(cancel.getRefundAmount().doubleValue()).isEqualTo(6000.0d);
         assertThat(cancel.getBookingId()).isEqualTo(5678);
-        assertThat(cancel.getCurrencyCode()).isEqualTo("XAF");
         assertThat(cancel.getOrder()).isNotNull();
         assertThat(cancel.getOrder().getId()).isEqualTo(300);
 

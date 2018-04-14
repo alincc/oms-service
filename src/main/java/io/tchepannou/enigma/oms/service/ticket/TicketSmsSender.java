@@ -2,6 +2,8 @@ package io.tchepannou.enigma.oms.service.ticket;
 
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.enigma.oms.domain.Ticket;
+import io.tchepannou.enigma.oms.service.sms.SendSmsRequest;
+import io.tchepannou.enigma.oms.service.sms.SendSmsResponse;
 import io.tchepannou.enigma.oms.service.sms.SmsGateway;
 import io.tchepannou.enigma.refdata.client.SiteBackend;
 import io.tchepannou.enigma.refdata.client.dto.SiteDto;
@@ -39,9 +41,14 @@ public class TicketSmsSender {
 
         try {
 
-            final String result = gateway.send(senderId, mobileNumber, message);
-            logger.add("SmsTransactionID", result);
-            return result;
+            final SendSmsRequest request = new SendSmsRequest();
+            request.setPhone(mobileNumber);
+            request.setMessage(message);
+            request.setSenderId(senderId);
+            final SendSmsResponse response = gateway.send(request);
+
+            logger.add("SmsMessageId", response.getMessageId());
+            return response.getMessageId();
 
         } catch (RuntimeException e){
 

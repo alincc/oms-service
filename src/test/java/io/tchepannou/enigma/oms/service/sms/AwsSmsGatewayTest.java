@@ -31,11 +31,16 @@ public class AwsSmsGatewayTest {
         when(expected.getMessageId()).thenReturn("this-is-message-id");
         when (sns.publish(any())).thenReturn(expected);
 
+        final SendSmsRequest req = new SendSmsRequest();
+        req.setSenderId("Ray");
+        req.setPhone("(514)544-11 11");
+        req.setMessage("Hello world");
+
         // When
-        String result = gateway.send("Ray", "(514)544-11 11", "Hello world");
+        final SendSmsResponse response = gateway.send(req);
 
         // Then
-        assertThat(result).isEqualTo("this-is-message-id");
+        assertThat(response.getMessageId()).isEqualTo("this-is-message-id");
 
         ArgumentCaptor<PublishRequest> request = ArgumentCaptor.forClass(PublishRequest.class);
         verify(sns).publish(request.capture());
@@ -51,11 +56,16 @@ public class AwsSmsGatewayTest {
         when(expected.getMessageId()).thenReturn("this-is-message-id");
         when (sns.publish(any())).thenReturn(expected);
 
+        final SendSmsRequest request = new SendSmsRequest();
+        request.setSenderId(null);
+        request.setPhone("(514)544-11 11");
+        request.setMessage("Hello world");
+
         // When
-        String result = gateway.send(null, "(514)544-11 11", "Hello world");
+        final SendSmsResponse result = gateway.send(request);
 
         // Then
-        assertThat(result).isEqualTo("this-is-message-id");
+        assertThat(result.getMessageId()).isEqualTo("this-is-message-id");
 
         ArgumentCaptor<PublishRequest> req = ArgumentCaptor.forClass(PublishRequest.class);
         verify(sns).publish(req.capture());
@@ -67,22 +77,34 @@ public class AwsSmsGatewayTest {
 
     @Test
     public void sendWithNullMessage() throws Exception {
+        // Given
+        final SendSmsRequest request = new SendSmsRequest();
+        request.setSenderId("foo");
+        request.setPhone("(514)544-11 11");
+        request.setMessage(null);
+
         // When
-        String result = gateway.send("test", "(514)544-11 11", null);
+        final SendSmsResponse result = gateway.send(request);
 
         // Then
-        assertThat(result).isNull();
+        assertThat(result.getMessageId()).isNull();
 
         verify(sns, never()).publish(any());
     }
 
     @Test
     public void sendWithEmptyMessage() throws Exception {
+        // Given
+        final SendSmsRequest request = new SendSmsRequest();
+        request.setSenderId("foo");
+        request.setPhone("(514)544-11 11");
+        request.setMessage("");
+
         // When
-        String result = gateway.send("test", "(514)544-11 11", "");
+        final SendSmsResponse result = gateway.send(request);
 
         // Then
-        assertThat(result).isNull();
+        assertThat(result.getMessageId()).isNull();
 
         verify(sns, never()).publish(any());
     }

@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class NullSmsGatewayTest {
     @Test
     public void send(){
-        final String result = new NullSmsGateway().send("Ray", "309403", "Hello world");
-        assertThat(result).isNull();
+        final SendSmsResponse result = new NullSmsGateway().send(null);
+        assertThat(result.getMessageId()).isNull();
     }
 }

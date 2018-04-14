@@ -4,12 +4,15 @@ import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
+import io.tchepannou.enigma.oms.service.sms.SendSmsRequest;
+import io.tchepannou.enigma.oms.service.sms.SendSmsResponse;
 import io.tchepannou.enigma.oms.service.sms.SmsGateway;
 import io.tchepannou.enigma.refdata.client.SiteBackend;
 import io.tchepannou.enigma.refdata.client.dto.SiteDto;
 import io.tchepannou.enigma.refdata.client.rr.SiteResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -45,14 +48,21 @@ public class TicketSmsSenderTest {
         final Ticket ticket = createTicket("5147550101", 1);
         when(generator.generate(ticket)).thenReturn("This is a message");
 
-        when(gateway.send(any(), any(), any())).thenReturn("123");
+        final SendSmsResponse response = new SendSmsResponse();
+        response.setMessageId("123");
+        when(gateway.send(any())).thenReturn(response);
 
         // When
         String result = service.send(ticket);
 
         // Then
         assertThat(result).isEqualTo("123");
-        verify(gateway).send("Test","5147550101", "This is a message");
+
+        final ArgumentCaptor<SendSmsRequest> request = ArgumentCaptor.forClass(SendSmsRequest.class);
+        verify(gateway).send(request.capture());
+        assertThat(request.getValue().getMessage()).isEqualTo("This is a message");
+        assertThat(request.getValue().getPhone()).isEqualTo("5147550101");
+        assertThat(request.getValue().getSenderId()).isEqualTo("Test");
     }
 
     @Test
@@ -63,7 +73,10 @@ public class TicketSmsSenderTest {
 
         final Ticket ticket = createTicket("5147550101", 1);
         when(generator.generate(ticket)).thenReturn("This is a message");
-        when(gateway.send(any(), any(), any())).thenReturn("12345");
+
+        final SendSmsResponse response = new SendSmsResponse();
+        response.setMessageId("12345");
+        when(gateway.send(any())).thenReturn(response);
 
         // When
         service.send(ticket);
@@ -72,7 +85,7 @@ public class TicketSmsSenderTest {
         verify(logger).add("SmsSenderId", "Test");
         verify(logger).add("SmsNumber", "5147550101");
         verify(logger).add("SmsMessage", "This is a message");
-        verify(logger).add("SmsTransactionID", "12345");
+        verify(logger).add("SmsMessageId", "12345");
     }
 
     private SiteDto createSite(final Integer id, final String smsSenderId){

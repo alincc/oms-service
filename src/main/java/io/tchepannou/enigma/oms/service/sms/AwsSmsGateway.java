@@ -18,9 +18,13 @@ public class AwsSmsGateway implements SmsGateway {
     private AmazonSNS sns;
 
     @Override
-    public String send(final String sender, final String phone, final String message) {
+    public SendSmsResponse send(final SendSmsRequest request) {
+        final String sender = request.getSenderId();
+        final String message = request.getMessage();
+        final String phone = request.getPhone();
+
         if (Strings.isNullOrEmpty(message)){
-            return null;
+            return new SendSmsResponse();
         }
 
         final Map<String, MessageAttributeValue> attrs = attributes(sender);
@@ -28,7 +32,10 @@ public class AwsSmsGateway implements SmsGateway {
                 .withMessage(formatMessage(message))
                 .withPhoneNumber(formatPhone(phone))
                 .withMessageAttributes(attrs));
-        return result.getMessageId();
+
+        final SendSmsResponse response = new SendSmsResponse();
+        response.setMessageId(result.getMessageId());
+        return response;
     }
 
     private String formatPhone(String phone) {

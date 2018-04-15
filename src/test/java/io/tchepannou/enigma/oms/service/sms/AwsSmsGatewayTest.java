@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.service.sms;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
@@ -11,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -83,13 +85,13 @@ public class AwsSmsGatewayTest {
         request.setPhone("(514)544-11 11");
         request.setMessage(null);
 
-        // When
-        final SendSmsResponse result = gateway.send(request);
-
-        // Then
-        assertThat(result.getMessageId()).isNull();
-
-        verify(sns, never()).publish(any());
+        try {
+            // When
+            gateway.send(request);
+            fail();
+        } catch (SmsException e){
+            verify(sns, never()).publish(any());
+        }
     }
 
     @Test
@@ -100,12 +102,29 @@ public class AwsSmsGatewayTest {
         request.setPhone("(514)544-11 11");
         request.setMessage("");
 
+
+        try {
+            // When
+            gateway.send(request);
+            fail();
+        } catch (SmsException e){
+            verify(sns, never()).publish(any());
+        }
+    }
+
+
+    @Test(expected = SmsException.class)
+    public void sendAWSException() throws Exception {
+        // Given
+        final SendSmsRequest request = new SendSmsRequest();
+        request.setSenderId("foo");
+        request.setPhone("(514)544-11 11");
+        request.setMessage("flkfdl");
+
+        AmazonClientException e = new AmazonClientException("failed");
+        when(sns.publish(any())).thenThrow(e);
+
         // When
-        final SendSmsResponse result = gateway.send(request);
-
-        // Then
-        assertThat(result.getMessageId()).isNull();
-
-        verify(sns, never()).publish(any());
+        gateway.send(request);
     }
 }

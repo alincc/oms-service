@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.domain;
 
+import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.TransactionType;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,28 +27,30 @@ public class Transaction extends Persistent {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @ManyToOne
-    @JoinColumn(name="account_fk")
-    private Account account;
+    @Column(name="gateway_tid")
+    private String gatewayTid;
 
     private BigDecimal amount;
 
-    private BigDecimal net;
-
-    private BigDecimal fees;
+    @Column(name="currency_code")
+    private String currencyCode;
 
     @Enumerated(EnumType.STRING)
     private TransactionType type;
 
-    @Column(name="entry_datetime")
-    private Date entryDateTime;
-
-    @Column(name="reference_id")
-    private Integer referenceId;
-
     @Column(name="transaction_datetime")
     private Date transactionDateTime;
 
-    @Column(name="correlation_id")
-    private String correlationId;
+    @ManyToOne
+    @JoinColumn(name="order_fk")
+    private Order order;
+
+    @ManyToOne
+    @JoinColumn(name="cancellation_fk")
+    private Cancellation cancellation;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="payment_method")
+    private PaymentMethod paymentMethod;
+
 }

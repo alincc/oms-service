@@ -1,11 +1,11 @@
 package io.tchepannou.enigma.oms.service.order;
 
 import io.tchepannou.core.logger.KVLogger;
-import io.tchepannou.enigma.ferari.client.backend.BookingBackend;
 import io.tchepannou.enigma.ferari.client.CancellationReason;
 import io.tchepannou.enigma.ferari.client.Direction;
 import io.tchepannou.enigma.ferari.client.FerrariErrorCode;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
+import io.tchepannou.enigma.ferari.client.backend.BookingBackend;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.ferari.client.exception.BookingException;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
@@ -15,23 +15,29 @@ import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
+import io.tchepannou.enigma.oms.client.TransactionType;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
+import io.tchepannou.enigma.oms.client.exception.NotFoundException;
+import io.tchepannou.enigma.oms.client.exception.OrderException;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
+import io.tchepannou.enigma.oms.domain.Cancellation;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
-import io.tchepannou.enigma.oms.client.exception.NotFoundException;
-import io.tchepannou.enigma.oms.client.exception.OrderException;
-import io.tchepannou.enigma.oms.domain.Cancellation;
+import io.tchepannou.enigma.oms.domain.Transaction;
+import io.tchepannou.enigma.oms.repository.CancellationRepository;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
-import io.tchepannou.enigma.oms.repository.CancellationRepository;
+import io.tchepannou.enigma.oms.repository.TransactionRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
+import io.tchepannou.enigma.oms.service.payment.PaymentRequest;
+import io.tchepannou.enigma.oms.service.payment.PaymentResponse;
+import io.tchepannou.enigma.oms.service.payment.PaymentService;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
@@ -88,8 +94,15 @@ public class OrderServiceTest {
     @Mock
     private TicketService ticketService;
 
+    @Mock
+    private TransactionRepository transactionRepository;
+
+    @Mock
+    private PaymentService paymentService;
+
     @InjectMocks
     private OrderService service;
+
 
     @Test
     public void shouldCreateOrder(){
@@ -120,6 +133,9 @@ public class OrderServiceTest {
     @Test
     public void shouldCheckout(){
         // Given
+        long now = 309403943;
+        when(clock.millis()).thenReturn(now);
+
         OrderLine line = createOrderLine(1, 100d);
         Order order = createOrder(1, OrderStatus.NEW, 100d, line);
         when(orderRepository.findOne(1)).thenReturn(order);
@@ -131,12 +147,15 @@ public class OrderServiceTest {
         TicketDto ticket = mock(TicketDto.class);
         when(ticketService.create(order)).thenReturn(Arrays.asList(ticket));
 
+        PaymentResponse paymentResponse = createPaymentResponse("123");
+        when(paymentService.pay(any())).thenReturn(paymentResponse);
+
         // When
         CheckoutOrderRequest request = checkoutOrderRequest();
         CheckoutOrderResponse response =  service.checkout(1, "4304309", request);
 
         // Then
-        verify(orderRepository, times(3)).save(order);
+        verify(orderRepository, times(2)).save(order);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
         assertThat(order.getDeviceUID()).isEqualTo("4304309");
         assertThat(order.getLanguageCode()).isEqualTo(request.getLanguageCode());
@@ -145,8 +164,6 @@ public class OrderServiceTest {
         assertThat(order.getLastName()).isEqualTo(request.getLastName());
         assertThat(order.getEmail()).isEqualTo(request.getEmail());
         assertThat(order.getCustomerId()).isEqualTo(request.getCustomerId());
-        assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
-        assertThat(order.getPaymentId()).isNotNull();
 
         verify(bookingBackend).book(any());
         verify(orderLineRepository).save(line);
@@ -157,6 +174,27 @@ public class OrderServiceTest {
         verify(ticketService).create(order);
         assertThat(response.getOrderId()).isEqualTo(order.getId());
         assertThat(response.getTickets()).containsExactly(ticket);
+
+        ArgumentCaptor<PaymentRequest> paymentRequest = ArgumentCaptor.forClass(PaymentRequest.class);
+        verify(paymentService).pay(paymentRequest.capture());
+        assertThat(paymentRequest.getValue().getAmount()).isEqualTo(order.getTotalAmount());
+        assertThat(paymentRequest.getValue().getCurrencyCode()).isEqualTo(order.getCurrencyCode());
+        assertThat(paymentRequest.getValue().getAreaCode()).isEqualTo(request.getMobilePayment().getAreaCode());
+        assertThat(paymentRequest.getValue().getMobileNumber()).isEqualTo(request.getMobilePayment().getNumber());
+        assertThat(paymentRequest.getValue().getCountryCode()).isEqualTo(request.getMobilePayment().getCountryCode());
+        assertThat(paymentRequest.getValue().getProvider()).isEqualTo(request.getMobilePayment().getProvider());
+        assertThat(paymentRequest.getValue().getUssdCode()).isEqualTo(request.getMobilePayment().getUssdCode());
+
+        ArgumentCaptor<Transaction> tx = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository).save(tx.capture());
+        assertThat(tx.getValue().getAmount()).isEqualTo(order.getTotalAmount());
+        assertThat(tx.getValue().getCurrencyCode()).isEqualTo(order.getCurrencyCode());
+        assertThat(tx.getValue().getCancellation()).isNull();
+        assertThat(tx.getValue().getType()).isEqualTo(TransactionType.CHARGE);
+        assertThat(tx.getValue().getGatewayTid()).isEqualTo(paymentResponse.getTransactionId());
+        assertThat(tx.getValue().getOrder()).isEqualTo(order);
+        assertThat(tx.getValue().getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
+        assertThat(tx.getValue().getTransactionDateTime()).isEqualTo(new Date(now));
     }
 
     @Test
@@ -279,6 +317,7 @@ public class OrderServiceTest {
         // When
         service.cancel(1);
     }
+
     private Order createOrder(Integer id, OrderStatus status, double totalPrice, OrderLine...lines){
         final Order order = new Order();
         order.setId(id);
@@ -370,4 +409,9 @@ public class OrderServiceTest {
         return token;
     }
 
+    private PaymentResponse createPaymentResponse(String id) {
+        PaymentResponse response = new PaymentResponse();
+        response.setTransactionId(id);
+        return response;
+    }
 }

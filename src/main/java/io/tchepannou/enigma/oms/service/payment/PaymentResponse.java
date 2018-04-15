@@ -1,13 +1,14 @@
 package io.tchepannou.enigma.oms.service.payment;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class PaymentResponse {
-    private String paymentId;
-    private boolean success;
-    private String errorCode;
-    private String errorMessage;
+    private String transactionId;
 }

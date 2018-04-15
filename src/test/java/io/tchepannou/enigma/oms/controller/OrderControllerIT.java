@@ -8,7 +8,6 @@ import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OfferType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
-import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.Sex;
 import io.tchepannou.enigma.oms.client.TicketStatus;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
@@ -159,7 +158,6 @@ public class OrderControllerIT {
         assertThat(order.getOrderDateTime()).isNotNull();
         assertThat(order.getCurrencyCode()).isEqualTo("XAF");
         assertThat(order.getCustomerId()).isEqualTo(order.getCustomerId());
-        assertThat(order.getPaymentId()).isNull();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.NEW);
         assertThat(order.getTotalAmount()).isEqualTo(new BigDecimal(12000).setScale(2));
         assertThat(order.getSiteId()).isEqualTo(request.getSiteId());
@@ -228,8 +226,6 @@ public class OrderControllerIT {
         final Order order = orderRepository.findOne(100);
         assertThat(order).isNotNull();
 
-        assertThat(order.getPaymentId()).isEqualTo(23203290);
-        assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
         assertThat(order.getCustomerId()).isEqualTo(request.getCustomerId());
         assertThat(order.getFirstName()).isEqualTo(request.getFirstName());
@@ -311,8 +307,6 @@ public class OrderControllerIT {
                 .andExpect(jsonPath("$.order.currencyCode", is("XAF")))
                 .andExpect(jsonPath("$.order.totalAmount", is(6000d)))
                 .andExpect(jsonPath("$.order.orderDateTime", notNullValue()))
-                .andExpect(jsonPath("$.order.paymentMethod", is("ONLINE")))
-                .andExpect(jsonPath("$.order.paymentId", is(123)))
                 .andExpect(jsonPath("$.order.siteId", is(1)))
                 .andExpect(jsonPath("$.order.deviceUID", is("1234-1234")))
                 .andExpect(jsonPath("$.order.languageCode", is("fr")))

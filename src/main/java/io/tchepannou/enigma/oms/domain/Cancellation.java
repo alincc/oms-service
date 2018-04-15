@@ -10,7 +10,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import java.util.Date;
 
@@ -32,8 +31,4 @@ public class Cancellation extends Persistent {
 
     @Column(name="cancellation_datetime")
     private Date cancellationDateTime;
-
-    @OneToOne
-    @JoinColumn(name="transaction_fk")
-    private Transaction transaction;
 }

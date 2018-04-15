@@ -60,6 +60,33 @@ public class TicketService {
     @Value("${server.port}")
     private int port;
 
+    //-- MessageListeners
+    @Transactional
+    @RabbitListener(queues = QueueNames.QUEUE_TICKET_SMS)
+    public void onOrderConfirmed(Integer orderId) {
+        onOrderConfirmed(orderId, new DefaultRestClient(new RestConfig()));
+    }
+
+    @VisibleForTesting
+    protected void onOrderConfirmed(Integer orderId, RestClient rest){
+        final Order order = orderRepository.findOne(orderId);
+        if (order == null){
+            LOGGER.error("Order#{} not found", orderId);
+            return;
+        }
+
+        final List<Ticket> tickets = ticketRepository.findByOrder(order);
+        for (Ticket ticket : tickets) {
+            final String url = "http://127.0.0.1:" + port + "/v1/tickets/" + ticket.getId() + "/sms";
+            try {
+                rest.get(url, SendSmsResponse.class);
+            } catch (HttpNotFoundException | HttpIOException e) {
+                LOGGER.error("Unable to send via SMS Ticket#{}", url, e);
+            }
+        }
+    }
+
+    //-- Public
     @Transactional
     public List<TicketDto> create(Order order){
         final List<TicketDto> result = new ArrayList<>();
@@ -81,6 +108,20 @@ public class TicketService {
                 .collect(Collectors.toList())
         );
         return result;
+    }
+
+    @Transactional
+    public void cancelByBooking(Integer bookingId) {
+        final List<Ticket> tickets = ticketRepository.findByBookingId(bookingId);
+
+        for (final Ticket ticket : tickets) {
+            if (TicketStatus.NEW.equals(ticket.getStatus())) {
+                ticket.setStatus(TicketStatus.CANCELLED);
+                ticket.setCancellationDateTime(DateHelper.now());
+
+                ticketRepository.save(ticket);
+            }
+        }
     }
 
     public List<TicketDto> findByOrder(Order order){
@@ -109,46 +150,8 @@ public class TicketService {
         return new GetTicketResponse(mapper.toTicketDto(ticket));
     }
 
-    @Transactional
-    public void cancelByBooking(Integer bookingId) {
-        final List<Ticket> tickets = ticketRepository.findByBookingId(bookingId);
 
-        for (final Ticket ticket : tickets) {
-            if (TicketStatus.NEW.equals(ticket.getStatus())) {
-                ticket.setStatus(TicketStatus.CANCELLED);
-                ticket.setCancellationDateTime(DateHelper.now());
-
-                ticketRepository.save(ticket);
-            }
-        }
-    }
-
-
-    @Transactional
-    @RabbitListener(queues = QueueNames.QUEUE_TICKET_SMS)
-    public void onOrderConfirmed(Integer orderId) {
-        onOrderConfirmed(orderId, new DefaultRestClient(new RestConfig()));
-    }
-
-    @VisibleForTesting
-    protected void onOrderConfirmed(Integer orderId, RestClient rest){
-        final Order order = orderRepository.findOne(orderId);
-        if (order == null){
-            LOGGER.error("Order#{} not found", orderId);
-            return;
-        }
-
-        final List<Ticket> tickets = ticketRepository.findByOrder(order);
-        for (Ticket ticket : tickets) {
-            final String url = "http://127.0.0.1:" + port + "/v1/tickets/" + ticket.getId() + "/sms";
-            try {
-                rest.get(url, SendSmsResponse.class);
-            } catch (HttpNotFoundException | HttpIOException e) {
-                LOGGER.error("Unable to send via SMS Ticket#{}", url, e);
-            }
-        }
-    }
-
+    //-- Private
     private Ticket createTicket(
             final int sequenceNumber,
             final OrderLine line,

@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 
 @Component
-public class CancellationRefundCalculator {
+public class RefundCalculator {
     @Autowired
     private Clock clock;
 

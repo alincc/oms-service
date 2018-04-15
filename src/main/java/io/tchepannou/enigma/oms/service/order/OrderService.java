@@ -14,6 +14,7 @@ import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
+import io.tchepannou.enigma.oms.client.TransactionType;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
@@ -27,12 +28,18 @@ import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.domain.Cancellation;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
+import io.tchepannou.enigma.oms.domain.Transaction;
 import io.tchepannou.enigma.oms.domain.Traveller;
+import io.tchepannou.enigma.oms.repository.CancellationRepository;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
-import io.tchepannou.enigma.oms.repository.CancellationRepository;
+import io.tchepannou.enigma.oms.repository.TransactionRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
+import io.tchepannou.enigma.oms.service.payment.PaymentException;
+import io.tchepannou.enigma.oms.service.payment.PaymentRequest;
+import io.tchepannou.enigma.oms.service.payment.PaymentResponse;
+import io.tchepannou.enigma.oms.service.payment.PaymentService;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +78,9 @@ public class OrderService {
     private CancellationRepository cancellationRepository;
 
     @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Autowired
     private Mapper mapper;
 
     @Autowired
@@ -78,6 +88,9 @@ public class OrderService {
 
     @Autowired
     private TicketService ticketService;
+
+    @Autowired
+    private PaymentService paymentService;
 
     @Transactional
     public CreateOrderResponse create(final CreateOrderRequest request){
@@ -276,13 +289,33 @@ public class OrderService {
     }
 
     private void charge(final Order order, final CheckoutOrderRequest request){
-        if ("411 111 1111".equals(order.getMobileNumber())){
-            throw new OrderException(OMSErrorCode.PAYMENT_FAILURE);
-        }
+        try {
 
-        order.setPaymentMethod(PaymentMethod.ONLINE);
-        order.setPaymentId(23203290);
-        orderRepository.save(order);
+            // Perform payment
+            final PaymentRequest paymentRequest = new PaymentRequest();
+            paymentRequest.setProvider(request.getMobilePayment().getProvider());
+            paymentRequest.setMobileNumber(request.getMobilePayment().getNumber());
+            paymentRequest.setAreaCode(request.getMobilePayment().getAreaCode());
+            paymentRequest.setCountryCode(request.getMobilePayment().getCountryCode());
+            paymentRequest.setUssdCode(request.getMobilePayment().getUssdCode());
+            paymentRequest.setAmount(order.getTotalAmount());
+            paymentRequest.setCurrencyCode(order.getCurrencyCode());
+            final PaymentResponse paymentResponse = paymentService.pay(paymentRequest);
+
+            // Record transaction
+            final Transaction tx = new Transaction();
+            tx.setAmount(paymentRequest.getAmount());
+            tx.setCurrencyCode(paymentRequest.getCurrencyCode());
+            tx.setGatewayTid(paymentResponse.getTransactionId());
+            tx.setOrder(order);
+            tx.setTransactionDateTime(new Date(clock.millis()));
+            tx.setType(TransactionType.CHARGE);
+            tx.setPaymentMethod(PaymentMethod.ONLINE);
+            transactionRepository.save(tx);
+
+        } catch (PaymentException e){
+            throw new OrderException(e, OMSErrorCode.PAYMENT_FAILURE);
+        }
     }
 
     private OrderException toOrderException(Throwable e, OMSErrorCode code){

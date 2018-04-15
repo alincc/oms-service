@@ -16,12 +16,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class CancellationRefundCalculatorTest {
+public class RefundCalculatorTest {
     @Mock
     private Clock clock;
 
     @InjectMocks
-    private CancellationRefundCalculator calculator;
+    private RefundCalculator calculator;
 
     @Test
     public void computeRefundAmount() throws Exception {

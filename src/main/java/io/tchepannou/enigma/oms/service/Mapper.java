@@ -84,8 +84,6 @@ public class Mapper {
         dto.setCurrencyCode(obj.getCurrencyCode());
         dto.setId(obj.getId());
         dto.setOrderDateTime(obj.getOrderDateTime());
-        dto.setPaymentId(obj.getPaymentId());
-        dto.setPaymentMethod(obj.getPaymentMethod());
         dto.setStatus(obj.getStatus());
         dto.setTotalAmount(obj.getTotalAmount());
         dto.setCustomer(toCustomerDto(obj));

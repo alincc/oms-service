@@ -1,7 +1,7 @@
 package io.tchepannou.enigma.oms.service.sms;
 
 public class SandboxSmsGateway implements SmsGateway {
-    public static final String FAIL_PHONE = "+15144111111";
+    public static final String FAIL_PHONE = "+123799501111";
 
     @Override
     public SendSmsResponse send(final SendSmsRequest request) {

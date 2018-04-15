@@ -1,7 +1,6 @@
 package io.tchepannou.enigma.oms.domain;
 
 import io.tchepannou.enigma.oms.client.OrderStatus;
-import io.tchepannou.enigma.oms.client.PaymentMethod;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,9 +25,6 @@ public class Order extends Persistent {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
-
-    @Column(name="payment_id")
-    private Integer paymentId;
 
     @Column(name="site_id")
     private Integer siteId;
@@ -56,10 +52,6 @@ public class Order extends Persistent {
 
     @OneToMany(mappedBy = "order")
     private List<Traveller> travellers;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name="payment_method")
-    private PaymentMethod paymentMethod;
 
     @Column(name="first_name")
     private String firstName;

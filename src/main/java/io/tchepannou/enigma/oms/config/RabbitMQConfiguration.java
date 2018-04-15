@@ -65,18 +65,8 @@ public class RabbitMQConfiguration {
     }
 
     @Bean
-    public Binding paymentBinding() {
-        return createBinding(QueueNames.QUEUE_ORDER_FINANCE, orderConfirmedExchange());
-    }
-
-    @Bean
     public Binding ticketSmsBinding() {
         return createBinding(QueueNames.QUEUE_TICKET_SMS, orderConfirmedExchange());
-    }
-
-    @Bean
-    public Binding cancellationBinding() {
-        return createBinding(QueueNames.QUEUE_ORDER_CANCEL, orderCancelledExchange());
     }
 
     private Binding createBinding(final String name, final Exchange exchange){

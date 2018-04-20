@@ -13,7 +13,6 @@ import io.tchepannou.enigma.ferari.client.FerrariErrorCode;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.backend.BookingBackend;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
-import io.tchepannou.enigma.ferari.client.exception.BookingException;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
@@ -176,7 +175,6 @@ public class OrderService {
 
             // Create order
             final Order order = mapper.toOrder(request);
-            order.setCreationDateTime(new Date(clock.millis()));
 
             final List<OrderLine> lines = new ArrayList();
             for (final OfferLineDto dto : request.getOfferLines()){
@@ -185,6 +183,9 @@ public class OrderService {
             }
 
             // Save
+            order.setLines(lines);
+            order.setCreationDateTime(new Date(clock.millis()));
+            order.setFreeCancellationDateTime(refundCalculator.computeFreeCancellationDateTime(order));
             orderRepository.save(order);
             for (final OrderLine line : lines){
                 orderLineRepository.save(line);

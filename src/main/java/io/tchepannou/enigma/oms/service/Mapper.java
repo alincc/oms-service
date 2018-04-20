@@ -94,6 +94,7 @@ public class Mapper {
         dto.setCreationDateTime(obj.getCreationDateTime());
         dto.setCheckoutDateTime(obj.getCheckoutDateTime());
         dto.setCancellationDateTime(obj.getCancellationDateTime());
+        dto.setFreeCancellationDateTime(obj.getFreeCancellationDateTime());
 
         if (obj.getTravellers() != null) {
             dto.setTravellers(

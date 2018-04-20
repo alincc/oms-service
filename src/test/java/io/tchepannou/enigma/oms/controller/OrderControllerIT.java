@@ -158,8 +158,10 @@ public class OrderControllerIT {
         assertThat(order.getTotalAmount()).isEqualTo(new BigDecimal(12000).setScale(2));
         assertThat(order.getSiteId()).isEqualTo(request.getSiteId());
         assertThat(order.getLanguageCode()).isNull();
+        assertThat(order.getCreationDateTime()).isNotNull();
+        assertThat(order.getFreeCancellationDateTime()).isNotNull();
 
-
+        
         final List<OrderLine> lines = orderLineRepository.findByOrder(order);
         assertThat(lines).hasSize(1);
         assertThat(lines.get(0).getUnitPrice()).isEqualTo(new BigDecimal(6000).setScale(2));

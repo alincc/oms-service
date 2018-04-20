@@ -3,6 +3,7 @@ package io.tchepannou.enigma.oms.service.order;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
+import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -19,24 +20,27 @@ public class RefundService {
 
     private int freeCancellationHours = 24;
 
+    public Date computeFreeCancellationDateTime(Order order){
+        try {
+            final Date tomorrow = DateUtils.addHours(new Date(clock.millis()), freeCancellationHours);
 
-    public BigDecimal computeRefundAmount (Order order) {
-        final long hours = (getDepartureDateTime(order).getTime() - clock.millis())/(60*60*1000);
-
-        return hours < freeCancellationHours
-                ? BigDecimal.ZERO
-                : computeRefundableAmount(order);
+            final Date departureDate = getDepartureDateTime(order);
+            return departureDate != null && departureDate.after(tomorrow) ? tomorrow : null;
+        } catch (Exception e){
+            return null;
+        }
     }
 
-    private Date getDepartureDateTime(Order order) {
-        Date departureDateTime = null;
-        for (OrderLine line : order.getLines()){
-            TransportationOfferToken token = TransportationOfferToken.decode(line.getOfferToken());
-            if (departureDateTime == null || token.getDepartureDateTime().before(departureDateTime)){
-                departureDateTime = token.getDepartureDateTime();
-            }
+
+    public BigDecimal computeRefundAmount (Order order) {
+        final Date free = order.getFreeCancellationDateTime();
+        if (free == null){
+            return BigDecimal.ZERO;
+        } else {
+            return free.getTime() > clock.millis()
+                    ? BigDecimal.ZERO
+                    : computeRefundableAmount(order);
         }
-        return departureDateTime;
     }
 
     private BigDecimal computeRefundableAmount(Order order) {
@@ -54,4 +58,16 @@ public class RefundService {
     public void setFreeCancellationHours(final int freeCancellationHours) {
         this.freeCancellationHours = freeCancellationHours;
     }
+
+    private Date getDepartureDateTime(Order order) {
+        Date departureDateTime = null;
+        for (OrderLine line : order.getLines()){
+            TransportationOfferToken token = TransportationOfferToken.decode(line.getOfferToken());
+            if (departureDateTime == null || token.getDepartureDateTime().before(departureDateTime)){
+                departureDateTime = token.getDepartureDateTime();
+            }
+        }
+        return departureDateTime;
+    }
+
 }

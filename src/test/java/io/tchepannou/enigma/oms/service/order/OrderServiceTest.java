@@ -125,6 +125,9 @@ public class OrderServiceTest {
         when(mapper.toOrderLine(line1, order)).thenReturn(orderLine1);
         when(mapper.toOrderLine(line2, order)).thenReturn(orderLine2);
 
+        Date freeCancellationDate = DateUtils.addDays(new Date(), 1);
+        when(refundCalculator.computeFreeCancellationDateTime(order)).thenReturn(freeCancellationDate);
+
         // When
         CreateOrderResponse response = service.create(request);
 
@@ -132,6 +135,7 @@ public class OrderServiceTest {
         assertThat(response.getOrderId()).isEqualTo(1);
 
         assertThat(order.getCreationDateTime().getTime()).isEqualTo(now);
+        assertThat(order.getFreeCancellationDateTime()).isEqualTo(freeCancellationDate);
         verify(orderRepository).save(order);
         verify(orderLineRepository).save(orderLine1);
         verify(orderLineRepository).save(orderLine2);

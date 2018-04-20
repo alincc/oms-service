@@ -13,6 +13,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -28,14 +29,44 @@ public class RefundServiceTest {
     private RefundService calculator;
 
     @Test
+    public void computeFreeCancellationDateTime(){
+        final long now = System.currentTimeMillis();
+        when(clock.millis()).thenReturn(now);
+
+        final OrderLine line1 = createOrderLine(1, 100, DateUtils.addHours(new Date(), 48));
+        final OrderLine line2 = createOrderLine(1, 200, DateUtils.addHours(new Date(), 72));
+        final Order order = createOrder(DateUtils.addHours(new Date(now), -12), line1, line2);
+
+        calculator.setFreeCancellationHours(24);
+
+        assertThat(calculator.computeFreeCancellationDateTime(order)).isEqualTo(
+                DateUtils.addHours(new Date(now), 24)
+        );
+    }
+
+    @Test
+    public void computeFreeCancellationDateTimeLastMinute(){
+        final long now = System.currentTimeMillis();
+        when(clock.millis()).thenReturn(now);
+
+        final OrderLine line1 = createOrderLine(1, 100, DateUtils.addHours(new Date(), 1));
+        final OrderLine line2 = createOrderLine(1, 200, DateUtils.addHours(new Date(), 72));
+        final Order order = createOrder(DateUtils.addHours(new Date(now), -12), line1, line2);
+
+        calculator.setFreeCancellationHours(24);
+
+        assertThat(calculator.computeFreeCancellationDateTime(order)).isNull();
+    }
+
+    @Test
     public void computeRefundAmount() throws Exception {
         // Given
         final long now = System.currentTimeMillis();
         when(clock.millis()).thenReturn(now);
 
-        OrderLine line1 = createOrderLine(1, createOfferToken(1, 2, 100d, DateUtils.addDays(new Date(now), 2)));
-        OrderLine line2 = createOrderLine(1, createOfferToken(2, 1, 300d, DateUtils.addDays(new Date(now), 10)));
-        Order order = createOrder(line1, line2);
+        final OrderLine line1 = createOrderLine(1, 100, DateUtils.addHours(new Date(), 48));
+        final OrderLine line2 = createOrderLine(1, 200, DateUtils.addHours(new Date(), 72));
+        final Order order = createOrder(DateUtils.addHours(new Date(now), -12), line1, line2);
 
         calculator.setFreeCancellationHours(24);
 
@@ -43,19 +74,19 @@ public class RefundServiceTest {
         BigDecimal amount = calculator.computeRefundAmount(order);
 
         // Then
-        assertThat(amount).isEqualTo(new BigDecimal(400d));
+        assertThat(amount).isEqualTo(new BigDecimal(300d));
     }
 
 
     @Test
-    public void computeRefundAmountBelowThreshold() throws Exception {
+    public void computeRefundAmountAfterExpiry() throws Exception {
         // Given
         final long now = System.currentTimeMillis();
         when(clock.millis()).thenReturn(now);
 
-        OrderLine line1 = createOrderLine(1, createOfferToken(1, 2, 100d, DateUtils.addHours(new Date(now), 2)));
-        OrderLine line2 = createOrderLine(1, createOfferToken(2, 1, 300d, DateUtils.addDays(new Date(now), 10)));
-        Order order = createOrder(line1, line2);
+        final OrderLine line1 = createOrderLine(1, 100, DateUtils.addHours(new Date(), 48));
+        final OrderLine line2 = createOrderLine(1, 200, DateUtils.addHours(new Date(), 72));
+        final Order order = createOrder(DateUtils.addHours(new Date(now), 12), line1, line2);
 
         calculator.setFreeCancellationHours(24);
 
@@ -66,11 +97,34 @@ public class RefundServiceTest {
         assertThat(amount).isEqualTo(BigDecimal.ZERO);
     }
 
+    @Test
+    public void computeRefundAmountNoFreeCancellationDate() throws Exception {
+        // Given
+        final Order order = createOrder(null);
 
+        calculator.setFreeCancellationHours(24);
 
-    private Order createOrder(OrderLine...lines){
+        // When
+        BigDecimal amount = calculator.computeRefundAmount(order);
+
+        // Then
+        assertThat(amount).isEqualTo(BigDecimal.ZERO);
+    }
+
+    private OrderLine createOrderLine(Integer id, double amount, Date departureDate) {
+        TransportationOfferToken token = createOfferToken(1, 2, amount, departureDate);
+
+        OrderLine line = new OrderLine();
+        line.setId(id);
+        line.setTotalPrice(new BigDecimal(amount));
+        line.setOfferToken(token.toString());
+        return line;
+    }
+
+    private Order createOrder(Date time, OrderLine...lines){
         Order order = new Order();
-        order.setLines(Arrays.asList(lines));
+        order.setFreeCancellationDateTime(time);
+        order.setLines(lines == null ? new ArrayList<>() : Arrays.asList(lines));
         return order;
     }
 
@@ -95,17 +149,5 @@ public class RefundServiceTest {
         token.setTravellerCount(1);
         return token;
     }
-
-    private OrderLine createOrderLine(Integer id, TransportationOfferToken token){
-        OrderLine line = new OrderLine();
-        line.setId(id);
-        line.setQuantity(1);
-        line.setMerchantId(1);
-        line.setUnitPrice(token.getAmount());
-        line.setTotalPrice(token.getAmount());
-        line.setOfferToken(token.toString());
-        return line;
-    }
-
 
 }

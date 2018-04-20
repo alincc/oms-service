@@ -7,11 +7,10 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
-public class PaymentRequest {
+public class RefundRequest {
     private String mobileNumber;
     private String mobileProvider;
 
     private BigDecimal amount;
     private String currencyCode;
-    private String ussdCode;
 }

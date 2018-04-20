@@ -26,8 +26,8 @@ INSERT INTO T_ORDER(id, site_id, customer_id, status, total_amount, currency_cod
 
 
 
-INSERT INTO T_ORDER(id, site_id, customer_id, language_code, status, total_amount, currency_code, first_name, last_name, email, device_uid)
-  VALUES(200, 1, 3, 'fr', 'CONFIRMED', '6000', 'XAF', 'Ray', 'Sponsible', 'ray@gmail.com', '1234-1234');
+INSERT INTO T_ORDER(id, site_id, customer_id, language_code, status, total_amount, currency_code, first_name, last_name, email, device_uid, mobile_number, mobile_provider)
+  VALUES(200, 1, 3, 'fr', 'CONFIRMED', '6000', 'XAF', 'Ray', 'Sponsible', 'ray@gmail.com', '1234-1234', '23799505678', "MTN");
 
 INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, offer_type, offer_token, quantity, unit_price, total_price, description)
   VALUES(200, 200, 2001, 5678, 'CAR', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060', 1, 6000, 6000, 'hello');

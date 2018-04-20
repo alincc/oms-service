@@ -10,14 +10,14 @@ import io.tchepannou.enigma.oms.client.dto.ErrorDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.OrderDto;
 import io.tchepannou.enigma.oms.client.dto.OrderLineDto;
-import io.tchepannou.enigma.oms.client.dto.CancellationDto;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
+import io.tchepannou.enigma.oms.client.dto.TransactionDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
-import io.tchepannou.enigma.oms.domain.Cancellation;
 import io.tchepannou.enigma.oms.domain.Ticket;
+import io.tchepannou.enigma.oms.domain.Transaction;
 import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.springframework.stereotype.Component;
@@ -91,6 +91,9 @@ public class Mapper {
         dto.setDeviceUID(obj.getDeviceUID());
         dto.setLanguageCode(obj.getLanguageCode());
         dto.setMobileNumber(obj.getMobileNumber());
+        dto.setCreationDateTime(obj.getCreationDateTime());
+        dto.setCheckoutDateTime(obj.getCheckoutDateTime());
+        dto.setCancellationDateTime(obj.getCancellationDateTime());
 
         if (obj.getTravellers() != null) {
             dto.setTravellers(
@@ -181,12 +184,21 @@ public class Mapper {
         dto.setText(error.getText());
         return dto;
     }
-    public CancellationDto toDto(final Cancellation refund){
-        final CancellationDto dto = new CancellationDto();
-        dto.setId(refund.getId());
-        dto.setBookingId(refund.getBookingId());
-        dto.setOrderId(refund.getOrder().getId());
-        dto.setCancellationDateTime(refund.getCancellationDateTime());
+
+    public TransactionDto toDto(final Transaction tx){
+        if (tx == null){
+            return null;
+        }
+
+        final TransactionDto dto = new TransactionDto();
+        dto.setAmount(tx.getAmount());
+        dto.setCurrencyCode(tx.getCurrencyCode());
+        dto.setGatewayTid(tx.getGatewayTid());
+        dto.setId(tx.getId());
+        dto.setOrderId(tx.getOrder().getId());
+        dto.setPaymentMethod(tx.getPaymentMethod());
+        dto.setTransactionDateTime(tx.getTransactionDateTime());
+        dto.setType(tx.getType());
         return dto;
     }
 }

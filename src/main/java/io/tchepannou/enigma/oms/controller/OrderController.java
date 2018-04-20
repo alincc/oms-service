@@ -5,13 +5,15 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.tchepannou.core.rest.Headers;
-import io.tchepannou.enigma.oms.client.rr.CancelBookingResponse;
+import io.tchepannou.enigma.oms.client.rr.CancelOrderRequest;
+import io.tchepannou.enigma.oms.client.rr.CancelOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
+import io.tchepannou.enigma.oms.client.rr.RefundOrderResponse;
 import io.tchepannou.enigma.oms.service.QueueNames;
 import io.tchepannou.enigma.oms.service.order.OrderService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -38,11 +40,6 @@ public class OrderController {
 
     @RequestMapping(method = RequestMethod.POST)
     @ApiOperation(value = "Create")
-    @ApiResponses({
-            @ApiResponse(code=200, message = "Success"),
-            @ApiResponse(code=400, message = "Invalid request", response = OMSErrorResponse.class),
-            @ApiResponse(code=409, message = "Failure when creating the order", response = OMSErrorResponse.class)
-    })
     public CreateOrderResponse create(@RequestBody @Valid CreateOrderRequest request) {
         return orderService.create(request);
     }
@@ -64,20 +61,22 @@ public class OrderController {
         return response;
     }
 
-    @RequestMapping(value="/bookings/{bookingId}/cancel", method = RequestMethod.GET)
-    @ApiOperation(value = "Cancel Booking")
-    public CancelBookingResponse cancel(@PathVariable Integer bookingId) {
-        CancelBookingResponse response = orderService.cancel(bookingId);
-        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_ORDER_CANCELLED, "", response.getCancellation().getId());
+    @RequestMapping(value="/{orderId}/cancel", method = RequestMethod.POST)
+    @ApiOperation(value = "Cancel Order")
+    public CancelOrderResponse cancel(@PathVariable Integer orderId, @Valid @RequestBody CancelOrderRequest request) {
+        CancelOrderResponse response = orderService.cancel(orderId, request);
+        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_ORDER_CANCELLED, "", orderId);
         return response;
+    }
+
+    @RequestMapping(value="/{orderId}/refund", method = RequestMethod.GET)
+    @ApiOperation(value = "Refund a cancelled order")
+    public RefundOrderResponse refund(@PathVariable Integer orderId) {
+        return orderService.refund(orderId);
     }
 
     @RequestMapping(value="/{orderId}", method = RequestMethod.GET)
     @ApiOperation(value = "Get")
-    @ApiResponses({
-            @ApiResponse(code=200, message = "Success"),
-            @ApiResponse(code=404, message = "Order not found", response = OMSErrorResponse.class),
-    })
     public GetOrderResponse findById(@PathVariable Integer orderId) {
         return orderService.findById(orderId);
     }

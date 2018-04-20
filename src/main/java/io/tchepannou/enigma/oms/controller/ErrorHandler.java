@@ -1,11 +1,10 @@
 package io.tchepannou.enigma.oms.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.dto.ErrorDto;
-import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
 import io.tchepannou.enigma.oms.client.exception.NotFoundException;
 import io.tchepannou.enigma.oms.client.exception.OrderException;
+import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
 import io.tchepannou.enigma.oms.service.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +27,6 @@ public class ErrorHandler {
     @Autowired
     private Mapper mapper;
 
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @ResponseBody
     @ExceptionHandler(NotFoundException.class)

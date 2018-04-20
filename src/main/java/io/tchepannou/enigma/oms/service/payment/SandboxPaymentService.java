@@ -11,4 +11,9 @@ public class SandboxPaymentService implements PaymentService {
 
         return new PaymentResponse(String.valueOf(System.currentTimeMillis()));
     }
+
+    @Override
+    public RefundResponse refund(final RefundRequest request) throws PaymentException {
+        return new RefundResponse(String.valueOf(System.currentTimeMillis()));
+    }
 }

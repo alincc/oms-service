@@ -46,27 +46,12 @@ public class AwsSmsGateway implements SmsGateway {
         }
     }
 
-    private String formatSenderId(String sender) {
-        if (sender == null){
-            return null;
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < sender.length(); i++) {
-            char ch = sender.charAt(i);
-            if (Character.isDigit(ch) || Character.isAlphabetic(ch)) {
-                sb.append(ch);
-            }
-        }
-        return sb.length() > SENDER_MAX_LEN ? sb.substring(0, SENDER_MAX_LEN) : sb.toString();
-    }
-
     private Map<String, MessageAttributeValue> attributes(final String sender) {
         Map<String, MessageAttributeValue> smsAttributes = new HashMap<>();
 
         if (sender != null) {
             smsAttributes.put("AWS.SNS.SMS.SenderID", new MessageAttributeValue()
-                    .withStringValue(formatSenderId(sender))
+                    .withStringValue(sender)
                     .withDataType("String"));
         }
 

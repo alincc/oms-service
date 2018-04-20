@@ -1,53 +1,66 @@
 package io.tchepannou.enigma.oms.service.order;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import io.tchepannou.core.logger.KVLogger;
+import io.tchepannou.core.rest.RestClient;
+import io.tchepannou.core.rest.RestConfig;
 import io.tchepannou.core.rest.exception.HttpStatusException;
+import io.tchepannou.core.rest.impl.DefaultRestClient;
 import io.tchepannou.enigma.ferari.client.CancellationReason;
+import io.tchepannou.enigma.ferari.client.FerariEnvironment;
 import io.tchepannou.enigma.ferari.client.FerrariErrorCode;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.backend.BookingBackend;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
+import io.tchepannou.enigma.ferari.client.exception.BookingException;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
-import io.tchepannou.enigma.ferari.client.rr.CancelBookingResponse;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.TransactionType;
+import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
 import io.tchepannou.enigma.oms.client.exception.NotFoundException;
 import io.tchepannou.enigma.oms.client.exception.OrderException;
+import io.tchepannou.enigma.oms.client.rr.CancelOrderRequest;
+import io.tchepannou.enigma.oms.client.rr.CancelOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
-import io.tchepannou.enigma.oms.domain.Cancellation;
+import io.tchepannou.enigma.oms.client.rr.RefundOrderResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Transaction;
 import io.tchepannou.enigma.oms.domain.Traveller;
-import io.tchepannou.enigma.oms.repository.CancellationRepository;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
+import io.tchepannou.enigma.oms.service.QueueNames;
 import io.tchepannou.enigma.oms.service.payment.PaymentException;
 import io.tchepannou.enigma.oms.service.payment.PaymentRequest;
 import io.tchepannou.enigma.oms.service.payment.PaymentResponse;
 import io.tchepannou.enigma.oms.service.payment.PaymentService;
+import io.tchepannou.enigma.oms.service.payment.RefundRequest;
+import io.tchepannou.enigma.oms.service.payment.RefundResponse;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Date;
@@ -75,16 +88,10 @@ public class OrderService {
     private TravellerRepository travellerRepository;
 
     @Autowired
-    private CancellationRepository cancellationRepository;
-
-    @Autowired
     private TransactionRepository transactionRepository;
 
     @Autowired
     private Mapper mapper;
-
-    @Autowired
-    private BookingBackend bookingBackend;
 
     @Autowired
     private TicketService ticketService;
@@ -92,6 +99,75 @@ public class OrderService {
     @Autowired
     private PaymentService paymentService;
 
+    @Autowired
+    private RefundCalculator refundCalculator;
+
+    @Autowired
+    private FerariEnvironment ferariEnvironment;
+
+    @Autowired
+    private BookingBackend bookingBackend;
+
+    @Value("${server.port}")
+    private int port;
+
+    //-- Message Handler
+    @Transactional
+    @RabbitListener(queues = QueueNames.QUEUE_ORDER_REFUND)
+    public void onRefund(Integer orderId) {
+        try {
+
+            onRefund(orderId, new DefaultRestClient(new RestConfig()));
+            LOGGER.error("Order#{} has been refunded", orderId);
+
+        } catch (HttpStatusException e){
+            LOGGER.error("Unable to refund Order#{}", orderId, e);
+        }
+    }
+
+    @VisibleForTesting
+    protected void onRefund(Integer orderId, RestClient rest){
+        final String url = "http://127.0.0.1:" + port + "/v1/orders/" + orderId + "/refund";
+        rest.get(url, RefundOrderResponse.class);
+    }
+
+    @Transactional
+    @RabbitListener(queues = QueueNames.QUEUE_BOOKING_CANCEL)
+    public void onCancelBookings(Integer orderId) {
+        final BookingBackend backend = new BookingBackend(new DefaultRestClient(new RestConfig()), ferariEnvironment);
+        onCancelBookings(orderId, backend);
+    }
+
+    @VisibleForTesting
+    protected void onCancelBookings(Integer orderId, BookingBackend backend) {
+
+        final Order order = orderRepository.findOne(orderId);
+        if (order == null){
+            LOGGER.warn("Cannot cancel bookings of Order#{}. Order not found", orderId);
+            return;
+        }
+        if (!OrderStatus.CANCELLED.equals(order.getStatus())){
+            LOGGER.warn("Cannot cancel bookings of Order#{}. Order.status={}", orderId, order.getStatus());
+            return;
+        }
+
+
+        final CancelBookingRequest request = new CancelBookingRequest();
+        request.setReason(CancellationReason.OTHER);
+        for (OrderLine line : order.getLines()) {
+            final Integer bookingId = line.getBookingId();
+            try {
+
+                backend.cancel(bookingId, request);
+                LOGGER.info("Booking#{} has been cancelled", bookingId);
+
+            } catch (BookingException e) {
+                LOGGER.error("Unable to cancel Booking#{}", bookingId, e);
+            }
+        }
+    }
+
+    //-- Public
     @Transactional
     public CreateOrderResponse create(final CreateOrderRequest request){
         kv.add("Action", "Create");
@@ -99,8 +175,10 @@ public class OrderService {
         try {
 
             // Create order
-            final List<OrderLine> lines = new ArrayList();
             final Order order = mapper.toOrder(request);
+            order.setCreationDateTime(new Date(clock.millis()));
+
+            final List<OrderLine> lines = new ArrayList();
             for (final OfferLineDto dto : request.getOfferLines()){
                 OrderLine line = mapper.toOrderLine(dto, order);
                 lines.add(line);
@@ -142,26 +220,24 @@ public class OrderService {
         if (OrderStatus.CONFIRMED.equals(order.getStatus())){
             // Do not book pending request
             LOGGER.info("Order#{} has already been confirmed", order.getId());
-            return new CheckoutOrderResponse(order.getId(), ticketService.findByOrder(order));
+            Transaction tx = transactionRepository.findByOrderAndType(order, TransactionType.CHARGE);
+            return new CheckoutOrderResponse(
+                    order.getId(),
+                    ticketService.findByOrder(order),
+                    mapper.toDto(tx)
+            );
         }
 
         // Customer information
+        order.setCheckoutDateTime(new Date(clock.millis()));
         order.setDeviceUID(deviceUID);
         order.setCustomerId(request.getCustomerId());
         order.setFirstName(request.getFirstName());
         order.setLastName(request.getLastName());
         order.setEmail(request.getEmail());
         order.setLanguageCode(request.getLanguageCode());
-        order.setMobileNumber(
-                Joiner
-                    .on("")
-                    .skipNulls()
-                    .join(
-                        request.getMobilePayment().getCountryCode(),
-                        request.getMobilePayment().getAreaCode(),
-                        request.getMobilePayment().getNumber()
-                    )
-        );
+        order.setMobileNumber(toPhoneText(request.getMobilePayment()));
+        order.setMobileProvider(request.getMobilePayment().getProvider());
 
         // Save travellers
         for (final TravellerDto traveller : request.getTravellers()){
@@ -173,13 +249,17 @@ public class OrderService {
         book(order);
 
         // Apply charges
-        charge(order, request);
+        Transaction tx = charge(order, request);
 
         // Confirm order
         final List<TicketDto> tickets = confirm(order);
 
         // Saved order
-        return new CheckoutOrderResponse(order.getId(), tickets);
+        return new CheckoutOrderResponse(
+                order.getId(),
+                tickets,
+                mapper.toDto(tx)
+        );
 
     }
 
@@ -196,53 +276,73 @@ public class OrderService {
     }
 
     @Transactional
-    public io.tchepannou.enigma.oms.client.rr.CancelBookingResponse cancel(final Integer bookingId) {
-        kv.add("BookingID", bookingId);
+    public CancelOrderResponse cancel(final Integer orderId, final CancelOrderRequest request) {
+        kv.add("OrderID", orderId);
         kv.add("Action", "Cancel");
 
-        try {
-            // Cancel the booking
-            final CancelBookingRequest request = new CancelBookingRequest();
-            request.setReason(CancellationReason.OTHER);
-            final CancelBookingResponse response = bookingBackend.cancel(bookingId, request);
-
-            // Cancel the tickets
-            ticketService.cancelByBooking(bookingId);
-
-            // Update
-            final Cancellation cancellation = createCancellation(response.getBooking());
-
-            kv.add("OrderID", cancellation.getOrder().getId());
-            kv.add("CancellationID", cancellation.getId());
-
-            return new io.tchepannou.enigma.oms.client.rr.CancelBookingResponse(
-                    cancellation == null ? null : mapper.toDto(cancellation)
-            );
-
-        } catch (io.tchepannou.enigma.ferari.client.exception.TaggedException e) {
-
-            final FerrariErrorCode code = e.getErrorCode();
-
-            if (FerrariErrorCode.BOOKING_NOT_FOUND.equals(code)) {
-                throw new NotFoundException(e, OMSErrorCode.BOOKING_NOT_FOUND);
-            } else if (FerrariErrorCode.BOOKING_ALREADY_CANCELLED.equals(code)) {
-                throw new OrderException(e, OMSErrorCode.CANCELLATION_ALREADY_CANCELLED);
-            }
-            throw e;
+        // Order
+        final Order order = orderRepository.findOne(orderId);
+        if (order == null){
+            throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
         }
+
+        // Check status
+        if (OrderStatus.CANCELLED.equals(order.getStatus())){
+            throw new OrderException(OMSErrorCode.ORDER_ALREADY_CANCELLED);
+        }
+        if (!OrderStatus.CONFIRMED.equals(order.getStatus())){
+            throw new OrderException(OMSErrorCode.ORDER_NOT_CONFIRMED);
+        }
+
+        // Check phone number
+        final String mobileNumber = toPhoneText(request.getMobilePayment());
+        if (!mobileNumber.equals(order.getMobileNumber())){
+            throw new OrderException(OMSErrorCode.ORDER_INVALID_MOBILE_NUMBER);
+        }
+
+        // Check mobile provider
+        if (!request.getMobilePayment().getProvider().equals(order.getMobileProvider())){
+            throw new OrderException(OMSErrorCode.ORDER_INVALID_MOBILE_PROVIDER);
+        }
+
+        // Cancel the order
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancellationDateTime(new Date(clock.millis()));
+        orderRepository.save(order);
+
+        // Cancel the tickets
+        for (OrderLine line : order.getLines()) {
+            ticketService.cancelByBooking(line.getBookingId());
+        }
+
+        // Update
+        return new CancelOrderResponse(mapper.toDto(order));
     }
 
-    private Cancellation createCancellation(final BookingDto booking) {
-        final Order order = orderRepository.findOne(booking.getOrderId());
-        final Cancellation cancellation = new Cancellation();
-        cancellation.setOrder(order);
-        cancellation.setCancellationDateTime(new Date(clock.millis()));
-        cancellation.setBookingId(booking.getId());
-        cancellationRepository.save(cancellation);
+    @Transactional
+    public RefundOrderResponse refund(final Integer orderId) {
+        kv.add("OrderID", orderId);
+        kv.add("Action", "Refund");
 
-        return cancellation;
+        // Order
+        final Order order = orderRepository.findOne(orderId);
+        if (order == null){
+            throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
+        }
+
+        // Check status
+        if (!OrderStatus.CANCELLED.equals(order.getStatus())){
+            throw new OrderException(OMSErrorCode.ORDER_NOT_CANCELLED);
+        }
+
+        final Transaction tx = refund(order);
+        kv.add("TransactionID", tx.getId());
+
+        return new RefundOrderResponse(mapper.toDto(tx));
     }
 
+
+    //-- Private
     private void book(final Order order){
         try {
             CreateBookingRequest request = toCreateBookingRequest(order);
@@ -288,22 +388,25 @@ public class OrderService {
         }
     }
 
-    private void charge(final Order order, final CheckoutOrderRequest request){
+    private Transaction charge(final Order order, final CheckoutOrderRequest request){
+        Transaction tx = transactionRepository.findByOrderAndType(order, TransactionType.CHARGE);
+        if (tx != null){
+            return tx;
+        }
+
         try {
 
             // Perform payment
             final PaymentRequest paymentRequest = new PaymentRequest();
-            paymentRequest.setProvider(request.getMobilePayment().getProvider());
-            paymentRequest.setMobileNumber(request.getMobilePayment().getNumber());
-            paymentRequest.setAreaCode(request.getMobilePayment().getAreaCode());
-            paymentRequest.setCountryCode(request.getMobilePayment().getCountryCode());
+            paymentRequest.setMobileProvider(request.getMobilePayment().getProvider());
+            paymentRequest.setMobileNumber(toPhoneText(request.getMobilePayment()));
             paymentRequest.setUssdCode(request.getMobilePayment().getUssdCode());
             paymentRequest.setAmount(order.getTotalAmount());
             paymentRequest.setCurrencyCode(order.getCurrencyCode());
             final PaymentResponse paymentResponse = paymentService.pay(paymentRequest);
 
             // Record transaction
-            final Transaction tx = new Transaction();
+            tx = new Transaction();
             tx.setAmount(paymentRequest.getAmount());
             tx.setCurrencyCode(paymentRequest.getCurrencyCode());
             tx.setGatewayTid(paymentResponse.getTransactionId());
@@ -313,10 +416,55 @@ public class OrderService {
             tx.setPaymentMethod(PaymentMethod.ONLINE);
             transactionRepository.save(tx);
 
+            return tx;
+
         } catch (PaymentException e){
             throw new OrderException(e, OMSErrorCode.PAYMENT_FAILURE);
         }
     }
+
+    private Transaction refund (final Order order) {
+        Transaction tx = transactionRepository.findByOrderAndType(order, TransactionType.REFUND);
+        if (tx != null){
+            throw new OrderException(OMSErrorCode.ORDER_ALREADY_REFUNDED);
+        }
+
+        final Transaction chargeTx = transactionRepository.findByOrderAndType(order, TransactionType.CHARGE);
+        if (chargeTx == null){
+            throw new OrderException(OMSErrorCode.ORDER_NOT_PAID);
+        }
+
+        final BigDecimal amount = refundCalculator.computeRefundAmount(order);
+        if (BigDecimal.ZERO.equals(amount)){
+            throw new OrderException(OMSErrorCode.ORDER_NOT_ELIGIBLE_FOR_REFUND);
+        }
+
+        try {
+            // Perform refund
+            final RefundRequest refundRequest = new RefundRequest();
+            refundRequest.setMobileNumber(order.getMobileNumber());
+            refundRequest.setMobileProvider(order.getMobileProvider());
+            refundRequest.setCurrencyCode(order.getCurrencyCode());
+            refundRequest.setAmount(amount);
+            final RefundResponse refundResponse = paymentService.refund(refundRequest);
+
+            // Save Transaction
+            tx = new Transaction();
+            tx.setAmount(refundRequest.getAmount().multiply(new BigDecimal(-1d)));
+            tx.setCurrencyCode(refundRequest.getCurrencyCode());
+            tx.setGatewayTid(refundResponse.getGatewayTid());
+            tx.setOrder(order);
+            tx.setTransactionDateTime(new Date(clock.millis()));
+            tx.setType(TransactionType.REFUND);
+            tx.setPaymentMethod(PaymentMethod.ONLINE);
+            transactionRepository.save(tx);
+
+            return tx;
+        } catch (PaymentException e){
+            throw new OrderException(e, OMSErrorCode.PAYMENT_FAILURE);
+        }
+    }
+
 
     private OrderException toOrderException(Throwable e, OMSErrorCode code){
         final Throwable cause = e.getCause();
@@ -339,5 +487,24 @@ public class OrderService {
                         .collect(Collectors.toList())
         );
         return request;
+    }
+
+    private String toPhoneText(MobilePaymentDto payment){
+        return Joiner
+                .on("")
+                .skipNulls()
+                .join(
+                        payment.getCountryCode(),
+                        payment.getAreaCode(),
+                        payment.getNumber()
+                );
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(final int port) {
+        this.port = port;
     }
 }

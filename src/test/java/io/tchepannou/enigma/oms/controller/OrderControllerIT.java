@@ -13,16 +13,15 @@ import io.tchepannou.enigma.oms.client.TicketStatus;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
-import io.tchepannou.enigma.oms.client.rr.CancelBookingResponse;
+import io.tchepannou.enigma.oms.client.rr.CancelOrderRequest;
+import io.tchepannou.enigma.oms.client.rr.CancelOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
-import io.tchepannou.enigma.oms.domain.Cancellation;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
 import io.tchepannou.enigma.oms.domain.Traveller;
-import io.tchepannou.enigma.oms.repository.CancellationRepository;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
@@ -90,9 +89,6 @@ public class OrderControllerIT {
 
     @Autowired
     private TicketRepository ticketRepository;
-
-    @Autowired
-    private CancellationRepository cancellationRepository;
 
     @Autowired
     private RefDataEnvironment refDataEnvironment;
@@ -234,6 +230,7 @@ public class OrderControllerIT {
         assertThat(order.getDeviceUID()).isEqualTo(deviceUID);
         assertThat(order.getLanguageCode()).isEqualTo(request.getLanguageCode());
         assertThat(order.getMobileNumber()).isEqualTo("23799505678");
+        assertThat(order.getMobileProvider()).isEqualTo("Orange");
 
         final List<Traveller> travellers = travellerRepository.findByOrder(order);
         assertThat(travellers).hasSize(2);
@@ -282,7 +279,6 @@ public class OrderControllerIT {
         assertThat(tickets.get(2).getStatus()).isEqualTo(TicketStatus.NEW);
 
     }
-
 
     /* =========== GET ============ */
     @Test
@@ -333,8 +329,18 @@ public class OrderControllerIT {
     /* ===== CANCEL ======= */
     @Test
     public void shouldCancelOrder() throws Exception {
+        final MobilePaymentDto mobile = new MobilePaymentDto();
+        mobile.setProvider("MTN");
+        mobile.setCountryCode("237");
+        mobile.setNumber("99505678");
+        final CancelOrderRequest request = new CancelOrderRequest();
+        request.setMobilePayment(mobile);
+
         final MvcResult result = mockMvc
-                .perform(get("/v1/orders/bookings/5678/cancel"))
+                .perform(post("/v1/orders/200/cancel")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request))
+                )
 
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
@@ -342,13 +348,11 @@ public class OrderControllerIT {
                 .andReturn()
         ;
 
-        final CancelBookingResponse response = mapper.readValue(result.getResponse().getContentAsString(), CancelBookingResponse.class);
+        final CancelOrderResponse response = mapper.readValue(result.getResponse().getContentAsString(), CancelOrderResponse.class);
 
-        final Cancellation cancel = cancellationRepository.findOne(response.getCancellation().getId());
-        assertThat(cancel.getCancellationDateTime()).isNotNull();
-        assertThat(cancel.getBookingId()).isEqualTo(5678);
-        assertThat(cancel.getOrder()).isNotNull();
-        assertThat(cancel.getOrder().getId()).isEqualTo(300);
+        final Order order = orderRepository.findOne(200);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getCancellationDateTime()).isNotNull();
 
         final Ticket ticket1 = ticketRepository.findOne(301);
         assertThat(ticket1.getStatus()).isEqualTo(TicketStatus.CANCELLED);

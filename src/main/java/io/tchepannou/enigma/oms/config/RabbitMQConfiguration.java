@@ -69,6 +69,16 @@ public class RabbitMQConfiguration {
         return createBinding(QueueNames.QUEUE_TICKET_SMS, orderConfirmedExchange());
     }
 
+    @Bean
+    public Binding refundBinding() {
+        return createBinding(QueueNames.QUEUE_ORDER_REFUND, orderCancelledExchange());
+    }
+
+    @Bean
+    public Binding bookingCancelledBinding() {
+        return createBinding(QueueNames.QUEUE_BOOKING_CANCEL, orderCancelledExchange());
+    }
+
     private Binding createBinding(final String name, final Exchange exchange){
         final Queue queue = new Queue(name, false);
 

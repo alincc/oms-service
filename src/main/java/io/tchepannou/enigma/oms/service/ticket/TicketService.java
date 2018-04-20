@@ -4,8 +4,6 @@ import com.google.common.annotations.VisibleForTesting;
 import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.core.rest.RestConfig;
-import io.tchepannou.core.rest.exception.HttpIOException;
-import io.tchepannou.core.rest.exception.HttpNotFoundException;
 import io.tchepannou.core.rest.impl.DefaultRestClient;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
@@ -63,12 +61,12 @@ public class TicketService {
     //-- MessageListeners
     @Transactional
     @RabbitListener(queues = QueueNames.QUEUE_TICKET_SMS)
-    public void onOrderConfirmed(Integer orderId) {
-        onOrderConfirmed(orderId, new DefaultRestClient(new RestConfig()));
+    public void onSms(Integer orderId) {
+        onSms(orderId, new DefaultRestClient(new RestConfig()));
     }
 
     @VisibleForTesting
-    protected void onOrderConfirmed(Integer orderId, RestClient rest){
+    protected void onSms(Integer orderId, RestClient rest){
         final Order order = orderRepository.findOne(orderId);
         if (order == null){
             LOGGER.error("Order#{} not found", orderId);
@@ -80,7 +78,7 @@ public class TicketService {
             final String url = "http://127.0.0.1:" + port + "/v1/tickets/" + ticket.getId() + "/sms";
             try {
                 rest.get(url, SendSmsResponse.class);
-            } catch (HttpNotFoundException | HttpIOException e) {
+            } catch (Exception e) {
                 LOGGER.error("Unable to send via SMS Ticket#{}", url, e);
             }
         }

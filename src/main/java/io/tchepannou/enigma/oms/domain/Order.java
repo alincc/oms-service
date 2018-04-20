@@ -64,6 +64,18 @@ public class Order extends Persistent {
     @Column(name="mobile_number")
     private String mobileNumber;
 
+    @Column(name="mobile_provider")
+    private String mobileProvider;
+
     @Column(name="language_code")
     private String languageCode;
+
+    @Column(name="creation_datetime")
+    private Date creationDateTime;
+
+    @Column(name="checkout_datetime")
+    private Date checkoutDateTime;
+
+    @Column(name="cancellation_datetime")
+    private Date cancellationDateTime;
 }

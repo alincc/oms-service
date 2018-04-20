@@ -206,7 +206,7 @@ public class TicketServiceTest {
 
         // When
         service.setPort(8080);
-        service.onOrderConfirmed(11, rest);
+        service.onSms(11, rest);
 
         // Verify
         verify(rest).get("http://127.0.0.1:8080/v1/tickets/1/sms", SendSmsResponse.class);
@@ -220,7 +220,7 @@ public class TicketServiceTest {
         RestClient rest = mock(RestClient.class);
 
         // When
-        service.onOrderConfirmed(11, rest);
+        service.onSms(11, rest);
 
         // Verify
         verify(rest, never()).get(any(), any());

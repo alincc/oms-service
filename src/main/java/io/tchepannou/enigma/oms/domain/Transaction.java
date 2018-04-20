@@ -45,10 +45,6 @@ public class Transaction extends Persistent {
     @JoinColumn(name="order_fk")
     private Order order;
 
-    @ManyToOne
-    @JoinColumn(name="cancellation_fk")
-    private Cancellation cancellation;
-
     @Enumerated(EnumType.STRING)
     @Column(name="payment_method")
     private PaymentMethod paymentMethod;

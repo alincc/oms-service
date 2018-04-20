@@ -1,7 +1,7 @@
 package io.tchepannou.enigma.oms.service.order;
 
 import io.tchepannou.core.logger.KVLogger;
-import io.tchepannou.enigma.ferari.client.CancellationReason;
+import io.tchepannou.core.rest.RestClient;
 import io.tchepannou.enigma.ferari.client.Direction;
 import io.tchepannou.enigma.ferari.client.FerrariErrorCode;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
@@ -9,7 +9,6 @@ import io.tchepannou.enigma.ferari.client.backend.BookingBackend;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.ferari.client.exception.BookingException;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
-import io.tchepannou.enigma.ferari.client.rr.CancelBookingResponse;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OfferType;
@@ -21,23 +20,26 @@ import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.exception.NotFoundException;
 import io.tchepannou.enigma.oms.client.exception.OrderException;
+import io.tchepannou.enigma.oms.client.rr.CancelOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
-import io.tchepannou.enigma.oms.domain.Cancellation;
+import io.tchepannou.enigma.oms.client.rr.RefundOrderResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Transaction;
-import io.tchepannou.enigma.oms.repository.CancellationRepository;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.service.Mapper;
+import io.tchepannou.enigma.oms.service.payment.PaymentException;
 import io.tchepannou.enigma.oms.service.payment.PaymentRequest;
 import io.tchepannou.enigma.oms.service.payment.PaymentResponse;
 import io.tchepannou.enigma.oms.service.payment.PaymentService;
+import io.tchepannou.enigma.oms.service.payment.RefundRequest;
+import io.tchepannou.enigma.oms.service.payment.RefundResponse;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
@@ -53,6 +55,7 @@ import java.time.Clock;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -66,6 +69,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
+@SuppressWarnings("CPD-START")
 public class OrderServiceTest {
     @Mock
     private KVLogger kv;
@@ -78,9 +82,6 @@ public class OrderServiceTest {
 
     @Mock
     private OrderLineRepository orderLineRepository;
-
-    @Mock
-    private CancellationRepository refundRepository;
 
     @Mock
     private TravellerRepository travellerRepository;
@@ -100,6 +101,9 @@ public class OrderServiceTest {
     @Mock
     private PaymentService paymentService;
 
+    @Mock
+    private RefundCalculator refundCalculator;
+
     @InjectMocks
     private OrderService service;
 
@@ -107,11 +111,13 @@ public class OrderServiceTest {
     @Test
     public void shouldCreateOrder(){
         // Given
+        final long now = System.currentTimeMillis();
+        when(clock.millis()).thenReturn(now);
+
         OfferLineDto line1 = createOfferLine(1, createOfferToken(1, 2, 100d));
         OfferLineDto line2 = createOfferLine(2, createOfferToken(2, 1, 90d));
         CreateOrderRequest request = createOrderRequest(line1, line2);
 
-        int ttl = 10;
         Order order = createOrder(1, OrderStatus.NEW, 100d);
         OrderLine orderLine1 = mock(OrderLine.class);
         OrderLine orderLine2 = mock(OrderLine.class);
@@ -125,6 +131,7 @@ public class OrderServiceTest {
         // Then
         assertThat(response.getOrderId()).isEqualTo(1);
 
+        assertThat(order.getCreationDateTime().getTime()).isEqualTo(now);
         verify(orderRepository).save(order);
         verify(orderLineRepository).save(orderLine1);
         verify(orderLineRepository).save(orderLine2);
@@ -160,10 +167,12 @@ public class OrderServiceTest {
         assertThat(order.getDeviceUID()).isEqualTo("4304309");
         assertThat(order.getLanguageCode()).isEqualTo(request.getLanguageCode());
         assertThat(order.getMobileNumber()).isEqualTo("23799505678");
+        assertThat(order.getMobileProvider()).isEqualTo("MTN");
         assertThat(order.getFirstName()).isEqualTo(request.getFirstName());
         assertThat(order.getLastName()).isEqualTo(request.getLastName());
         assertThat(order.getEmail()).isEqualTo(request.getEmail());
         assertThat(order.getCustomerId()).isEqualTo(request.getCustomerId());
+        assertThat(order.getCheckoutDateTime().getTime()).isEqualTo(now);
 
         verify(bookingBackend).book(any());
         verify(orderLineRepository).save(line);
@@ -179,22 +188,72 @@ public class OrderServiceTest {
         verify(paymentService).pay(paymentRequest.capture());
         assertThat(paymentRequest.getValue().getAmount()).isEqualTo(order.getTotalAmount());
         assertThat(paymentRequest.getValue().getCurrencyCode()).isEqualTo(order.getCurrencyCode());
-        assertThat(paymentRequest.getValue().getAreaCode()).isEqualTo(request.getMobilePayment().getAreaCode());
-        assertThat(paymentRequest.getValue().getMobileNumber()).isEqualTo(request.getMobilePayment().getNumber());
-        assertThat(paymentRequest.getValue().getCountryCode()).isEqualTo(request.getMobilePayment().getCountryCode());
-        assertThat(paymentRequest.getValue().getProvider()).isEqualTo(request.getMobilePayment().getProvider());
+        assertThat(paymentRequest.getValue().getMobileNumber()).isEqualTo("23799505678");
+        assertThat(paymentRequest.getValue().getMobileProvider()).isEqualTo(request.getMobilePayment().getProvider());
         assertThat(paymentRequest.getValue().getUssdCode()).isEqualTo(request.getMobilePayment().getUssdCode());
 
         ArgumentCaptor<Transaction> tx = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionRepository).save(tx.capture());
         assertThat(tx.getValue().getAmount()).isEqualTo(order.getTotalAmount());
         assertThat(tx.getValue().getCurrencyCode()).isEqualTo(order.getCurrencyCode());
-        assertThat(tx.getValue().getCancellation()).isNull();
         assertThat(tx.getValue().getType()).isEqualTo(TransactionType.CHARGE);
         assertThat(tx.getValue().getGatewayTid()).isEqualTo(paymentResponse.getTransactionId());
         assertThat(tx.getValue().getOrder()).isEqualTo(order);
         assertThat(tx.getValue().getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(tx.getValue().getTransactionDateTime()).isEqualTo(new Date(now));
+    }
+
+    @Test
+    public void checkoutShouldNotChangeTwice(){
+        // Given
+        long now = 309403943;
+        when(clock.millis()).thenReturn(now);
+
+        OrderLine line = createOrderLine(1, 100d);
+        Order order = createOrder(1, OrderStatus.NEW, 100d, line);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        BookingDto booking = new BookingDto();
+        booking.setId(11);
+        when(bookingBackend.book(any())).thenReturn(new CreateBookingResponse(Arrays.asList(booking)));
+
+        Transaction tx = createTransaction(1, order, TransactionType.CHARGE, 100);
+        when(transactionRepository.findByOrderAndType(order, TransactionType.CHARGE)).thenReturn(tx);
+
+        TicketDto tick = mock(TicketDto.class);
+        when(ticketService.create(order)).thenReturn(Arrays.asList(tick));
+
+        PaymentResponse paymentResponse = createPaymentResponse("123");
+        when(paymentService.pay(any())).thenReturn(paymentResponse);
+
+        // When
+        CheckoutOrderRequest request = checkoutOrderRequest();
+        CheckoutOrderResponse response =  service.checkout(1, "4304309", request);
+
+        // Then
+        verify(orderRepository, times(2)).save(order);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(order.getDeviceUID()).isEqualTo("4304309");
+        assertThat(order.getLanguageCode()).isEqualTo(request.getLanguageCode());
+        assertThat(order.getMobileNumber()).isEqualTo("23799505678");
+        assertThat(order.getFirstName()).isEqualTo(request.getFirstName());
+        assertThat(order.getLastName()).isEqualTo(request.getLastName());
+        assertThat(order.getEmail()).isEqualTo(request.getEmail());
+        assertThat(order.getCustomerId()).isEqualTo(request.getCustomerId());
+        assertThat(order.getCheckoutDateTime().getTime()).isEqualTo(now);
+
+        verify(bookingBackend).book(any());
+        verify(orderLineRepository).save(line);
+        assertThat(line.getBookingId()).isEqualTo(booking.getId());
+
+        verify(bookingBackend).confirm(anyInt());
+
+        verify(ticketService).create(order);
+        assertThat(response.getOrderId()).isEqualTo(order.getId());
+        assertThat(response.getTickets()).containsExactly(tick);
+
+        verify(paymentService, never()).pay(any());
+        verify(transactionRepository, never()).save(any(Transaction.class));
     }
 
     @Test
@@ -268,54 +327,355 @@ public class OrderServiceTest {
     }
 
     @Test
+    public void shouldNotCheckoutWhenPaymentFail(){
+        // Given
+        OrderLine line = createOrderLine(1, 100d);
+        Order order = createOrder(1, OrderStatus.NEW, 100d, line);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        BookingDto booking = new BookingDto();
+        booking.setId(11);
+        when(bookingBackend.book(any())).thenReturn(new CreateBookingResponse(Arrays.asList(booking)));
+
+        TicketDto ticket = mock(TicketDto.class);
+        when(ticketService.create(order)).thenReturn(Arrays.asList(ticket));
+
+
+        when(paymentService.pay(any())).thenThrow(PaymentException.class);
+
+        // When
+        try {
+            service.checkout(1, "4304309", checkoutOrderRequest());
+            fail("failed");
+        } catch (OrderException e){
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.PAYMENT_FAILURE);
+
+            verify(bookingBackend).book(any());
+            verify(ticketService, never()).create(order);
+        }
+    }
+
+
+    @Test
     public void cancel(){
         // Given
         final long now = System.currentTimeMillis();
         when(clock.millis()).thenReturn(now);
 
-        final Order order = createOrder(11, OrderStatus.CONFIRMED, 1000);
+        final OrderLine line1 = createOrderLine(1, 111, 1000);
+        final OrderLine line2 = createOrderLine(1, 222, 1000);
+        final Order order = createOrder(11, OrderStatus.CONFIRMED, 1000, line1, line2);
         when(orderRepository.findOne(11)).thenReturn(order);
 
-        final Date departureDate = DateUtils.addDays(new Date(now), 2);
-        final BookingDto booking = createBooking(1, order, departureDate, 1000);
-        final CancelBookingResponse response = new CancelBookingResponse(booking);
-        when(bookingBackend.cancel(anyInt(), any(CancelBookingRequest.class))).thenReturn(response);
+        final CancelOrderRequest request = cancelOrderRequest();
 
         // When
-        service.cancel(1);
+        service.cancel(11, request);
 
         // Then
-        ArgumentCaptor<CancelBookingRequest> request = ArgumentCaptor.forClass(CancelBookingRequest.class);
-        verify(bookingBackend).cancel(eq(1), request.capture());
-        assertThat(request.getValue().getReason()).isEqualTo(CancellationReason.OTHER);
+        verify(ticketService).cancelByBooking(111);
+        verify(ticketService).cancelByBooking(222);
 
-        verify(ticketService).cancelByBooking(1);
-
-        ArgumentCaptor<Cancellation> cancellation = ArgumentCaptor.forClass(Cancellation.class);
-        verify(refundRepository).save(cancellation.capture());
-        assertThat(cancellation.getValue().getCancellationDateTime()).isEqualTo(new Date(now));
-        assertThat(cancellation.getValue().getBookingId()).isEqualTo(booking.getId());
-        assertThat(cancellation.getValue().getOrder()).isEqualTo(order);
+        verify(orderRepository).save(order);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getCancellationDateTime().getTime()).isEqualTo(now);
     }
 
     @Test(expected = NotFoundException.class)
-    public void cancelShouldThrowNotFoundOnInvalidBooking(){
-        // Given
-        io.tchepannou.enigma.ferari.client.exception.NotFoundException ex = new io.tchepannou.enigma.ferari.client.exception.NotFoundException(FerrariErrorCode.BOOKING_NOT_FOUND);
-        when(bookingBackend.cancel(any(), any())).thenThrow(ex);
-
+    public void cancelShouldThrowNotFoundOnInvalidOrder(){
         // When
-        service.cancel(1);
+        service.cancel(99999, cancelOrderRequest());
     }
 
     @Test(expected = OrderException.class)
-    public void cancelShouldOrderExceptionOnCancelledOrder(){
+    public void cancelShouldFailedForNewOrder(){
         // Given
-        BookingException ex = new BookingException(FerrariErrorCode.BOOKING_ALREADY_CANCELLED);
-        when(bookingBackend.cancel(any(), any())).thenThrow(ex);
+        final Order order = createOrder(11, OrderStatus.NEW, 1000);
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        final CancelOrderRequest request = cancelOrderRequest();
 
         // When
-        service.cancel(1);
+        service.cancel(11, request);
+    }
+
+    @Test
+    public void cancelShouldFailedWithInvalidMobileNumber(){
+        // Given
+        final Order order = createOrder(11, OrderStatus.CONFIRMED, 1000);
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        final CancelOrderRequest request = cancelOrderRequest();
+        request.getMobilePayment().setNumber("invalid");
+
+        try {
+            // When
+            service.cancel(11, request);
+            fail("failed");
+        } catch (OrderException e){
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.ORDER_INVALID_MOBILE_NUMBER);
+        }
+    }
+
+    @Test
+    public void cancelShouldFailedWithInvalidMobileProvider(){
+        // Given
+        final Order order = createOrder(11, OrderStatus.CONFIRMED, 1000);
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        final CancelOrderRequest request = cancelOrderRequest();
+        request.getMobilePayment().setProvider("invalid");
+
+        try {
+            // When
+            service.cancel(11, request);
+            fail("failed");
+        } catch (OrderException e){
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.ORDER_INVALID_MOBILE_PROVIDER);
+        }
+    }
+
+    @Test(expected = OrderException.class)
+    public void cancelShouldFailedForCancelledOrder(){
+        // Given
+        final Order order = createOrder(11, OrderStatus.CANCELLED, 1000);
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        final CancelOrderRequest request = cancelOrderRequest();
+
+        // When
+        service.cancel(11, request);
+    }
+
+
+    @Test
+    public void onCancelBookings() {
+        // Given
+        OrderLine line1 = createOrderLine(1, 11, 100);
+        OrderLine line2 = createOrderLine(2, 22, 140);
+        Order order = createOrder(111, OrderStatus.CANCELLED, 240, line1, line2);
+        when(orderRepository.findOne(111)).thenReturn(order);
+
+        BookingBackend backend = mock(BookingBackend.class);
+
+        // When
+        service.onCancelBookings(111, backend);
+
+        // Then
+        verify(backend).cancel(eq(11), any(CancelBookingRequest.class));
+        verify(backend).cancel(eq(22), any(CancelBookingRequest.class));
+    }
+
+
+    @Test
+    public void refund(){
+        // Given
+        long now = 1209210932;
+        when (clock.millis()).thenReturn(now);
+
+        OrderLine line1 = createOrderLine(11, 101);
+        OrderLine line2 = createOrderLine(12, 102);
+        Order order = createOrder(1, OrderStatus.CANCELLED, 100, line1, line2);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        Transaction charge = createTransaction(1, order, TransactionType.CHARGE, 100);
+        when(transactionRepository.findByOrderAndType(order, TransactionType.CHARGE)).thenReturn(charge);
+
+        when(refundCalculator.computeRefundAmount(order)).thenReturn(new BigDecimal(100d));
+
+        RefundResponse paymentResponse = new RefundResponse();
+        paymentResponse.setGatewayTid(UUID.randomUUID().toString());
+        when(paymentService.refund(any())).thenReturn(paymentResponse);
+
+        // When
+        service.refund(1);
+
+        // Then
+        ArgumentCaptor<RefundRequest> rr = ArgumentCaptor.forClass(RefundRequest.class);
+        verify(paymentService).refund(rr.capture());
+        assertThat(rr.getValue().getAmount()).isEqualTo(new BigDecimal(100d));
+        assertThat(rr.getValue().getCurrencyCode()).isEqualTo(order.getCurrencyCode());
+        assertThat(rr.getValue().getMobileNumber()).isEqualTo(order.getMobileNumber());
+        assertThat(rr.getValue().getMobileProvider()).isEqualTo(order.getMobileProvider());
+
+        ArgumentCaptor<Transaction> tx = ArgumentCaptor.forClass(Transaction.class);
+        verify(transactionRepository).save(tx.capture());
+        assertThat(tx.getValue().getTransactionDateTime()).isEqualTo(new Date(now));
+        assertThat(tx.getValue().getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
+        assertThat(tx.getValue().getOrder()).isEqualTo(order);
+        assertThat(tx.getValue().getGatewayTid()).isEqualTo(paymentResponse.getGatewayTid());
+        assertThat(tx.getValue().getType()).isEqualTo(TransactionType.REFUND);
+        assertThat(tx.getValue().getAmount()).isEqualTo(new BigDecimal(100d).multiply(new BigDecimal(-1d)));
+        assertThat(tx.getValue().getCurrencyCode()).isEqualTo(order.getCurrencyCode());
+    }
+
+    @Test
+    public void shouldNotRefundTwice(){
+        // Given
+        OrderLine line1 = createOrderLine(11, 101);
+        OrderLine line2 = createOrderLine(12, 102);
+        Order order = createOrder(1, OrderStatus.CANCELLED, 100, line1, line2);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        Transaction charge = createTransaction(456, order, TransactionType.CHARGE, 100);
+        when(transactionRepository.findByOrderAndType(order, TransactionType.CHARGE)).thenReturn(charge);
+
+        Transaction refund = createTransaction(789, order, TransactionType.REFUND, -100);
+        when(transactionRepository.findByOrderAndType(order, TransactionType.REFUND)).thenReturn(refund);
+
+        when(refundCalculator.computeRefundAmount(order)).thenReturn(new BigDecimal(100d));
+
+        RefundResponse paymentResponse = new RefundResponse();
+        paymentResponse.setGatewayTid(UUID.randomUUID().toString());
+        when(paymentService.refund(any())).thenReturn(paymentResponse);
+
+        try {
+            // When
+            service.refund(1);
+            fail("failed");
+
+        } catch (OrderException e) {
+            // Then
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.ORDER_ALREADY_REFUNDED);
+            verify(paymentService, never()).refund(any());
+            verify(transactionRepository, never()).save(any(Transaction.class));
+        }
+    }
+
+    @Test
+    public void shouldNotRefundNonRefundableOrder(){
+        // Given
+        OrderLine line1 = createOrderLine(11, 101);
+        OrderLine line2 = createOrderLine(12, 102);
+        Order order = createOrder(1, OrderStatus.CANCELLED, 100, line1, line2);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        Transaction charge = createTransaction(456, order, TransactionType.CHARGE, 100);
+        when(transactionRepository.findByOrderAndType(order, TransactionType.CHARGE)).thenReturn(charge);
+
+        when(refundCalculator.computeRefundAmount(order)).thenReturn(BigDecimal.ZERO);
+
+        RefundResponse paymentResponse = new RefundResponse();
+        paymentResponse.setGatewayTid(UUID.randomUUID().toString());
+        when(paymentService.refund(any())).thenReturn(paymentResponse);
+
+        try {
+            // When
+            service.refund(1);
+            fail("failed");
+
+        } catch (OrderException e) {
+            // Then
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.ORDER_NOT_ELIGIBLE_FOR_REFUND);
+            verify(paymentService, never()).refund(any());
+            verify(transactionRepository, never()).save(any(Transaction.class));
+        }
+    }
+
+    @Test
+    public void shouldNotRefundNonOrdersNotCharged(){
+        // Given
+        OrderLine line1 = createOrderLine(11, 101);
+        OrderLine line2 = createOrderLine(12, 102);
+        Order order = createOrder(1, OrderStatus.CANCELLED, 100, line1, line2);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        when(transactionRepository.findByOrderAndType(order, TransactionType.CHARGE)).thenReturn(null);
+
+
+        try {
+            // When
+            service.refund(1);
+            fail("failed");
+
+        } catch (OrderException e) {
+            // Then
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.ORDER_NOT_PAID);
+            verify(paymentService, never()).refund(any());
+            verify(transactionRepository, never()).save(any(Transaction.class));
+        }
+    }
+
+    @Test
+    public void shouldNotRefundOnPaymentFailure(){
+        // Given
+        OrderLine line1 = createOrderLine(11, 101);
+        OrderLine line2 = createOrderLine(12, 102);
+        Order order = createOrder(1, OrderStatus.CANCELLED, 100, line1, line2);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        Transaction charge = createTransaction(456, order, TransactionType.CHARGE, 100);
+        when(transactionRepository.findByOrderAndType(order, TransactionType.CHARGE)).thenReturn(charge);
+
+        when(refundCalculator.computeRefundAmount(order)).thenReturn(BigDecimal.ONE);
+
+        PaymentException e = new PaymentException("failed");
+        when(paymentService.refund(any())).thenThrow(e);
+
+        try {
+            // When
+            service.refund(1);
+            fail("failed");
+
+        } catch (OrderException ex) {
+            // Then
+            assertThat(ex.getErrorCode()).isEqualTo(OMSErrorCode.PAYMENT_FAILURE);
+            verify(transactionRepository, never()).save(any(Transaction.class));
+        }
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void refundInvalidOrder(){
+        service.refund(123);
+    }
+
+    @Test(expected = OrderException.class)
+    public void refundInvalidNotCancelledOrder(){
+        OrderLine line1 = createOrderLine(11, 1);
+        OrderLine line2 = createOrderLine(12, 1);
+        Order order = createOrder(1, OrderStatus.CONFIRMED, 2, line1, line2);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        service.refund(1);
+    }
+
+
+    @Test
+    public void onRefund(){
+        RestClient rest = mock(RestClient.class);
+        service.setPort(123);
+        service.onRefund(111, rest);
+
+        verify(rest).get("http://127.0.0.1:123/v1/orders/111/refund", RefundOrderResponse.class);
+    }
+
+    @Test
+    public void onCancelBookingsInvalidOrder() {
+        // Given
+        BookingBackend backend = mock(BookingBackend.class);
+
+        // When
+        service.onCancelBookings(111, backend);
+
+        // Then
+        verify(backend, never()).cancel(any(), any(CancelBookingRequest.class));
+    }
+
+    @Test
+    public void onCancelBookingsOrderNotCancelled() {
+        // Given
+        OrderLine line1 = createOrderLine(1, 11, 100);
+        OrderLine line2 = createOrderLine(2, 22, 140);
+        Order order = createOrder(111, OrderStatus.NEW, 240, line1, line2);
+        when(orderRepository.findOne(111)).thenReturn(order);
+
+        BookingBackend backend = mock(BookingBackend.class);
+
+        // When
+        service.onCancelBookings(111, backend);
+
+        // Then
+        verify(backend, never()).cancel(any(), any(CancelBookingRequest.class));
     }
 
     private Order createOrder(Integer id, OrderStatus status, double totalPrice, OrderLine...lines){
@@ -323,7 +683,10 @@ public class OrderServiceTest {
         order.setId(id);
         order.setStatus(status);
         order.setTotalAmount(new BigDecimal(totalPrice));
+        order.setCurrencyCode("XAF");
         order.setSiteId(1);
+        order.setMobileProvider("MTN");
+        order.setMobileNumber("23799505678");
         if (lines != null) {
             order.setLines(Arrays.asList(lines));
             order.getLines().forEach(line -> line.setOrder(order));
@@ -331,20 +694,14 @@ public class OrderServiceTest {
         return order;
     }
 
-    private BookingDto createBooking(Integer id, Order order, Date departureDate, double amount){
-        BookingDto booking = new BookingDto();
-        booking.setId(id);
-        booking.setOrderId(order.getId());
-        booking.setDepartureDateTime(departureDate);
-        booking.setTotalPrice(new BigDecimal(amount));
-        booking.setCurrencyCode("XAF");
-        return booking;
+    private OrderLine createOrderLine(Integer id, double unitPrice) {
+        return createOrderLine(id, null, unitPrice);
     }
 
-
-    private OrderLine createOrderLine(Integer id, double unitPrice){
+    private OrderLine createOrderLine(Integer id, Integer bookingId, double unitPrice){
         OrderLine line = new OrderLine();
         line.setId(id);
+        line.setBookingId(bookingId);
         line.setQuantity(1);
         line.setMerchantId(1);
         line.setUnitPrice(new BigDecimal(unitPrice));
@@ -370,11 +727,7 @@ public class OrderServiceTest {
     }
 
     private CheckoutOrderRequest checkoutOrderRequest(){
-        MobilePaymentDto payment = new MobilePaymentDto();
-        payment.setUssdCode("1232");
-        payment.setCountryCode("237");
-        payment.setNumber("99505678");
-        payment.setProvider("MTN");
+        MobilePaymentDto payment = mobilePayment();
 
         CheckoutOrderRequest request = new CheckoutOrderRequest();
         request.setLanguageCode("fr");
@@ -385,6 +738,24 @@ public class OrderServiceTest {
         request.setMobilePayment(payment);
         return request;
     }
+
+
+    private MobilePaymentDto mobilePayment(){
+        MobilePaymentDto payment = new MobilePaymentDto();
+        payment.setUssdCode("1232");
+        payment.setCountryCode("237");
+        payment.setNumber("99505678");
+        payment.setProvider("MTN");
+        return payment;
+    }
+
+
+    private CancelOrderRequest cancelOrderRequest(){
+        CancelOrderRequest req = new CancelOrderRequest();
+        req.setMobilePayment(mobilePayment());
+        return req;
+    }
+
     private TransportationOfferToken createOfferToken(
             Integer originId,
             Integer destinationId,
@@ -413,5 +784,16 @@ public class OrderServiceTest {
         PaymentResponse response = new PaymentResponse();
         response.setTransactionId(id);
         return response;
+    }
+
+
+    private Transaction createTransaction(Integer id, Order order, TransactionType type, double amount){
+        Transaction tx = new Transaction();
+        tx.setId(id);
+        tx.setType(type);
+        tx.setOrder(order);
+        tx.setGatewayTid(UUID.randomUUID().toString());
+        tx.setAmount(new BigDecimal(amount));
+        return tx;
     }
 }

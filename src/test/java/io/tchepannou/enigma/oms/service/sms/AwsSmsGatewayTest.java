@@ -34,7 +34,7 @@ public class AwsSmsGatewayTest {
         when (sns.publish(any())).thenReturn(expected);
 
         final SendSmsRequest req = new SendSmsRequest();
-        req.setSenderId("Ray");
+        req.setSenderId("12345678901");
         req.setPhone("(514)544-11 11");
         req.setMessage("Hello world");
 
@@ -48,7 +48,7 @@ public class AwsSmsGatewayTest {
         verify(sns).publish(request.capture());
         assertThat(request.getValue().getMessage()).isEqualTo("Hello world");
         assertThat(request.getValue().getPhoneNumber()).isEqualTo("+15145441111");
-        assertThat(request.getValue().getMessageAttributes().get("AWS.SNS.SMS.SenderID").getStringValue()).isEqualTo("Ray");
+        assertThat(request.getValue().getMessageAttributes().get("AWS.SNS.SMS.SenderID").getStringValue()).isEqualTo("12345678901");
         assertThat(request.getValue().getMessageAttributes().get("AWS.SNS.SMS.SMSType").getStringValue()).isEqualTo("Transactional");
     }
 

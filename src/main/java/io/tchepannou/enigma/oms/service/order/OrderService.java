@@ -120,7 +120,7 @@ public class OrderService {
             onRefund(orderId, new DefaultRestClient(new RestConfig()));
             LOGGER.error("Order#{} has been refunded", orderId);
 
-        } catch (HttpStatusException e){
+        } catch (Exception e){
             LOGGER.error("Unable to refund Order#{}", orderId, e);
         }
     }
@@ -161,7 +161,7 @@ public class OrderService {
                 backend.cancel(bookingId, request);
                 LOGGER.info("Booking#{} has been cancelled", bookingId);
 
-            } catch (BookingException e) {
+            } catch (Exception e) {
                 LOGGER.error("Unable to cancel Booking#{}", bookingId, e);
             }
         }

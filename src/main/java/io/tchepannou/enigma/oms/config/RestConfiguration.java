@@ -25,7 +25,7 @@ public class RestConfiguration {
     public RestConfig restConfig(){
         final RestConfig config = new RestConfig();
         config.setSerializer(new JsonSerializer(objectMapper));
-        config.addFeatuure(new TracingFeature("ferari-service", request));
+        config.addFeatuure(new TracingFeature("oms-service", request));
         config.addFeatuure(new LanguageFeature(request));
         return config;
     }

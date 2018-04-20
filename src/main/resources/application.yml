@@ -87,7 +87,7 @@ enigma:
   service:
     email:
       from: "enigma.voyage.dev@gmail.com"
-    expirer:
-      cron: "0 0/15 * * * ?"
     order:
       orderTTLMinutes: 10
+    refund:
+      freeCancellationHours: 24

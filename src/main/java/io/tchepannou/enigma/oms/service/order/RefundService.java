@@ -4,6 +4,7 @@ import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -11,7 +12,8 @@ import java.time.Clock;
 import java.util.Date;
 
 @Component
-public class RefundCalculator {
+@ConfigurationProperties("enigma.service.refund")
+public class RefundService {
     @Autowired
     private Clock clock;
 
@@ -44,7 +46,6 @@ public class RefundCalculator {
         }
         return total;
     }
-
 
     public int getFreeCancellationHours() {
         return freeCancellationHours;

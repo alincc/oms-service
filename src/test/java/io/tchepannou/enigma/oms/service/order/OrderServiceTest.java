@@ -102,7 +102,7 @@ public class OrderServiceTest {
     private PaymentService paymentService;
 
     @Mock
-    private RefundCalculator refundCalculator;
+    private RefundService refundCalculator;
 
     @InjectMocks
     private OrderService service;

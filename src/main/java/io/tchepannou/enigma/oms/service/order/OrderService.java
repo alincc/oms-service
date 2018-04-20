@@ -100,7 +100,7 @@ public class OrderService {
     private PaymentService paymentService;
 
     @Autowired
-    private RefundCalculator refundCalculator;
+    private RefundService refundCalculator;
 
     @Autowired
     private FerariEnvironment ferariEnvironment;

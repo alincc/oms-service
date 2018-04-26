@@ -6,7 +6,7 @@ import io.tchepannou.core.test.jetty.StubHandler;
 import io.tchepannou.enigma.ferari.client.FerariEnvironment;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
-import io.tchepannou.enigma.oms.client.OfferType;
+import io.tchepannou.enigma.oms.client.OrderLineType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.Sex;
 import io.tchepannou.enigma.oms.client.TicketStatus;
@@ -155,7 +155,9 @@ public class OrderControllerIT {
         assertThat(order.getCurrencyCode()).isEqualTo("XAF");
         assertThat(order.getCustomerId()).isEqualTo(order.getCustomerId());
         assertThat(order.getStatus()).isEqualTo(OrderStatus.NEW);
-        assertThat(order.getTotalAmount()).isEqualTo(new BigDecimal(12000).setScale(2));
+        assertThat(order.getSubTotalAmount()).isEqualTo(new BigDecimal(12000).setScale(2));
+        assertThat(order.getTotalFees()).isEqualTo(new BigDecimal(300).setScale(2));
+        assertThat(order.getTotalAmount()).isEqualTo(new BigDecimal(12300).setScale(2));
         assertThat(order.getSiteId()).isEqualTo(request.getSiteId());
         assertThat(order.getLanguageCode()).isNull();
         assertThat(order.getCreationDateTime()).isNotNull();
@@ -163,7 +165,7 @@ public class OrderControllerIT {
 
         
         final List<OrderLine> lines = orderLineRepository.findByOrder(order);
-        assertThat(lines).hasSize(1);
+        assertThat(lines).hasSize(2);
         assertThat(lines.get(0).getUnitPrice()).isEqualTo(new BigDecimal(6000).setScale(2));
         assertThat(lines.get(0).getTotalPrice()).isEqualTo(new BigDecimal(12000).setScale(2));
         assertThat(lines.get(0).getQuantity()).isEqualTo(2);
@@ -171,7 +173,16 @@ public class OrderControllerIT {
         assertThat(lines.get(0).getDescription()).isEqualTo(request.getOfferLines().get(0).getDescription());
         assertThat(lines.get(0).getOfferToken()).isEqualTo(request.getOfferLines().get(0).getToken());
         assertThat(lines.get(0).getMerchantId()).isEqualTo(request.getOfferLines().get(0).getMerchantId());
-        assertThat(lines.get(0).getOfferType()).isEqualTo(request.getOfferLines().get(0).getType());
+        assertThat(lines.get(0).getType()).isEqualTo(request.getOfferLines().get(0).getType());
+
+        assertThat(lines.get(1).getUnitPrice()).isEqualTo(new BigDecimal(300).setScale(2));
+        assertThat(lines.get(1).getTotalPrice()).isEqualTo(new BigDecimal(300).setScale(2));
+        assertThat(lines.get(1).getQuantity()).isEqualTo(1);
+        assertThat(lines.get(1).getBookingId()).isNull();
+        assertThat(lines.get(1).getDescription()).isNull();
+        assertThat(lines.get(1).getOfferToken()).isNull();
+        assertThat(lines.get(1).getMerchantId()).isNull();
+        assertThat(lines.get(1).getType()).isEqualTo(OrderLineType.FEES);
     }
 
     @Test
@@ -246,9 +257,10 @@ public class OrderControllerIT {
         assertThat(travellers.get(1).getEmail()).isEqualTo("jane.smith@gmail.com");
 
         final List<OrderLine> lines = orderLineRepository.findByOrder(order);
-        assertThat(lines).hasSize(2);
+        assertThat(lines).hasSize(3);
         assertThat(lines.get(0).getBookingId()).isEqualTo(1000);
         assertThat(lines.get(1).getBookingId()).isEqualTo(1001);
+        assertThat(lines.get(2).getBookingId()).isNull();
 
         final List<Ticket> tickets = ticketRepository.findByOrder(order);
         assertThat(tickets).hasSize(3);
@@ -303,7 +315,9 @@ public class OrderControllerIT {
 
                 .andExpect(jsonPath("$.order.status", is("CONFIRMED")))
                 .andExpect(jsonPath("$.order.currencyCode", is("XAF")))
-                .andExpect(jsonPath("$.order.totalAmount", is(6000d)))
+                .andExpect(jsonPath("$.order.subTotalAmount", is(6000d)))
+                .andExpect(jsonPath("$.order.totalFees", is(300d)))
+                .andExpect(jsonPath("$.order.totalAmount", is(6300d)))
                 .andExpect(jsonPath("$.order.orderDateTime", notNullValue()))
                 .andExpect(jsonPath("$.order.siteId", is(1)))
                 .andExpect(jsonPath("$.order.deviceUID", is("1234-1234")))
@@ -311,7 +325,7 @@ public class OrderControllerIT {
 
                 .andExpect(jsonPath("$.order.lines.length()", is(1)))
                 .andExpect(jsonPath("$.order.lines[0].bookingId", is(5678)))
-                .andExpect(jsonPath("$.order.lines[0].offerType", is("CAR")))
+                .andExpect(jsonPath("$.order.lines[0].type", is("CAR")))
                 .andExpect(jsonPath("$.order.lines[0].offerToken", notNullValue()))
                 .andExpect(jsonPath("$.order.lines[0].description", is("hello")))
                 .andExpect(jsonPath("$.order.lines[0].unitPrice", is(6000d)))
@@ -350,7 +364,7 @@ public class OrderControllerIT {
                 .andReturn()
         ;
 
-        final CancelOrderResponse response = mapper.readValue(result.getResponse().getContentAsString(), CancelOrderResponse.class);
+        mapper.readValue(result.getResponse().getContentAsString(), CancelOrderResponse.class);
 
         final Order order = orderRepository.findOne(200);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
@@ -399,7 +413,7 @@ public class OrderControllerIT {
         final List<OfferLineDto> lines = new ArrayList();
         final OfferLineDto line = new OfferLineDto();
         line.setToken(TransportationOfferToken.toString());
-        line.setType(OfferType.CAR);
+        line.setType(OrderLineType.CAR);
         line.setDescription("description #1");
         line.setMerchantId(101);
 

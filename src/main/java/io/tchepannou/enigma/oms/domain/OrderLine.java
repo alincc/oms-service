@@ -1,6 +1,6 @@
 package io.tchepannou.enigma.oms.domain;
 
-import io.tchepannou.enigma.oms.client.OfferType;
+import io.tchepannou.enigma.oms.client.OrderLineType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,6 +29,10 @@ public class OrderLine extends Persistent{
     @JoinColumn(name="order_fk")
     private Order order;
 
+    @ManyToOne
+    @JoinColumn(name="fees_fk")
+    private Fees fees;
+
     @Column(name="booking_id")
     private Integer bookingId;
 
@@ -36,8 +40,7 @@ public class OrderLine extends Persistent{
     private Integer merchantId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name="offer_type")
-    private OfferType offerType;
+    private OrderLineType type;
 
     private Integer quantity;
 

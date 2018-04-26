@@ -3,10 +3,12 @@ package io.tchepannou.enigma.oms.service;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
+import io.tchepannou.enigma.oms.client.OrderLineType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.TicketToken;
 import io.tchepannou.enigma.oms.client.dto.CustomerDto;
 import io.tchepannou.enigma.oms.client.dto.ErrorDto;
+import io.tchepannou.enigma.oms.client.dto.FeesDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.OrderDto;
 import io.tchepannou.enigma.oms.client.dto.OrderLineDto;
@@ -14,6 +16,7 @@ import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.dto.TransactionDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
+import io.tchepannou.enigma.oms.domain.Fees;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
@@ -36,6 +39,8 @@ public class Mapper {
         order.setOrderDateTime(now);
         order.setStatus(OrderStatus.NEW);
         order.setTotalAmount(BigDecimal.ZERO);
+        order.setSubTotalAmount(BigDecimal.ZERO);
+        order.setTotalFees(BigDecimal.ZERO);
         order.setSiteId(request.getSiteId());
 
         return order;
@@ -48,23 +53,40 @@ public class Mapper {
 
         final TransportationOfferToken token = TransportationOfferToken.decode(dto.getToken());
         final BigDecimal unitPrice = token.getAmount();
-        final BigDecimal quantity = new BigDecimal(token.getTravellerCount());
+        final Integer quantity = token.getTravellerCount();
 
         final OrderLine line = new OrderLine();
-        line.setOfferType(dto.getType());
         line.setDescription(dto.getDescription());
         line.setOrder(order);
         line.setOfferToken(dto.getToken());
         line.setMerchantId(dto.getMerchantId());
-        line.setQuantity(quantity.intValue());
+        line.setQuantity(quantity);
         line.setUnitPrice(unitPrice);
-        line.setTotalPrice(unitPrice.multiply(quantity));
+        line.setTotalPrice(unitPrice.multiply(new BigDecimal(quantity)));
         line.setOfferToken(dto.getToken());
         line.setMerchantId(dto.getMerchantId());
-        line.setOfferType(dto.getType());
+        line.setType(dto.getType());
 
-        order.setTotalAmount(order.getTotalAmount().add(line.getTotalPrice()));
         order.setCurrencyCode(token.getCurrencyCode());
+
+        return line;
+    }
+
+    public OrderLine toOrderLine(
+            final Fees fees,
+            final Order order
+    ) throws InvalidCarOfferTokenException {
+
+        final BigDecimal unitPrice = order.getSubTotalAmount()
+                .multiply(fees.getPercent())
+                .add(fees.getAmount());
+
+        final OrderLine line = new OrderLine();
+        line.setType(OrderLineType.FEES);
+        line.setOrder(order);
+        line.setQuantity(1);
+        line.setUnitPrice(unitPrice);
+        line.setTotalPrice(unitPrice);
 
         return line;
     }
@@ -95,6 +117,8 @@ public class Mapper {
         dto.setCheckoutDateTime(obj.getCheckoutDateTime());
         dto.setCancellationDateTime(obj.getCancellationDateTime());
         dto.setFreeCancellationDateTime(obj.getFreeCancellationDateTime());
+        dto.setSubTotalAmount(obj.getSubTotalAmount());
+        dto.setTotalFees(obj.getTotalFees());
 
         if (obj.getTravellers() != null) {
             dto.setTravellers(
@@ -131,9 +155,10 @@ public class Mapper {
         dto.setBookingId(obj.getBookingId());
         dto.setDescription(obj.getDescription());
         dto.setId(obj.getId());
-        dto.setOfferType(obj.getOfferType());
+        dto.setType(obj.getType());
         dto.setOfferToken(obj.getOfferToken());
         dto.setMerchantId(obj.getMerchantId());
+        dto.setFees(toFeesDto(obj.getFees()));
         return dto;
     }
 
@@ -200,6 +225,20 @@ public class Mapper {
         dto.setPaymentMethod(tx.getPaymentMethod());
         dto.setTransactionDateTime(tx.getTransactionDateTime());
         dto.setType(tx.getType());
+        return dto;
+    }
+
+    public FeesDto toFeesDto(final Fees obj){
+        if (obj == null){
+            return null;
+        }
+
+        FeesDto dto = new FeesDto();
+        dto.setAmount(obj.getAmount());
+        dto.setId(obj.getId());
+        dto.setName(obj.getName());
+        dto.setPercent(obj.getPercent());
+        dto.setSiteId(obj.getSiteId());
         return dto;
     }
 }

@@ -90,7 +90,11 @@ public class TicketService {
         final List<TicketDto> result = new ArrayList<>();
         final List<Traveller> travellers = order.getTravellers();
 
-        for (OrderLine line : order.getLines()){
+        for (final OrderLine line : order.getLines()){
+            if (line.getOfferToken() == null){
+                continue;
+            }
+
             int sequenceNumber = 0;
             for (int i=0 ; i<line.getQuantity() ; i++) {
                 final Traveller traveller = CollectionUtils.isEmpty(travellers) ? null : travellers.get(i);

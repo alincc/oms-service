@@ -62,6 +62,10 @@ public class RefundService {
     private Date getDepartureDateTime(Order order) {
         Date departureDateTime = null;
         for (OrderLine line : order.getLines()){
+            if (line.getOfferToken() == null){
+                continue;
+            }
+
             TransportationOfferToken token = TransportationOfferToken.decode(line.getOfferToken());
             if (departureDateTime == null || token.getDepartureDateTime().before(departureDateTime)){
                 departureDateTime = token.getDepartureDateTime();

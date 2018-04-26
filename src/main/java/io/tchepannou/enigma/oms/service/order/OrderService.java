@@ -33,10 +33,12 @@ import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.RefundOrderResponse;
+import io.tchepannou.enigma.oms.domain.Fees;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Transaction;
 import io.tchepannou.enigma.oms.domain.Traveller;
+import io.tchepannou.enigma.oms.repository.FeesRepository;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
@@ -107,6 +109,9 @@ public class OrderService {
     @Autowired
     private BookingBackend bookingBackend;
 
+    @Autowired
+    private FeesRepository feesRepository;
+
     @Value("${server.port}")
     private int port;
 
@@ -175,12 +180,9 @@ public class OrderService {
 
             // Create order
             final Order order = mapper.toOrder(request);
-
-            final List<OrderLine> lines = new ArrayList();
-            for (final OfferLineDto dto : request.getOfferLines()){
-                OrderLine line = mapper.toOrderLine(dto, order);
-                lines.add(line);
-            }
+            final List<OrderLine> lines = addLines(request, order);
+            lines.addAll(applyFees(request, order));
+            order.setTotalAmount(order.getSubTotalAmount().add(order.getTotalFees()));
 
             // Save
             order.setLines(lines);
@@ -190,7 +192,6 @@ public class OrderService {
             for (final OrderLine line : lines){
                 orderLineRepository.save(line);
             }
-            order.setLines(lines);
 
             // Log
             kv.add("OrderID", order.getId());
@@ -344,15 +345,43 @@ public class OrderService {
 
 
     //-- Private
+    private List<OrderLine> addLines(final CreateOrderRequest request, final Order order) {
+        BigDecimal total = BigDecimal.ZERO;
+        final List<OrderLine> lines = new ArrayList();
+        for (final OfferLineDto dto : request.getOfferLines()){
+            OrderLine line = mapper.toOrderLine(dto, order);
+            lines.add(line);
+
+            total = total.add(line.getTotalPrice());
+        }
+        order.setSubTotalAmount(total);
+        return lines;
+    }
+
+    private List<OrderLine> applyFees(final CreateOrderRequest request, final Order order) {
+        BigDecimal total = BigDecimal.ZERO;
+        final List<Fees> fees = feesRepository.findBySiteId(request.getSiteId());
+        final List<OrderLine> lines = new ArrayList();
+        for (final Fees fee : fees){
+            final OrderLine line = mapper.toOrderLine(fee, order);
+            lines.add(line);
+
+            total = total.add(line.getTotalPrice());
+        }
+        order.setTotalFees(total);
+        return lines;
+    }
+
     private void book(final Order order){
         try {
             CreateBookingRequest request = toCreateBookingRequest(order);
             final List<BookingDto> bookings = bookingBackend.book(request).getBookings();
 
             // Book
+            final List<OrderLine> lines = order.getLines();
             for (int i = 0; i < bookings.size(); i++) {
                 final BookingDto dto = bookings.get(i);
-                final OrderLine line = order.getLines().get(i);
+                final OrderLine line = lines.get(i);
                 line.setBookingId(dto.getId());
                 orderLineRepository.save(line);
             }
@@ -376,7 +405,10 @@ public class OrderService {
         try {
 
             for (OrderLine line : order.getLines()) {
-                bookingBackend.confirm(line.getBookingId());
+                final Integer bookingId = line.getBookingId();
+                if (bookingId != null) {
+                    bookingBackend.confirm(bookingId);
+                }
             }
 
             order.setStatus(OrderStatus.CONFIRMED);
@@ -485,6 +517,7 @@ public class OrderService {
         request.setOfferTokens(
                 order.getLines().stream()
                         .map(l -> l.getOfferToken())
+                        .filter(token -> token != null)
                         .collect(Collectors.toList())
         );
         return request;

@@ -18,7 +18,11 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -86,6 +90,33 @@ public class TicketSmsSenderTest {
         verify(logger).add("SmsNumber", "5147550101");
         verify(logger).add("SmsMessage", "This is a message");
         verify(logger).add("SmsMessageId", "12345");
+    }
+
+    @Test
+    public void shouldLogError() throws Exception {
+        // Given
+        final SiteDto site = createSite(1, "Test");
+        when(siteBackend.findById(1)).thenReturn(new SiteResponse(site));
+
+        final Ticket ticket = createTicket("5147550101", 1);
+        when(generator.generate(ticket)).thenReturn("This is a message");
+
+        Exception ex = new RuntimeException("test");
+        when(gateway.send(any())).thenThrow(ex);
+
+        try {
+            // When
+            service.send(ticket);
+            fail("failed");
+        } catch (RuntimeException e) {
+            // When
+            verify(logger).add("SmsSenderId", "Test");
+            verify(logger).add("SmsNumber", "5147550101");
+            verify(logger).add("SmsMessage", "This is a message");
+            verify(logger, never()).add(eq("SmsMessageId"), anyString());
+            verify(logger).add("SmsException", RuntimeException.class.getName());
+            verify(logger).add("SmsExceptionMessage", "test");
+        }
     }
 
     private SiteDto createSite(final Integer id, final String smsSenderId){

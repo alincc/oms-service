@@ -11,13 +11,14 @@ import io.tchepannou.enigma.ferari.client.exception.BookingException;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
-import io.tchepannou.enigma.oms.client.OfferType;
+import io.tchepannou.enigma.oms.client.OrderLineType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
 import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.TransactionType;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
+import io.tchepannou.enigma.oms.client.dto.TransactionDto;
 import io.tchepannou.enigma.oms.client.exception.NotFoundException;
 import io.tchepannou.enigma.oms.client.exception.OrderException;
 import io.tchepannou.enigma.oms.client.rr.CancelOrderRequest;
@@ -29,6 +30,7 @@ import io.tchepannou.enigma.oms.client.rr.RefundOrderResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Transaction;
+import io.tchepannou.enigma.oms.repository.FeesRepository;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TransactionRepository;
@@ -43,6 +45,7 @@ import io.tchepannou.enigma.oms.service.payment.RefundResponse;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import org.apache.commons.lang.time.DateUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -54,6 +57,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 
@@ -104,9 +108,17 @@ public class OrderServiceTest {
     @Mock
     private RefundService refundCalculator;
 
+    @Mock
+    private FeesRepository feesRepository;
+
     @InjectMocks
     private OrderService service;
 
+
+    @Before
+    public void setUp(){
+        when(feesRepository.findBySiteId(anyInt())).thenReturn(Collections.emptyList());
+    }
 
     @Test
     public void shouldCreateOrder(){
@@ -114,16 +126,16 @@ public class OrderServiceTest {
         final long now = System.currentTimeMillis();
         when(clock.millis()).thenReturn(now);
 
-        OfferLineDto line1 = createOfferLine(1, createOfferToken(1, 2, 100d));
-        OfferLineDto line2 = createOfferLine(2, createOfferToken(2, 1, 90d));
-        CreateOrderRequest request = createOrderRequest(line1, line2);
+        OfferLineDto offer1 = createOfferLine(1, createOfferToken(1, 2, 100d));
+        OfferLineDto offer2 = createOfferLine(2, createOfferToken(2, 1, 90d));
+        CreateOrderRequest request = createOrderRequest(offer1, offer2);
 
         Order order = createOrder(1, OrderStatus.NEW, 100d);
-        OrderLine orderLine1 = mock(OrderLine.class);
-        OrderLine orderLine2 = mock(OrderLine.class);
+        OrderLine orderLine1 = createOrderLine(1, 100d);
+        OrderLine orderLine2 = createOrderLine(2, 90d);
         when (mapper.toOrder(request)).thenReturn(order);
-        when(mapper.toOrderLine(line1, order)).thenReturn(orderLine1);
-        when(mapper.toOrderLine(line2, order)).thenReturn(orderLine2);
+        when(mapper.toOrderLine(offer1, order)).thenReturn(orderLine1);
+        when(mapper.toOrderLine(offer2, order)).thenReturn(orderLine2);
 
         Date freeCancellationDate = DateUtils.addDays(new Date(), 1);
         when(refundCalculator.computeFreeCancellationDateTime(order)).thenReturn(freeCancellationDate);
@@ -136,6 +148,11 @@ public class OrderServiceTest {
 
         assertThat(order.getCreationDateTime().getTime()).isEqualTo(now);
         assertThat(order.getFreeCancellationDateTime()).isEqualTo(freeCancellationDate);
+        assertThat(order.getSubTotalAmount()).isEqualTo(new BigDecimal(190));
+        assertThat(order.getTotalFees()).isEqualTo(new BigDecimal(0));
+        assertThat(order.getTotalAmount()).isEqualTo(new BigDecimal(190));
+        assertThat(order.getCurrencyCode()).isEqualTo("XAF");
+
         verify(orderRepository).save(order);
         verify(orderLineRepository).save(orderLine1);
         verify(orderLineRepository).save(orderLine2);
@@ -205,6 +222,49 @@ public class OrderServiceTest {
         assertThat(tx.getValue().getOrder()).isEqualTo(order);
         assertThat(tx.getValue().getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(tx.getValue().getTransactionDateTime()).isEqualTo(new Date(now));
+    }
+
+
+    @Test
+    public void checkoutConfirmedOrder(){
+        // Given
+        long now = 309403943;
+        when(clock.millis()).thenReturn(now);
+
+        OrderLine line = createOrderLine(1, 100d);
+        Order order = createOrder(1, OrderStatus.CONFIRMED, 100d, line);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        TicketDto tick = mock(TicketDto.class);
+        when(tick.getId()).thenReturn(11);
+        when(ticketService.findByOrder(order)).thenReturn(Arrays.asList(tick));
+
+        Transaction tx = createTransaction(111, order, TransactionType.CHARGE, 100d);
+        when(transactionRepository.findByOrderAndType(any(), any())).thenReturn(tx);
+        TransactionDto txDto = new TransactionDto();
+        txDto.setId(111);
+        when(mapper.toDto(tx)).thenReturn(txDto);
+
+        // When
+        CheckoutOrderRequest request = checkoutOrderRequest();
+        CheckoutOrderResponse response =  service.checkout(1, "4304309", request);
+
+        // Then
+        verify(orderRepository, never()).save(order);
+        assertThat(response.getOrderId()).isEqualTo(1);
+        assertThat(response.getTickets()).hasSize(1);
+        assertThat(response.getTickets().get(0).getId()).isEqualTo(11);
+        assertThat(response.getTransaction().getId()).isEqualTo(111);
+
+        verify(bookingBackend, never()).book(any());
+        verify(orderLineRepository, never()).save(line);
+
+        verify(bookingBackend, never()).confirm(anyInt());
+
+        verify(ticketService, never()).create(order);
+
+        verify(paymentService, never()).pay(any());
+        verify(transactionRepository, never()).save(any(Transaction.class));
     }
 
     @Test
@@ -358,6 +418,7 @@ public class OrderServiceTest {
             verify(ticketService, never()).create(order);
         }
     }
+
 
 
     @Test
@@ -717,7 +778,7 @@ public class OrderServiceTest {
         OfferLineDto line = new OfferLineDto();
         line.setDescription("this is desc");
         line.setMerchantId(merchantId);
-        line.setType(OfferType.CAR);
+        line.setType(OrderLineType.CAR);
         line.setToken(token.toString());
         return line;
     }

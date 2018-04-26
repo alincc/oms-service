@@ -2,7 +2,7 @@
 INSERT INTO T_ORDER(id, site_id, customer_id, status, total_amount, currency_code, email, first_name, last_name)
   VALUES(100, 1, 1, 'CONFIRMED', '12000', 'XAF', 'ray.sponsible@gmail.com', 'Ray', 'Sponsible');
 
-INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, offer_type, offer_token, quantity, unit_price, total_price)
+INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, type, offer_token, quantity, unit_price, total_price)
   VALUES(100, 100, 1001, 'CAR', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060', 1, 6000, 6000);
 
 

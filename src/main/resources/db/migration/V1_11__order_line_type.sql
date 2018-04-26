@@ -1,0 +1,1 @@
+ALTER TABLE T_ORDER_LINE CHANGE offer_type type VARCHAR(10);

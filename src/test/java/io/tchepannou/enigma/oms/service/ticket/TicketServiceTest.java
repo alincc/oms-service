@@ -213,6 +213,28 @@ public class TicketServiceTest {
         verify(rest).get("http://127.0.0.1:8080/v1/tickets/2/sms", SendSmsResponse.class);
     }
 
+    @Test
+    public void onOrderConfirmedWithErrors() throws Exception {
+        // Given
+        Order order = createOrder(11);
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        Ticket ticket1 = createTicket(1);
+        Ticket ticket2 = createTicket(2);
+        when(ticketRepository.findByOrder(order)).thenReturn(Arrays.asList(ticket1, ticket2));
+
+        RestClient rest = mock(RestClient.class);
+        when(rest.get("http://127.0.0.1:8080/v1/tickets/1/sms", SendSmsResponse.class)).thenThrow(RuntimeException.class);
+
+        // When
+        service.setPort(8080);
+        service.onSms(11, rest);
+
+        // Verify
+        verify(rest).get("http://127.0.0.1:8080/v1/tickets/1/sms", SendSmsResponse.class);
+        verify(rest).get("http://127.0.0.1:8080/v1/tickets/2/sms", SendSmsResponse.class);
+    }
+
 
     @Test
     public void onOrderConfirmedDontSendSMSOnInvalidOrder() throws Exception {

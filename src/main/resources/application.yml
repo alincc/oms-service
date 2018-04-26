@@ -1,6 +1,6 @@
 spring:
   jpa:
-    show-sql: true
+    show-sql: false
     hibernate:
       ddl-auto: none
       naming.physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
@@ -76,7 +76,6 @@ logging:
     org.springframework: INFO
     org.hibernate: ERROR
     org.hibernate.engine.jdbc.spi.SqlExceptionHelper: OFF
-    io.springfox: DEBUG
 
   pattern:
     console: "%d Type=%level Logger=%c Thread=%thread %m%n"

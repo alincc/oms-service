@@ -87,6 +87,7 @@ public class Mapper {
         line.setQuantity(1);
         line.setUnitPrice(unitPrice);
         line.setTotalPrice(unitPrice);
+        line.setFees(fees);
 
         return line;
     }
@@ -239,6 +240,7 @@ public class Mapper {
         dto.setName(obj.getName());
         dto.setPercent(obj.getPercent());
         dto.setSiteId(obj.getSiteId());
+        dto.setRefundable(obj.isRefundable());
         return dto;
     }
 }

@@ -76,7 +76,7 @@ logging:
     org.springframework: INFO
     org.hibernate: ERROR
     org.hibernate.engine.jdbc.spi.SqlExceptionHelper: OFF
-    springfox: DEBUG
+    io.springfox: DEBUG
 
   pattern:
     console: "%d Type=%level Logger=%c Thread=%thread %m%n"

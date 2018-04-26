@@ -1,5 +1,5 @@
 --- Fees
-INSERT INTO T_FEES(id, site_id, name, amount, percent) VALUES(1, 1, 'BookingFees', 300, 0);
+INSERT INTO T_FEES(id, site_id, name, amount, percent, refundable) VALUES(1, 1, 'BookingFees', 300, 0, false);
 
 --- checkout
 INSERT INTO T_ORDER(id, site_id, customer_id, status, total_amount, currency_code, email, first_name, last_name)
@@ -45,3 +45,17 @@ INSERT INTO T_TICKET(id, order_line_fk, merchant_id, product_id, origin_id, dest
 
 INSERT INTO T_TICKET(id, order_line_fk, merchant_id, product_id, origin_id, destination_id, sequence_number, first_name, last_name, print_datetime, expiry_datetime, departure_datetime, status)
   VALUES(302, 302, 2002, 1001, 2370001, 2370002, 0, 'Ray', 'Sponsible', '2030-01-10', '2030-01-31', '2030-01-31', 'NEW');
+
+-- Refund
+INSERT INTO T_ORDER(id, site_id, customer_id, status, sub_total_amount, total_fees, total_amount, currency_code, first_name, last_name, email, free_cancellation_datetime)
+  VALUES(400, 1, 3, 'CANCELLED', 10000.00, 300.00, 10300.00, 'XAF', 'Ray', 'Sponsible', 'ray@gmail.com', now());
+
+INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, type, offer_token, quantity, unit_price, total_price)
+  VALUES(401, 400, 2001, 5678, 'CAR', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644924060', 1, 6000, 6000);
+INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, type, offer_token, quantity, unit_price, total_price)
+  VALUES(402, 400, 2002, 5679, 'CAR', '100,1902459600000,1902466800000,1000,4000,XAF,1,2370002,2370001,I,15138644924060', 1, 4000, 4000);
+INSERT INTO T_ORDER_LINE(id, order_fk, fees_fk, type, quantity, unit_price, total_price)
+  VALUES(403, 400, 1, 'FEES', 1, 300, 300);
+
+INSERT INTO T_TRANSACTION(id, order_fk, type, gateway_tid, amount, currency_code, transaction_datetime, payment_method)
+  VALUES(400, 400, 'CHARGE', '12090920', 10300, 'XAF', now(), 'ONLINE');

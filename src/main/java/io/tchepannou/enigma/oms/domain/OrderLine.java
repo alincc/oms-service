@@ -14,6 +14,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.math.BigDecimal;
 
 @Getter
@@ -54,4 +55,9 @@ public class OrderLine extends Persistent{
     private String offerToken;
 
     private String description;
+
+    @Transient
+    public boolean isRefundable() {
+        return offerToken != null || (fees != null && fees.isRefundable());
+    }
 }

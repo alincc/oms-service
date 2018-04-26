@@ -8,8 +8,10 @@ import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderLineType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
+import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.Sex;
 import io.tchepannou.enigma.oms.client.TicketStatus;
+import io.tchepannou.enigma.oms.client.TransactionType;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
 import io.tchepannou.enigma.oms.client.dto.TravellerDto;
@@ -21,10 +23,12 @@ import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
 import io.tchepannou.enigma.oms.domain.Ticket;
+import io.tchepannou.enigma.oms.domain.Transaction;
 import io.tchepannou.enigma.oms.domain.Traveller;
 import io.tchepannou.enigma.oms.repository.OrderLineRepository;
 import io.tchepannou.enigma.oms.repository.OrderRepository;
 import io.tchepannou.enigma.oms.repository.TicketRepository;
+import io.tchepannou.enigma.oms.repository.TransactionRepository;
 import io.tchepannou.enigma.oms.repository.TravellerRepository;
 import io.tchepannou.enigma.oms.support.DateHelper;
 import io.tchepannou.enigma.profile.client.ProfileEnvironment;
@@ -92,6 +96,9 @@ public class OrderControllerIT {
 
     @Autowired
     private RefDataEnvironment refDataEnvironment;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
 
     @Autowired
     private ProfileEnvironment profileEnvironment;
@@ -174,6 +181,7 @@ public class OrderControllerIT {
         assertThat(lines.get(0).getOfferToken()).isEqualTo(request.getOfferLines().get(0).getToken());
         assertThat(lines.get(0).getMerchantId()).isEqualTo(request.getOfferLines().get(0).getMerchantId());
         assertThat(lines.get(0).getType()).isEqualTo(request.getOfferLines().get(0).getType());
+        assertThat(lines.get(0).getFees()).isNull();
 
         assertThat(lines.get(1).getUnitPrice()).isEqualTo(new BigDecimal(300).setScale(2));
         assertThat(lines.get(1).getTotalPrice()).isEqualTo(new BigDecimal(300).setScale(2));
@@ -183,6 +191,8 @@ public class OrderControllerIT {
         assertThat(lines.get(1).getOfferToken()).isNull();
         assertThat(lines.get(1).getMerchantId()).isNull();
         assertThat(lines.get(1).getType()).isEqualTo(OrderLineType.FEES);
+        assertThat(lines.get(1).getFees()).isNotNull();
+        assertThat(lines.get(1).getFees().getId()).isEqualTo(1);
     }
 
     @Test
@@ -375,6 +385,33 @@ public class OrderControllerIT {
 
         final Ticket ticket2 = ticketRepository.findOne(302);
         assertThat(ticket2.getStatus()).isEqualTo(TicketStatus.NEW);
+    }
+
+    /* ===== REFUND ======= */
+    @Test
+    public void shouldRefundOrder() throws Exception {
+
+        final MvcResult result = mockMvc
+                .perform(get("/v1/orders/400/refund"))
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+
+                .andReturn()
+                ;
+
+        mapper.readValue(result.getResponse().getContentAsString(), CancelOrderResponse.class);
+
+        final Order order = orderRepository.findOne(400);
+        final Transaction tx = transactionRepository.findByOrderAndType(order, TransactionType.REFUND);
+
+        assertThat(tx).isNotNull();
+        assertThat(tx.getAmount()).isEqualTo(new BigDecimal(-10000).setScale(2));
+        assertThat(tx.getCurrencyCode()).isEqualTo("XAF");
+        assertThat(tx.getType()).isEqualTo(TransactionType.REFUND);
+        assertThat(tx.getGatewayTid()).isNotNull();
+        assertThat(tx.getTransactionDateTime()).isNotNull();
+        assertThat(tx.getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
     }
 
 

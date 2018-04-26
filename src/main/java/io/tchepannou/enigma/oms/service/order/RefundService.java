@@ -33,11 +33,11 @@ public class RefundService {
 
 
     public BigDecimal computeRefundAmount (Order order) {
-        final Date free = order.getFreeCancellationDateTime();
-        if (free == null){
+        final Date treshold = order.getFreeCancellationDateTime();
+        if (treshold == null){
             return BigDecimal.ZERO;
         } else {
-            return free.getTime() > clock.millis()
+            return treshold.getTime() > clock.millis()
                     ? BigDecimal.ZERO
                     : computeRefundableAmount(order);
         }
@@ -45,8 +45,10 @@ public class RefundService {
 
     private BigDecimal computeRefundableAmount(Order order) {
         BigDecimal total = BigDecimal.ZERO;
-        for (OrderLine line : order.getLines()){
-            total = total.add(line.getTotalPrice());
+        for (final OrderLine line : order.getLines()){
+            if (line.isRefundable()) {
+                total = total.add(line.getTotalPrice());
+            }
         }
         return total;
     }

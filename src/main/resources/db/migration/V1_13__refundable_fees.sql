@@ -1,0 +1,1 @@
+ALTER TABLE T_FEES ADD COLUMN refundable BOOL DEFAULT false;

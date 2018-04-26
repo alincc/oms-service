@@ -160,6 +160,10 @@ public class OrderService {
         request.setReason(CancellationReason.OTHER);
         for (OrderLine line : order.getLines()) {
             final Integer bookingId = line.getBookingId();
+            if (bookingId == null){
+                continue;
+            }
+
             try {
 
                 backend.cancel(bookingId, request);

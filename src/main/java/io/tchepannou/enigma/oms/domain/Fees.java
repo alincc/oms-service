@@ -26,4 +26,5 @@ public class Fees extends Persistent {
     private String name;
     private BigDecimal percent;
     private BigDecimal amount;
+    private boolean refundable;
 }

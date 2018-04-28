@@ -1,5 +1,6 @@
 package io.tchepannou.enigma.oms.controller;
 
+import io.tchepannou.core.logger.KVLogger;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.dto.ErrorDto;
 import io.tchepannou.enigma.oms.client.exception.NotFoundException;
@@ -27,12 +28,15 @@ public class ErrorHandler {
     @Autowired
     private Mapper mapper;
 
+    @Autowired
+    private KVLogger kv;
+
 
     @ResponseBody
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
     protected OMSErrorResponse handleNotFoundException(final NotFoundException ex){
-        LOGGER.error("Object not found", ex);
+        log("Object not found", ex);
 
         return createErrorResponse(ex.getErrorCode());
     }
@@ -41,7 +45,7 @@ public class ErrorHandler {
     @ExceptionHandler(OrderException.class)
     @ResponseStatus(value = HttpStatus.CONFLICT)
     protected OMSErrorResponse handleOrderException(final OrderException ex){
-        LOGGER.error("Order error", ex);
+        log("Order error", ex);
 
         return createErrorResponse(ex.getErrorCode());
     }
@@ -52,7 +56,7 @@ public class ErrorHandler {
     protected OMSErrorResponse handleMethodArgumentNotValidException(
             final MethodArgumentNotValidException ex
     ) {
-        LOGGER.error("Validation error", ex);
+        log("Validation error", ex);
 
         final List<ErrorDto> errors = ex.getBindingResult().getFieldErrors()
                 .stream()
@@ -71,7 +75,7 @@ public class ErrorHandler {
     @ExceptionHandler(Throwable.class)
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     protected OMSErrorResponse handleThrowable(final Throwable ex){
-        LOGGER.error("Unexpected error", ex);
+        log("Unexpected error", ex);
 
         return createErrorResponse(OMSErrorCode.UNEXPECTED_ERROR);
     }
@@ -79,9 +83,17 @@ public class ErrorHandler {
     private OMSErrorResponse createErrorResponse(OMSErrorCode error){
         return createErrorResponse(Arrays.asList(mapper.toDto(error)));
     }
+
     private OMSErrorResponse createErrorResponse(List<ErrorDto> errors){
         final OMSErrorResponse response = new OMSErrorResponse();
         response.setErrors(errors);
         return response;
+    }
+
+    private void log(final String message, final Throwable ex){
+        kv.add(KVLogger.EXCEPTION, ex.getClass().getName());
+        kv.add(KVLogger.EXCEPTION_MESSAGE, ex.getMessage());
+
+        LOGGER.error(message, ex);
     }
 }

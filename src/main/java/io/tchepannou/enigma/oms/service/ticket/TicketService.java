@@ -74,6 +74,7 @@ public class TicketService {
         }
 
         final List<Ticket> tickets = ticketRepository.findByOrder(order);
+        LOGGER.error("{} ticket(s) to send for Order#{} to {}", tickets.size(), order.getId(), order.getMobileNumber());
         for (Ticket ticket : tickets) {
             final String url = "http://127.0.0.1:" + port + "/v1/tickets/" + ticket.getId() + "/sms";
             try {

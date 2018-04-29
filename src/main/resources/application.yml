@@ -88,5 +88,7 @@ enigma:
       from: "enigma.voyage.dev@gmail.com"
     order:
       orderTTLMinutes: 10
+      expiry:
+        cron: "0 */11 * * * ?"
     refund:
       freeCancellationHours: 24

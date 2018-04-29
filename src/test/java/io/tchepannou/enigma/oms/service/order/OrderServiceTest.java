@@ -9,6 +9,7 @@ import io.tchepannou.enigma.ferari.client.backend.BookingBackend;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
 import io.tchepannou.enigma.ferari.client.exception.BookingException;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
+import io.tchepannou.enigma.ferari.client.rr.CancelBookingResponse;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderLineType;
@@ -26,6 +27,7 @@ import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
+import io.tchepannou.enigma.oms.client.rr.ExpireOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.RefundOrderResponse;
 import io.tchepannou.enigma.oms.domain.Order;
 import io.tchepannou.enigma.oms.domain.OrderLine;
@@ -111,6 +113,7 @@ public class OrderServiceTest {
     @Mock
     private FeesRepository feesRepository;
 
+
     @InjectMocks
     private OrderService service;
 
@@ -141,12 +144,14 @@ public class OrderServiceTest {
         when(refundCalculator.computeFreeCancellationDateTime(order)).thenReturn(freeCancellationDate);
 
         // When
+        service.setOrderTTLMinutes(10);
         CreateOrderResponse response = service.create(request);
 
         // Then
         assertThat(response.getOrderId()).isEqualTo(1);
 
         assertThat(order.getCreationDateTime().getTime()).isEqualTo(now);
+        assertThat(order.getExpiryDateTime()).isEqualTo(DateUtils.addMinutes(new Date(now), 10));
         assertThat(order.getFreeCancellationDateTime()).isEqualTo(freeCancellationDate);
         assertThat(order.getSubTotalAmount()).isEqualTo(new BigDecimal(190));
         assertThat(order.getTotalFees()).isEqualTo(new BigDecimal(0));
@@ -531,6 +536,189 @@ public class OrderServiceTest {
         verify(backend).cancel(eq(22), any(CancelBookingRequest.class));
     }
 
+    @Test
+    public void onCancelBookingsWithBookingNotFound() {
+        // Given
+        OrderLine line1 = createOrderLine(1, 11, 100);
+        OrderLine line2 = createOrderLine(2, 22, 140);
+        Order order = createOrder(111, OrderStatus.CANCELLED, 240, line1, line2);
+        when(orderRepository.findOne(111)).thenReturn(order);
+
+        BookingBackend backend = mock(BookingBackend.class);
+        BookingException e = new BookingException(FerrariErrorCode.BOOKING_NOT_FOUND);
+        when(backend.cancel(eq(11), any())).thenThrow(e);
+        when(backend.cancel(eq(22), any())).thenReturn(new CancelBookingResponse());
+
+        // When
+        service.onCancelBookings(111, backend);
+
+        // Then
+        verify(backend, times(2)).cancel(anyInt(), any(CancelBookingRequest.class));
+    }
+
+    @Test
+    public void onCancelBookingsWithBookingAlreadyCancelled() {
+        // Given
+        OrderLine line1 = createOrderLine(1, 11, 100);
+        OrderLine line2 = createOrderLine(2, 22, 140);
+        Order order = createOrder(111, OrderStatus.CANCELLED, 240, line1, line2);
+        when(orderRepository.findOne(111)).thenReturn(order);
+
+        BookingBackend backend = mock(BookingBackend.class);
+        BookingException e = new BookingException(FerrariErrorCode.BOOKING_ALREADY_CANCELLED);
+        when(backend.cancel(eq(11), any())).thenThrow(e);
+        when(backend.cancel(eq(22), any())).thenReturn(new CancelBookingResponse());
+
+        // When
+        service.onCancelBookings(111, backend);
+
+        // Then
+        verify(backend, times(2)).cancel(anyInt(), any(CancelBookingRequest.class));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void onCancelBookingsWithBookingError() {
+        // Given
+        OrderLine line1 = createOrderLine(1, 11, 100);
+        OrderLine line2 = createOrderLine(2, 22, 140);
+        Order order = createOrder(111, OrderStatus.CANCELLED, 240, line1, line2);
+        when(orderRepository.findOne(111)).thenReturn(order);
+
+        BookingBackend backend = mock(BookingBackend.class);
+        when(backend.cancel(eq(11), any())).thenThrow(RuntimeException.class);
+
+        // When
+        service.onCancelBookings(111, backend);
+    }
+
+
+    @Test
+    public void shouldExpireNewOrder(){
+        // Given
+        final long now = System.currentTimeMillis();
+        when(clock.millis()).thenReturn(now);
+
+        final OrderLine line1 = createOrderLine(1, 111, 1000);
+        final OrderLine line2 = createOrderLine(1, 222, 1000);
+        final Order order = createOrder(11, OrderStatus.NEW, 1000, line1, line2);
+        order.setExpiryDateTime(DateUtils.addYears(new Date(now), -1));
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        // When
+        service.expire(11);
+
+        // Then
+        verify(orderRepository).save(order);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getCancellationDateTime().getTime()).isEqualTo(now);
+    }
+
+    @Test
+    public void shouldNotExpireInvalidOrder(){
+        // Given
+        when(orderRepository.findOne(11)).thenReturn(null);
+
+        try {
+            // When
+            service.expire(11);
+            fail("failed");
+        } catch (NotFoundException e){
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.ORDER_NOT_FOUND);
+        }
+    }
+
+    @Test
+    public void shouldNotExpireCancelledOrder(){
+        // Given
+        final OrderLine line1 = createOrderLine(1, 111, 1000);
+        final Order order = createOrder(11, OrderStatus.CANCELLED, 1000, line1);
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        try {
+            // When
+            service.expire(11);
+            fail("failed");
+        } catch (OrderException e){
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.ORDER_NOT_NEW);
+        }
+    }
+
+    @Test
+    public void shouldNotExpireConfirmedOrder(){
+        // Given
+        final OrderLine line1 = createOrderLine(1, 111, 1000);
+        final Order order = createOrder(11, OrderStatus.CONFIRMED, 1000, line1);
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        try {
+            // When
+            service.expire(11);
+            fail("failed");
+        } catch (OrderException e){
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.ORDER_NOT_NEW);
+        }
+    }
+
+    @Test
+    public void shouldExpireAll(){
+        // Given
+        final Order o1 = createOrder(11, OrderStatus.NEW, 1000);
+        final Order o2 = createOrder(22, OrderStatus.NEW, 1000);
+        final Order o3 = createOrder(33, OrderStatus.NEW, 1000);
+        when (orderRepository.findByStatusAndExpiryDateTimeBefore(any(), any())).thenReturn(Arrays.asList(o1, o2, o3));
+
+        RestClient rest = mock(RestClient.class);
+
+        // When
+        service.setPort(123);
+        service.expire(rest);
+
+        // Then
+        verify(rest).get("http://127.0.0.1:123/v1/orders/11/expire", ExpireOrderResponse.class);
+        verify(rest).get("http://127.0.0.1:123/v1/orders/22/expire", ExpireOrderResponse.class);
+        verify(rest).get("http://127.0.0.1:123/v1/orders/33/expire", ExpireOrderResponse.class);
+    }
+
+    @Test
+    public void shouldNotFailWhenExpireAll(){
+        // Given
+        final Order o1 = createOrder(11, OrderStatus.NEW, 1000);
+        final Order o2 = createOrder(22, OrderStatus.NEW, 1000);
+        final Order o3 = createOrder(33, OrderStatus.NEW, 1000);
+        when (orderRepository.findByStatusAndExpiryDateTimeBefore(any(), any())).thenReturn(Arrays.asList(o1, o2, o3));
+
+        RestClient rest = mock(RestClient.class);
+        when(rest.get("http://127.0.0.1:123/v1/orders/11/expire", ExpireOrderResponse.class)).thenThrow(RuntimeException.class);
+
+        // When
+        service.setPort(123);
+        service.expire(rest);
+
+        // Then
+        verify(rest).get("http://127.0.0.1:123/v1/orders/11/expire", ExpireOrderResponse.class);
+        verify(rest).get("http://127.0.0.1:123/v1/orders/22/expire", ExpireOrderResponse.class);
+        verify(rest).get("http://127.0.0.1:123/v1/orders/33/expire", ExpireOrderResponse.class);
+    }
+
+    @Test
+    public void shouldNotExpireNonExpiredOrder(){
+        // Given
+        final long now = System.currentTimeMillis();
+        when(clock.millis()).thenReturn(now);
+
+        final OrderLine line1 = createOrderLine(1, 111, 1000);
+        final Order order = createOrder(11, OrderStatus.NEW, 1000, line1);
+        order.setExpiryDateTime(DateUtils.addYears(new Date(now), 1));
+        when(orderRepository.findOne(11)).thenReturn(order);
+
+        try {
+            // When
+            service.expire(11);
+            fail("failed");
+        } catch (OrderException e){
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.ORDER_NOT_EXPIRED);
+        }
+    }
 
     @Test
     public void refund(){

@@ -13,6 +13,7 @@ import io.tchepannou.enigma.ferari.client.FerrariErrorCode;
 import io.tchepannou.enigma.ferari.client.InvalidCarOfferTokenException;
 import io.tchepannou.enigma.ferari.client.backend.BookingBackend;
 import io.tchepannou.enigma.ferari.client.dto.BookingDto;
+import io.tchepannou.enigma.ferari.client.exception.BookingException;
 import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
@@ -31,6 +32,7 @@ import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
+import io.tchepannou.enigma.oms.client.rr.ExpireOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.RefundOrderResponse;
 import io.tchepannou.enigma.oms.domain.Fees;
@@ -52,12 +54,14 @@ import io.tchepannou.enigma.oms.service.payment.PaymentService;
 import io.tchepannou.enigma.oms.service.payment.RefundRequest;
 import io.tchepannou.enigma.oms.service.payment.RefundResponse;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
+import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -112,8 +116,13 @@ public class OrderService {
     @Autowired
     private FeesRepository feesRepository;
 
+    @Autowired
+    private RestClient rest;
+
     @Value("${server.port}")
     private int port;
+
+    private int orderTTLMinutes;
 
     //-- Message Handler
     @Transactional
@@ -169,8 +178,20 @@ public class OrderService {
                 backend.cancel(bookingId, request);
                 LOGGER.info("Booking#{} has been cancelled", bookingId);
 
-            } catch (Exception e) {
+            } catch (BookingException e) {
+
+                final FerrariErrorCode code = e.getErrorCode();
+                if (FerrariErrorCode.BOOKING_NOT_FOUND.equals(code)){
+                    // Ignore
+                } else if (FerrariErrorCode.BOOKING_ALREADY_CANCELLED.equals(code)){
+                    // Ignore
+                } else {
+                    throw e;
+                }
+
+            } catch (RuntimeException e) {
                 LOGGER.error("Unable to cancel Booking#{}", bookingId, e);
+                throw e;
             }
         }
     }
@@ -180,6 +201,7 @@ public class OrderService {
     public CreateOrderResponse create(final CreateOrderRequest request){
         kv.add("Action", "Create");
 
+        final Date now = new Date(clock.millis());
         try {
 
             // Create order
@@ -190,8 +212,9 @@ public class OrderService {
 
             // Save
             order.setLines(lines);
-            order.setCreationDateTime(new Date(clock.millis()));
+            order.setCreationDateTime(now);
             order.setFreeCancellationDateTime(refundCalculator.computeFreeCancellationDateTime(order));
+            order.setExpiryDateTime(DateUtils.addMinutes(now, orderTTLMinutes));
             orderRepository.save(order);
             for (final OrderLine line : lines){
                 orderLineRepository.save(line);
@@ -321,8 +344,38 @@ public class OrderService {
             ticketService.cancelByBooking(line.getBookingId());
         }
 
+
         // Update
         return new CancelOrderResponse(mapper.toDto(order));
+    }
+
+    @Transactional
+    public ExpireOrderResponse expire(final Integer orderId) {
+        kv.add("OrderID", orderId);
+        kv.add("Action", "Expire");
+
+        // Order
+        final Date now = new Date(clock.millis());
+        final Order order = orderRepository.findOne(orderId);
+        if (order == null){
+            throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
+        }
+
+        // Check status
+        if (!OrderStatus.NEW.equals(order.getStatus())){
+            throw new OrderException(OMSErrorCode.ORDER_NOT_NEW);
+        }
+        if (order.getExpiryDateTime().after(now)){
+            throw new OrderException(OMSErrorCode.ORDER_NOT_EXPIRED);
+        }
+
+        // Cancel the order
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancellationDateTime(now);
+        orderRepository.save(order);
+
+        // Update
+        return new ExpireOrderResponse(mapper.toDto(order));
     }
 
     @Transactional
@@ -345,6 +398,28 @@ public class OrderService {
         kv.add("TransactionID", tx.getId());
 
         return new RefundOrderResponse(mapper.toDto(tx));
+    }
+
+    @Scheduled(cron = "${enigma.service.order.expiry.cron}")
+    public void expire() {
+        final RestClient rest = new DefaultRestClient(new RestConfig());
+        expire(rest);
+    }
+
+    @VisibleForTesting
+    protected void expire(RestClient rest) {
+        final Date now = new Date(clock.millis());
+        final List<Order> orders = orderRepository.findByStatusAndExpiryDateTimeBefore(OrderStatus.NEW, now);
+        LOGGER.info("{} order(s) to expire", orders.size());
+
+        for (final Order order : orders){
+            try {
+                LOGGER.info("Expiring Order#{}", order.getId());
+                rest.get("http://127.0.0.1:" + this.port + "/v1/orders/" + order.getId() + "/expire", ExpireOrderResponse.class);
+            } catch (Exception e){
+                LOGGER.error("Unable to expire Order#{}", order.getId(), e);
+            }
+        }
     }
 
 
@@ -544,5 +619,13 @@ public class OrderService {
 
     public void setPort(final int port) {
         this.port = port;
+    }
+
+    public int getOrderTTLMinutes() {
+        return orderTTLMinutes;
+    }
+
+    public void setOrderTTLMinutes(final int orderTTLMinutes) {
+        this.orderTTLMinutes = orderTTLMinutes;
     }
 }

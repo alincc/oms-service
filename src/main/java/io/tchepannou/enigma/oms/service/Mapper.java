@@ -120,6 +120,7 @@ public class Mapper {
         dto.setFreeCancellationDateTime(obj.getFreeCancellationDateTime());
         dto.setSubTotalAmount(obj.getSubTotalAmount());
         dto.setTotalFees(obj.getTotalFees());
+        dto.setExpiryDateTime(obj.getExpiryDateTime());
 
         if (obj.getTravellers() != null) {
             dto.setTravellers(

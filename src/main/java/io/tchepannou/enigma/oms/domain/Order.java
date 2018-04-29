@@ -91,6 +91,9 @@ public class Order extends Persistent {
     @Column(name="free_cancellation_datetime")
     private Date freeCancellationDateTime;
 
+    @Column(name="expiry_datetime")
+    private Date expiryDateTime;
+
     @Version
     private Long version;
 }

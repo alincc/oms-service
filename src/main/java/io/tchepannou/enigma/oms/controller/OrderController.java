@@ -11,6 +11,7 @@ import io.tchepannou.enigma.oms.client.rr.CheckoutOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CheckoutOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderRequest;
 import io.tchepannou.enigma.oms.client.rr.CreateOrderResponse;
+import io.tchepannou.enigma.oms.client.rr.ExpireOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.GetOrderResponse;
 import io.tchepannou.enigma.oms.client.rr.OMSErrorResponse;
 import io.tchepannou.enigma.oms.client.rr.RefundOrderResponse;
@@ -73,6 +74,14 @@ public class OrderController {
     @ApiOperation(value = "Refund a cancelled order")
     public RefundOrderResponse refund(@PathVariable Integer orderId) {
         return orderService.refund(orderId);
+    }
+
+    @RequestMapping(value="/{orderId}/expire", method = RequestMethod.GET)
+    @ApiOperation(value = "Cancel Order")
+    public ExpireOrderResponse expire(@PathVariable Integer orderId) {
+        ExpireOrderResponse response = orderService.expire(orderId);
+//        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_ORDER_CANCELLED, "", orderId);
+        return response;
     }
 
     @RequestMapping(value="/{orderId}", method = RequestMethod.GET)

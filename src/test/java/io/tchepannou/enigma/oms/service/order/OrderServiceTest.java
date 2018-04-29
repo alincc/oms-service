@@ -611,6 +611,9 @@ public class OrderServiceTest {
         verify(orderRepository).save(order);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
         assertThat(order.getCancellationDateTime().getTime()).isEqualTo(now);
+
+        verify(bookingBackend).cancel(eq(111), any(CancelBookingRequest.class));
+        verify(bookingBackend).cancel(eq(222), any(CancelBookingRequest.class));
     }
 
     @Test

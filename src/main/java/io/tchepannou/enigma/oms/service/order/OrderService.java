@@ -144,7 +144,6 @@ public class OrderService {
         rest.get(url, RefundOrderResponse.class);
     }
 
-    @Transactional
     @RabbitListener(queues = QueueNames.QUEUE_BOOKING_CANCEL)
     public void onCancelBookings(Integer orderId) {
         final BookingBackend backend = new BookingBackend(new DefaultRestClient(new RestConfig()), ferariEnvironment);
@@ -164,9 +163,12 @@ public class OrderService {
             return;
         }
 
+        onCancelBookings(order, CancellationReason.OTHER, backend);
+    }
 
+    private void onCancelBookings(Order order, CancellationReason reason, BookingBackend backend) {
         final CancelBookingRequest request = new CancelBookingRequest();
-        request.setReason(CancellationReason.OTHER);
+        request.setReason(reason);
         for (OrderLine line : order.getLines()) {
             final Integer bookingId = line.getBookingId();
             if (bookingId == null){
@@ -195,7 +197,6 @@ public class OrderService {
             }
         }
     }
-
     //-- Public
     @Transactional
     public CreateOrderResponse create(final CreateOrderRequest request){
@@ -373,6 +374,9 @@ public class OrderService {
         order.setStatus(OrderStatus.CANCELLED);
         order.setCancellationDateTime(now);
         orderRepository.save(order);
+
+        // Cancel booking
+        onCancelBookings(order, CancellationReason.EXPIRED, bookingBackend);
 
         // Update
         return new ExpireOrderResponse(mapper.toDto(order));

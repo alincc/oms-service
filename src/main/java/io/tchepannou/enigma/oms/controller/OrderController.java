@@ -79,9 +79,7 @@ public class OrderController {
     @RequestMapping(value="/{orderId}/expire", method = RequestMethod.GET)
     @ApiOperation(value = "Cancel Order")
     public ExpireOrderResponse expire(@PathVariable Integer orderId) {
-        ExpireOrderResponse response = orderService.expire(orderId);
-//        rabbitTemplate.convertAndSend(QueueNames.EXCHANGE_ORDER_CANCELLED, "", orderId);
-        return response;
+        return orderService.expire(orderId);
     }
 
     @RequestMapping(value="/{orderId}", method = RequestMethod.GET)

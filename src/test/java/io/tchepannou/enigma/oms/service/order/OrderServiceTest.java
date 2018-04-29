@@ -229,7 +229,6 @@ public class OrderServiceTest {
         assertThat(tx.getValue().getTransactionDateTime()).isEqualTo(new Date(now));
     }
 
-
     @Test
     public void checkoutConfirmedOrder(){
         // Given
@@ -373,6 +372,22 @@ public class OrderServiceTest {
             fail("failed");
         } catch (OrderException e){
             assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.OFFER_EXPIRED);
+        }
+    }
+
+    @Test
+    public void shouldNotCheckoutExpiredOrder(){
+        // Given
+        OrderLine line = createOrderLine(1, 100d);
+        Order order = createOrder(1, OrderStatus.EXPIRED, 100d, line);
+        when(orderRepository.findOne(1)).thenReturn(order);
+
+        // When
+        try {
+            service.checkout(1, "4304309", checkoutOrderRequest());
+            fail("failed");
+        } catch (OrderException e){
+            assertThat(e.getErrorCode()).isEqualTo(OMSErrorCode.ORDER_EXPIRED);
         }
     }
 
@@ -609,11 +624,8 @@ public class OrderServiceTest {
 
         // Then
         verify(orderRepository).save(order);
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.EXPIRED);
         assertThat(order.getCancellationDateTime().getTime()).isEqualTo(now);
-
-        verify(bookingBackend).cancel(eq(111), any(CancelBookingRequest.class));
-        verify(bookingBackend).cancel(eq(222), any(CancelBookingRequest.class));
     }
 
     @Test

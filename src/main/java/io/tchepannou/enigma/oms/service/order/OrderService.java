@@ -163,12 +163,8 @@ public class OrderService {
             return;
         }
 
-        onCancelBookings(order, CancellationReason.OTHER, backend);
-    }
-
-    private void onCancelBookings(Order order, CancellationReason reason, BookingBackend backend) {
         final CancelBookingRequest request = new CancelBookingRequest();
-        request.setReason(reason);
+        request.setReason(CancellationReason.OTHER);
         for (OrderLine line : order.getLines()) {
             final Integer bookingId = line.getBookingId();
             if (bookingId == null){
@@ -197,6 +193,7 @@ public class OrderService {
             }
         }
     }
+
     //-- Public
     @Transactional
     public CreateOrderResponse create(final CreateOrderRequest request){
@@ -247,6 +244,7 @@ public class OrderService {
         if (order == null){
             throw new NotFoundException(OMSErrorCode.ORDER_NOT_FOUND);
         }
+
         if (OrderStatus.CONFIRMED.equals(order.getStatus())){
             // Do not book pending request
             LOGGER.info("Order#{} has already been confirmed", order.getId());
@@ -256,6 +254,10 @@ public class OrderService {
                     ticketService.findByOrder(order),
                     mapper.toDto(tx)
             );
+        }
+
+        if (OrderStatus.EXPIRED.equals(order.getStatus())){
+            throw new OrderException(OMSErrorCode.ORDER_EXPIRED);
         }
 
         // Customer information
@@ -371,12 +373,9 @@ public class OrderService {
         }
 
         // Cancel the order
-        order.setStatus(OrderStatus.CANCELLED);
+        order.setStatus(OrderStatus.EXPIRED);
         order.setCancellationDateTime(now);
         orderRepository.save(order);
-
-        // Cancel booking
-        onCancelBookings(order, CancellationReason.EXPIRED, bookingBackend);
 
         // Update
         return new ExpireOrderResponse(mapper.toDto(order));

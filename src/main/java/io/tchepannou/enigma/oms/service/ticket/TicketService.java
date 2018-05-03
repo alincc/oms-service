@@ -10,6 +10,7 @@ import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.TicketStatus;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.exception.NotFoundException;
+import io.tchepannou.enigma.oms.client.rr.GetTicketListResponse;
 import io.tchepannou.enigma.oms.client.rr.GetTicketResponse;
 import io.tchepannou.enigma.oms.client.rr.SendSmsResponse;
 import io.tchepannou.enigma.oms.domain.Order;
@@ -132,6 +133,15 @@ public class TicketService {
                 .stream()
                 .map(t -> mapper.toTicketDto(t))
                 .collect(Collectors.toList());
+    }
+
+    public GetTicketListResponse findByCustomerIdAndDate(Integer customerId, Date departureDate) {
+        final List<Ticket> tickets = ticketRepository.findByCustomerIdAndStatusAndDate(customerId, TicketStatus.NEW, departureDate);
+        return new GetTicketListResponse(
+                tickets.stream()
+                    .map(t -> mapper.toTicketDto(t))
+                    .collect(Collectors.toList())
+        );
     }
 
     public SendSmsResponse sms(Integer id) {

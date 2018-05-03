@@ -82,4 +82,23 @@ public class TicketControllerIT {
         ;
 
     }
+
+    /* =========== FIND BY CUSTOMER ============ */
+    @Test
+    public void shouldReturnTicketForCustomer() throws Exception {
+        mockMvc
+                .perform(
+                        get("/v1/tickets/customers/11/departures/2030-01-10")
+                )
+
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(status().isOk())
+
+                .andExpect(jsonPath("$.tickets.length()", is(3)))
+                .andExpect(jsonPath("$.tickets[0].id", is(200)))
+                .andExpect(jsonPath("$.tickets[1].id", is(201)))
+                .andExpect(jsonPath("$.tickets[2].id", is(210)))
+
+                .andReturn();
+    }
 }

@@ -6,17 +6,12 @@ import io.tchepannou.enigma.oms.client.rr.GetTicketListResponse;
 import io.tchepannou.enigma.oms.client.rr.GetTicketResponse;
 import io.tchepannou.enigma.oms.client.rr.SendSmsResponse;
 import io.tchepannou.enigma.oms.service.ticket.TicketService;
-import io.tchepannou.enigma.oms.support.DateHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 
 @RestController
 @RequestMapping(value="/v1/tickets", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -31,15 +26,12 @@ public class TicketController {
         return ticketService.findById(id);
     }
 
-    @RequestMapping(value="/customers/{customerId}/departures/{departureDate}", method = RequestMethod.GET)
+    @RequestMapping(value="/customers/{customerId}", method = RequestMethod.GET)
     @ApiOperation("findByCustomer")
     public GetTicketListResponse findByCustomer(
-            @PathVariable Integer customerId,
-            @PathVariable String departureDate
-    ) throws ParseException {
-        final DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
-        fmt.setTimeZone(DateHelper.getTimeZone());
-        return ticketService.findByCustomerIdAndDate(customerId, fmt.parse(departureDate));
+            @PathVariable Integer customerId
+    ) {
+        return ticketService.findByCustomerIdAndDate(customerId);
     }
 
     @RequestMapping(value="/{id}/sms", method = RequestMethod.GET)

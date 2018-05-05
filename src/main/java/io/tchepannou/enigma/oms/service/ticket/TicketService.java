@@ -135,8 +135,8 @@ public class TicketService {
                 .collect(Collectors.toList());
     }
 
-    public GetTicketListResponse findByCustomerIdAndDate(Integer customerId, Date departureDate) {
-        final List<Ticket> tickets = ticketRepository.findByCustomerIdAndStatusAndDate(customerId, TicketStatus.NEW, departureDate);
+    public GetTicketListResponse findByCustomerIdAndDate(Integer customerId) {
+        final List<Ticket> tickets = ticketRepository.findByCustomerIdAndStatus(customerId, TicketStatus.NEW);
         return new GetTicketListResponse(
                 tickets.stream()
                     .map(t -> mapper.toTicketDto(t))

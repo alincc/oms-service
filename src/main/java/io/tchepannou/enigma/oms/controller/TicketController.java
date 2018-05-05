@@ -26,12 +26,12 @@ public class TicketController {
         return ticketService.findById(id);
     }
 
-    @RequestMapping(value="/customers/{customerId}", method = RequestMethod.GET)
-    @ApiOperation("findByCustomer")
-    public GetTicketListResponse findByCustomer(
-            @PathVariable Integer customerId
+    @RequestMapping(value="/users/{userId}", method = RequestMethod.GET)
+    @ApiOperation("findByUser")
+    public GetTicketListResponse findByUser(
+            @PathVariable Integer userId
     ) {
-        return ticketService.findByCustomerIdAndDate(customerId);
+        return ticketService.findByCustomerIdAndDate(userId);
     }
 
     @RequestMapping(value="/{id}/sms", method = RequestMethod.GET)

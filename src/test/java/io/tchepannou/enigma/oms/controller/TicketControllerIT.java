@@ -88,7 +88,7 @@ public class TicketControllerIT {
     public void shouldReturnTicketForCustomer() throws Exception {
         mockMvc
                 .perform(
-                        get("/v1/tickets/customers/11")
+                        get("/v1/tickets/users/11")
                 )
 
                 .andDo(MockMvcResultHandlers.print())

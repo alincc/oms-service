@@ -24,6 +24,15 @@ public class DateHelper {
         return getCalendar().getTime();
     }
 
+    public static Date today(){
+        Calendar cal = toCalendar(now());
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTime();
+    }
+
     public static Calendar getCalendar(){
         final Calendar cal = Calendar.getInstance();
         cal.setTimeZone(getTimeZone());

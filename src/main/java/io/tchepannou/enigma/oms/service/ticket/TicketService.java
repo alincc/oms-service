@@ -136,7 +136,8 @@ public class TicketService {
     }
 
     public GetTicketListResponse findByCustomerIdAndDate(Integer userId) {
-        final List<Ticket> tickets = ticketRepository.findByUserIdAndStatus(userId, TicketStatus.NEW);
+        final Date today = DateUtils.addDays(DateHelper.today(), -1);
+        final List<Ticket> tickets = ticketRepository.findByUserIdAndStatusAndDepatureDate(userId, TicketStatus.NEW, today);
         return new GetTicketListResponse(
                 tickets.stream()
                     .map(t -> mapper.toTicketDto(t))

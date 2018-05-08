@@ -26,7 +26,7 @@
         <ferari-client.version>1.0.39</ferari-client.version>
         <profile-client.version>1.0.10</profile-client.version>
         <oms-client.version>1.0.39</oms-client.version>
-        <ref-data-client.version>1.0.11</ref-data-client.version>
+        <ref-data-client.version>1.0.17</ref-data-client.version>
     </properties>
 
     <dependencies>

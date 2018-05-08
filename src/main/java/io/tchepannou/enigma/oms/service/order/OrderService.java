@@ -222,7 +222,7 @@ public class OrderService {
             kv.add("OrderID", order.getId());
 
             // Response
-            return new CreateOrderResponse(order.getId());
+            return new CreateOrderResponse(mapper.toDto(order));
 
         } catch (InvalidCarOfferTokenException e){
 
@@ -250,7 +250,7 @@ public class OrderService {
             LOGGER.info("Order#{} has already been confirmed", order.getId());
             Transaction tx = transactionRepository.findByOrderAndType(order, TransactionType.CHARGE);
             return new CheckoutOrderResponse(
-                    order.getId(),
+                    mapper.toDto(order),
                     ticketService.findByOrder(order),
                     mapper.toDto(tx)
             );
@@ -288,7 +288,7 @@ public class OrderService {
 
         // Saved order
         return new CheckoutOrderResponse(
-                order.getId(),
+                mapper.toDto(order),
                 tickets,
                 mapper.toDto(tx)
         );

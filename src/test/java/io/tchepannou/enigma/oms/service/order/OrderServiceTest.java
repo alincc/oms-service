@@ -18,6 +18,7 @@ import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.TransactionType;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
+import io.tchepannou.enigma.oms.client.dto.OrderDto;
 import io.tchepannou.enigma.oms.client.dto.TicketDto;
 import io.tchepannou.enigma.oms.client.dto.TransactionDto;
 import io.tchepannou.enigma.oms.client.exception.NotFoundException;
@@ -140,6 +141,9 @@ public class OrderServiceTest {
         when(mapper.toOrderLine(offer1, order)).thenReturn(orderLine1);
         when(mapper.toOrderLine(offer2, order)).thenReturn(orderLine2);
 
+        OrderDto orderDto = mock(OrderDto.class);
+        when(mapper.toDto(order)).thenReturn(orderDto);
+
         Date freeCancellationDate = DateUtils.addDays(new Date(), 1);
         when(refundCalculator.computeFreeCancellationDateTime(order)).thenReturn(freeCancellationDate);
 
@@ -148,7 +152,7 @@ public class OrderServiceTest {
         CreateOrderResponse response = service.create(request);
 
         // Then
-        assertThat(response.getOrderId()).isEqualTo(1);
+        assertThat(response.getOrder()).isEqualTo(orderDto);
 
         assertThat(order.getCreationDateTime().getTime()).isEqualTo(now);
         assertThat(order.getExpiryDateTime()).isEqualTo(DateUtils.addMinutes(new Date(now), 10));
@@ -172,6 +176,9 @@ public class OrderServiceTest {
         OrderLine line = createOrderLine(1, 100d);
         Order order = createOrder(1, OrderStatus.NEW, 100d, line);
         when(orderRepository.findOne(1)).thenReturn(order);
+
+        OrderDto orderDto = mock(OrderDto.class);
+        when(mapper.toDto(order)).thenReturn(orderDto);
 
         BookingDto booking = new BookingDto();
         booking.setId(11);
@@ -207,7 +214,7 @@ public class OrderServiceTest {
         verify(bookingBackend).confirm(anyInt());
 
         verify(ticketService).create(order);
-        assertThat(response.getOrderId()).isEqualTo(order.getId());
+        assertThat(response.getOrder()).isEqualTo(orderDto);
         assertThat(response.getTickets()).containsExactly(ticket);
 
         ArgumentCaptor<PaymentRequest> paymentRequest = ArgumentCaptor.forClass(PaymentRequest.class);
@@ -239,6 +246,9 @@ public class OrderServiceTest {
         Order order = createOrder(1, OrderStatus.CONFIRMED, 100d, line);
         when(orderRepository.findOne(1)).thenReturn(order);
 
+        OrderDto orderDto = mock(OrderDto.class);
+        when(mapper.toDto(order)).thenReturn(orderDto);
+
         TicketDto tick = mock(TicketDto.class);
         when(tick.getId()).thenReturn(11);
         when(ticketService.findByOrder(order)).thenReturn(Arrays.asList(tick));
@@ -255,7 +265,7 @@ public class OrderServiceTest {
 
         // Then
         verify(orderRepository, never()).save(order);
-        assertThat(response.getOrderId()).isEqualTo(1);
+        assertThat(response.getOrder()).isEqualTo(orderDto);
         assertThat(response.getTickets()).hasSize(1);
         assertThat(response.getTickets().get(0).getId()).isEqualTo(11);
         assertThat(response.getTransaction().getId()).isEqualTo(111);
@@ -280,6 +290,9 @@ public class OrderServiceTest {
         OrderLine line = createOrderLine(1, 100d);
         Order order = createOrder(1, OrderStatus.NEW, 100d, line);
         when(orderRepository.findOne(1)).thenReturn(order);
+
+        OrderDto orderDto = mock(OrderDto.class);
+        when(mapper.toDto(order)).thenReturn(orderDto);
 
         BookingDto booking = new BookingDto();
         booking.setId(11);
@@ -317,7 +330,7 @@ public class OrderServiceTest {
         verify(bookingBackend).confirm(anyInt());
 
         verify(ticketService).create(order);
-        assertThat(response.getOrderId()).isEqualTo(order.getId());
+        assertThat(response.getOrder()).isEqualTo(orderDto);
         assertThat(response.getTickets()).containsExactly(tick);
 
         verify(paymentService, never()).pay(any());
@@ -330,6 +343,9 @@ public class OrderServiceTest {
         OrderLine line = createOrderLine(1, 77d);
         Order order = createOrder(1, OrderStatus.CONFIRMED, 77d, line);
         when(orderRepository.findOne(1)).thenReturn(order);
+
+        OrderDto orderDto = mock(OrderDto.class);
+        when(mapper.toDto(order)).thenReturn(orderDto);
 
         TicketDto ticket = mock(TicketDto.class);
         when(ticketService.findByOrder(order)).thenReturn(Arrays.asList(ticket));
@@ -347,7 +363,7 @@ public class OrderServiceTest {
         verify(bookingBackend, never()).confirm(anyInt());
 
         verify(ticketService, never()).create(order);
-        assertThat(response.getOrderId()).isEqualTo(order.getId());
+        assertThat(response.getOrder()).isEqualTo(orderDto);
         assertThat(response.getTickets()).containsExactly(ticket);
     }
 

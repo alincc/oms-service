@@ -135,7 +135,7 @@ public class TicketService {
                 .collect(Collectors.toList());
     }
 
-    public GetTicketListResponse findByCustomerIdAndDate(Integer userId) {
+    public GetTicketListResponse findByUser(Integer userId) {
         final Date now = DateHelper.now();
         final List<Ticket> tickets = ticketRepository.findByUserIdAndStatusAndExpiryDate(userId, TicketStatus.NEW, now);
         return new GetTicketListResponse(

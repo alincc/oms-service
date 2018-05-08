@@ -148,13 +148,13 @@ public class OrderControllerIT {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
 
-                .andExpect(jsonPath("$.orderId", notNullValue()))
+                .andExpect(jsonPath("$.order", notNullValue()))
 
                 .andReturn();
 
         // Then
         final CreateOrderResponse response = mapper.readValue(result.getResponse().getContentAsString(), CreateOrderResponse.class);
-        final Integer id = response.getOrderId();
+        final Integer id = response.getOrder().getId();
         final Order order = orderRepository.findOne(id);
         assertThat(order).isNotNull();
 

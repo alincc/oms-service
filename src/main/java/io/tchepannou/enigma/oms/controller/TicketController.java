@@ -31,7 +31,7 @@ public class TicketController {
     public GetTicketListResponse findByUser(
             @PathVariable Integer userId
     ) {
-        return ticketService.findByCustomerIdAndDate(userId);
+        return ticketService.findByUser(userId);
     }
 
     @RequestMapping(value="/{id}/sms", method = RequestMethod.GET)

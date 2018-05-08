@@ -18,6 +18,6 @@ public interface TicketRepository extends CrudRepository<Ticket, Integer>{
     @Query("SELECT t FROM Ticket t WHERE t.orderLine.bookingId = ?1")
     List<Ticket> findByBookingId(Integer bookingId);
 
-    @Query("SELECT t FROM Ticket t WHERE t.orderLine.order.customerId = ?1 AND t.status=?2 AND t.expiryDateTime>?3")
+    @Query("SELECT t FROM Ticket t WHERE t.orderLine.order.customerId = ?1 AND t.status=?2 AND t.expiryDateTime>=?3")
     List<Ticket> findByUserIdAndStatusAndExpiryDate(Integer userId, TicketStatus ticketStatus, Date expiryDate);
 }

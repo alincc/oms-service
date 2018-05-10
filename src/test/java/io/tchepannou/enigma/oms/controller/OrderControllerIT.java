@@ -8,7 +8,6 @@ import io.tchepannou.enigma.ferari.client.TransportationOfferToken;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderLineType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
-import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.Sex;
 import io.tchepannou.enigma.oms.client.TicketStatus;
 import io.tchepannou.enigma.oms.client.TransactionType;
@@ -411,7 +410,6 @@ public class OrderControllerIT {
         assertThat(tx.getType()).isEqualTo(TransactionType.REFUND);
         assertThat(tx.getGatewayTid()).isNotNull();
         assertThat(tx.getTransactionDateTime()).isNotNull();
-        assertThat(tx.getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
     }
 
 

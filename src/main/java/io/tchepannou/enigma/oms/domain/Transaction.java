@@ -1,6 +1,5 @@
 package io.tchepannou.enigma.oms.domain;
 
-import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.TransactionType;
 import lombok.Getter;
 import lombok.Setter;
@@ -44,9 +43,4 @@ public class Transaction extends Persistent {
     @ManyToOne
     @JoinColumn(name="order_fk")
     private Order order;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name="payment_method")
-    private PaymentMethod paymentMethod;
-
 }

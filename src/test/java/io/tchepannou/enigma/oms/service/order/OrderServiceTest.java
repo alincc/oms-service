@@ -14,7 +14,6 @@ import io.tchepannou.enigma.ferari.client.rr.CreateBookingResponse;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderLineType;
 import io.tchepannou.enigma.oms.client.OrderStatus;
-import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.TransactionType;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
@@ -232,7 +231,6 @@ public class OrderServiceTest {
         assertThat(tx.getValue().getType()).isEqualTo(TransactionType.CHARGE);
         assertThat(tx.getValue().getGatewayTid()).isEqualTo(paymentResponse.getTransactionId());
         assertThat(tx.getValue().getOrder()).isEqualTo(order);
-        assertThat(tx.getValue().getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(tx.getValue().getTransactionDateTime()).isEqualTo(new Date(now));
     }
 
@@ -785,7 +783,6 @@ public class OrderServiceTest {
         ArgumentCaptor<Transaction> tx = ArgumentCaptor.forClass(Transaction.class);
         verify(transactionRepository).save(tx.capture());
         assertThat(tx.getValue().getTransactionDateTime()).isEqualTo(new Date(now));
-        assertThat(tx.getValue().getPaymentMethod()).isEqualTo(PaymentMethod.ONLINE);
         assertThat(tx.getValue().getOrder()).isEqualTo(order);
         assertThat(tx.getValue().getGatewayTid()).isEqualTo(paymentResponse.getGatewayTid());
         assertThat(tx.getValue().getType()).isEqualTo(TransactionType.REFUND);

@@ -18,7 +18,6 @@ import io.tchepannou.enigma.ferari.client.rr.CancelBookingRequest;
 import io.tchepannou.enigma.ferari.client.rr.CreateBookingRequest;
 import io.tchepannou.enigma.oms.client.OMSErrorCode;
 import io.tchepannou.enigma.oms.client.OrderStatus;
-import io.tchepannou.enigma.oms.client.PaymentMethod;
 import io.tchepannou.enigma.oms.client.TransactionType;
 import io.tchepannou.enigma.oms.client.dto.MobilePaymentDto;
 import io.tchepannou.enigma.oms.client.dto.OfferLineDto;
@@ -528,7 +527,6 @@ public class OrderService {
             tx.setOrder(order);
             tx.setTransactionDateTime(new Date(clock.millis()));
             tx.setType(TransactionType.CHARGE);
-            tx.setPaymentMethod(PaymentMethod.ONLINE);
             transactionRepository.save(tx);
 
             return tx;
@@ -571,7 +569,6 @@ public class OrderService {
             tx.setOrder(order);
             tx.setTransactionDateTime(new Date(clock.millis()));
             tx.setType(TransactionType.REFUND);
-            tx.setPaymentMethod(PaymentMethod.ONLINE);
             transactionRepository.save(tx);
 
             return tx;

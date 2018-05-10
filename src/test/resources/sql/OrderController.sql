@@ -57,5 +57,5 @@ INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, type, offer_toke
 INSERT INTO T_ORDER_LINE(id, order_fk, fees_fk, type, quantity, unit_price, total_price)
   VALUES(403, 400, 1, 'FEES', 1, 300, 300);
 
-INSERT INTO T_TRANSACTION(id, order_fk, type, gateway_tid, amount, currency_code, transaction_datetime, payment_method)
-  VALUES(400, 400, 'CHARGE', '12090920', 10300, 'XAF', now(), 'ONLINE');
+INSERT INTO T_TRANSACTION(id, order_fk, type, gateway_tid, amount, currency_code, transaction_datetime)
+  VALUES(400, 400, 'CHARGE', '12090920', 10300, 'XAF', now());

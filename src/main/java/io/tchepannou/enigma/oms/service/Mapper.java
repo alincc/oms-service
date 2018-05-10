@@ -224,7 +224,6 @@ public class Mapper {
         dto.setGatewayTid(tx.getGatewayTid());
         dto.setId(tx.getId());
         dto.setOrderId(tx.getOrder().getId());
-        dto.setPaymentMethod(tx.getPaymentMethod());
         dto.setTransactionDateTime(tx.getTransactionDateTime());
         dto.setType(tx.getType());
         return dto;

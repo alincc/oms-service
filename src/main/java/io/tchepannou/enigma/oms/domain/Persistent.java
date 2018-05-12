@@ -5,6 +5,9 @@ public abstract class Persistent {
 
     @Override
     public boolean equals(final Object obj) {
+        if (obj == null){
+            return false;
+        }
 
         if (getClass().equals(obj.getClass())){
             final Integer id = getId();

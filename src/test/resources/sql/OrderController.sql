@@ -6,10 +6,10 @@ INSERT INTO T_ORDER(id, site_id, customer_id, status, total_amount, currency_cod
   VALUES(100, 1, 1, 'NEW', '12300', 'XAF', 'ray.sponsible@gmail.com', 'Ray', 'Sponsible');
 
 INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, type, offer_token, quantity, unit_price, total_price)
-  VALUES(100, 100, 1001, 'CAR', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060', 1, 6000, 6000);
+  VALUES(100, 100, 1001, 'BUS', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060', 1, 6000, 6000);
 
 INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, type, offer_token, quantity, unit_price, total_price)
-  VALUES(101, 100, 1001, 'CAR', '100,1902459600000,1902466800000,1000,6000,XAF,2,2370001,2370002,I,15138644923060', 2, 6000, 12000);
+  VALUES(101, 100, 1001, 'BUS', '100,1902459600000,1902466800000,1000,6000,XAF,2,2370001,2370002,I,15138644923060', 2, 6000, 12000);
 
 INSERT INTO T_ORDER_LINE(id, order_fk, fees_fk, type, quantity, unit_price, total_price)
   VALUES(102, 100, 1, 'FEES', 1, 300, 300);
@@ -20,7 +20,7 @@ INSERT INTO T_ORDER(id, site_id, customer_id, language_code, status, sub_total_a
   VALUES(200, 1, 3, 'fr', 'CONFIRMED', 6000, 300, 6300, 'XAF', 'Ray', 'Sponsible', 'ray@gmail.com', '1234-1234', '23799505678', "MTN");
 
 INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, type, offer_token, quantity, unit_price, total_price, description)
-  VALUES(200, 200, 2001, 5678, 'CAR', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060', 1, 6000, 6000, 'hello');
+  VALUES(200, 200, 2001, 5678, 'BUS', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060', 1, 6000, 6000, 'hello');
 
 
 -- Expired order
@@ -36,9 +36,9 @@ INSERT INTO T_ORDER(id, site_id, customer_id, status, total_amount, currency_cod
   VALUES(300, 1, 3, 'CONFIRMED', '6000', 'XAF', 'Ray', 'Sponsible', 'ray@gmail.com');
 
 INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, type, offer_token, quantity, unit_price, total_price)
-  VALUES(301, 300, 2001, 5678, 'CAR', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060', 1, 6000, 6000);
+  VALUES(301, 300, 2001, 5678, 'BUS', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644923060', 1, 6000, 6000);
 INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, type, offer_token, quantity, unit_price, total_price)
-  VALUES(302, 300, 2002, 5679, 'CAR', '100,1902459600000,1902466800000,1000,4000,XAF,1,2370002,2370001,I,15138644923060', 1, 4000, 4000);
+  VALUES(302, 300, 2002, 5679, 'BUS', '100,1902459600000,1902466800000,1000,4000,XAF,1,2370002,2370001,I,15138644923060', 1, 4000, 4000);
 
 INSERT INTO T_TICKET(id, order_line_fk, merchant_id, product_id, origin_id, destination_id, sequence_number, first_name, last_name, print_datetime, expiry_datetime, departure_datetime, status)
   VALUES(301, 301, 2001, 1001, 2370001, 2370002, 0, 'Ray', 'Sponsible', '2030-01-10', '2030-01-31', '2030-01-31', 'NEW');
@@ -51,9 +51,9 @@ INSERT INTO T_ORDER(id, site_id, customer_id, status, sub_total_amount, total_fe
   VALUES(400, 1, 3, 'CANCELLED', 10000.00, 300.00, 10300.00, 'XAF', 'Ray', 'Sponsible', 'ray@gmail.com', now());
 
 INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, type, offer_token, quantity, unit_price, total_price)
-  VALUES(401, 400, 2001, 5678, 'CAR', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644924060', 1, 6000, 6000);
+  VALUES(401, 400, 2001, 5678, 'BUS', '100,1902459600000,1902466800000,1000,6000,XAF,1,2370001,2370002,-,15138644924060', 1, 6000, 6000);
 INSERT INTO T_ORDER_LINE(id, order_fk, merchant_id, booking_id, type, offer_token, quantity, unit_price, total_price)
-  VALUES(402, 400, 2002, 5679, 'CAR', '100,1902459600000,1902466800000,1000,4000,XAF,1,2370002,2370001,I,15138644924060', 1, 4000, 4000);
+  VALUES(402, 400, 2002, 5679, 'BUS', '100,1902459600000,1902466800000,1000,4000,XAF,1,2370002,2370001,I,15138644924060', 1, 4000, 4000);
 INSERT INTO T_ORDER_LINE(id, order_fk, fees_fk, type, quantity, unit_price, total_price)
   VALUES(403, 400, 1, 'FEES', 1, 300, 300);
 

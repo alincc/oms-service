@@ -334,7 +334,7 @@ public class OrderControllerIT {
 
                 .andExpect(jsonPath("$.order.lines.length()", is(1)))
                 .andExpect(jsonPath("$.order.lines[0].bookingId", is(5678)))
-                .andExpect(jsonPath("$.order.lines[0].type", is("CAR")))
+                .andExpect(jsonPath("$.order.lines[0].type", is("BUS")))
                 .andExpect(jsonPath("$.order.lines[0].offerToken", notNullValue()))
                 .andExpect(jsonPath("$.order.lines[0].description", is("hello")))
                 .andExpect(jsonPath("$.order.lines[0].unitPrice", is(6000d)))

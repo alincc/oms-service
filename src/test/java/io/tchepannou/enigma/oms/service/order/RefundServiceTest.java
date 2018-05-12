@@ -178,7 +178,7 @@ public class RefundServiceTest {
 
         OrderLine line = new OrderLine();
         line.setId(id);
-        line.setType(OrderLineType.CAR);
+        line.setType(OrderLineType.BUS);
         line.setQuantity(1);
         line.setUnitPrice(new BigDecimal(amount));
         line.setTotalPrice(new BigDecimal(amount));

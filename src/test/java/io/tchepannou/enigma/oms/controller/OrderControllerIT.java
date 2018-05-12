@@ -448,7 +448,7 @@ public class OrderControllerIT {
         final List<OfferLineDto> lines = new ArrayList();
         final OfferLineDto line = new OfferLineDto();
         line.setToken(TransportationOfferToken.toString());
-        line.setType(OrderLineType.CAR);
+        line.setType(OrderLineType.BUS);
         line.setDescription("description #1");
         line.setMerchantId(101);
 

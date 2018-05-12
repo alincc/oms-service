@@ -994,7 +994,7 @@ public class OrderServiceTest {
         OfferLineDto line = new OfferLineDto();
         line.setDescription("this is desc");
         line.setMerchantId(merchantId);
-        line.setType(OrderLineType.CAR);
+        line.setType(OrderLineType.BUS);
         line.setToken(token.toString());
         return line;
     }
